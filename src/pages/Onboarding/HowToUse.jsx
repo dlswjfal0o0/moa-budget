@@ -1,9 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTheme } from '../../contexts/ThemeContext'
 
-const { themeData } = useTheme()
-const PRIMARY = themeData?.primary || '#3182F6'
+const PRIMARY = '#3182F6'
 const BG = '#fefaf4'
 const TEXT = '#1A0E05'
 const TEXT2 = '#8B6F5E'
