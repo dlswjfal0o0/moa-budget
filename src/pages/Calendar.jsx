@@ -45,9 +45,9 @@ export default function Calendar() {
 
   const handleAddFixed = () => {
     if (!newFixed.title || !newFixed.amount) return
-    const updated = [...fixedExpenses, { id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), done: false }]
+    const updated = [...fixedExpenses, { id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate, done: false }]
     saveFixed(updated)
-    setNewFixed({ title: '', amount: '' })
+    setNewFixed({ title: '', amount: '', dueDate: '' })
     setShowAddFixed(false)
   }
 
@@ -191,22 +191,36 @@ export default function Calendar() {
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>고정지출을 추가해보세요</p>
           )}
 
-          {fixedExpenses.map(f => (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-              <input type="checkbox" checked={f.done} onChange={() => handleToggleFixed(f.id)}
-                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: themeData.primary }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 14, color: f.done ? '#bbb' : '#111', textDecoration: f.done ? 'line-through' : 'none' }}>{f.title}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: 14, color: f.done ? '#bbb' : '#111', textDecoration: f.done ? 'line-through' : 'none' }}>{f.title}</p>
-                {f.dueDate && <p style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>납부일 {f.dueDate}</p>}
-              </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: f.done ? '#bbb' : '#ef4444' }}>-{fmt(f.amount)}원</p>
-              <button onClick={() => handleDeleteFixed(f.id)}
-                style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[...fixedExpenses]
+                .sort((a, b) => {
+                    const da = parseInt(a.dueDate?.split('-')[2] || '99')
+                    const db = parseInt(b.dueDate?.split('-')[2] || '99')
+                    return da - db
+                })
+                .map(f => {
+                    const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
+                    return (
+                        <div key={f.id} style={{ background: f.done ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: f.done ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                                <input type="checkbox" checked={f.done} onChange={() => handleToggleFixed(f.id)}
+                                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
+                                <button onClick={() => handleDeleteFixed(f.id)}
+                                    style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
+                            </div>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: f.done ? '#bbb' : '#111', textDecoration: f.done ? 'line-through' : 'none', marginBottom: 4 }}>
+                                {f.title}
+                            </p>
+                            {dayNum && (
+                                <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>매월 {dayNum}일</p>
+                            )}
+                            <p style={{ fontSize: 15, fontWeight: 700, color: f.done ? '#bbb' : '#ef4444' }}>
+                                -{fmt(f.amount)}원
+                            </p>
+                        </div>
+                    )
+                })}
             </div>
-          ))}
 
           {showAddFixed && (
             <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>

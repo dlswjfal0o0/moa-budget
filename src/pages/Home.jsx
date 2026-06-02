@@ -1,3 +1,5 @@
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { CATEGORY_COLORS } from '../styles/theme'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
@@ -10,6 +12,47 @@ const CATEGORY_COLORS = {
   식비: '#FF6B6B', 교통: '#4ECDC4', 쇼핑: '#45B7D1',
   문화: '#96CEB4', 의료: '#FFD93D', 주거: '#C9B1FF',
   통신: '#98D8C8', 기타: '#B0B0B0',
+}
+
+function BudgetGauge({ spent, total, primary, fmt }) {
+  const pct = total > 0 ? Math.min((spent / total) * 100, 100) : 0
+  const r = 52
+  const circ = Math.PI * r
+  const offset = circ * (1 - pct / 100)
+  const color = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : primary
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 0 8px' }}>
+      <div style={{ position: 'relative', width: 160, height: 90 }}>
+        <svg width="160" height="90" viewBox="0 0 160 90">
+          <path d="M 14 78 A 66 66 0 0 1 146 78"
+            fill="none" stroke="#f0f0f0" strokeWidth="16" strokeLinecap="round" />
+          <path d="M 14 78 A 66 66 0 0 1 146 78"
+            fill="none" stroke={color} strokeWidth="16" strokeLinecap="round"
+            strokeDasharray={Math.PI * 66}
+            strokeDashoffset={Math.PI * 66 * (1 - pct / 100)}
+            style={{ transition: 'stroke-dashoffset 1s ease' }} />
+        </svg>
+        <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: 28, fontWeight: 800, color: '#111', lineHeight: 1 }}>{Math.round(pct)}<span style={{ fontSize: 16 }}>%</span></p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 24, marginTop: 4 }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>사용</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{fmt(spent)}원</p>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>예산</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{fmt(total)}원</p>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>잔여</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#22c55e' }}>{fmt(Math.max(total - spent, 0))}원</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function Home() {
@@ -113,6 +156,7 @@ export default function Home() {
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
   const expenseByCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
   const fmt = n => n.toLocaleString('ko-KR')
+  const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }))
 
   const inputStyle = {
     width: '100%', padding: '11px 14px', borderRadius: 10,
@@ -170,10 +214,7 @@ export default function Home() {
                   </div>
 
                   {/* 게이지 */}
-                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 8 }}>
-                    <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-                      background: pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary }} />
-                  </div>
+                  <BudgetGauge spent={spent} total={b.amount} primary={themeData?.primary || '#3182F6'} fmt={fmt} />
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: insight.color, fontWeight: 500 }}>{insight.msg}</span>
@@ -242,22 +283,27 @@ export default function Home() {
           {Object.keys(expenseByCategory).length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 지출 내역이 없어요</p>
           ) : (
-            Object.entries(expenseByCategory).map(([cat, amt]) => (
-              <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: (CATEGORY_COLORS[cat] || '#B0B0B0') + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: CATEGORY_COLORS[cat] || '#B0B0B0' }}>{cat[0]}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <ResponsiveContainer width={150} height={150}>
+                    <PieChart>
+                        <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={3}>
+                            {categoryData.map((entry, i) => (
+                                <Cell key={i} fill={CATEGORY_COLORS[entry.name] || '#B0B0B0'} />
+                            ))}
+                        </Pie>
+                        <Tooltip formatter={v => [`${fmt(v)}원`]} />
+                    </PieChart>
+                </ResponsiveContainer>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {categoryData.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: CATEGORY_COLORS[c.name] || '#B0B0B0', flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, color: themeData.text || '#555', flex: 1 }}>{c.name}</span>
+                            <span style={{ fontSize: 12, color: '#888' }}>{Math.round(c.value / totalExpense * 100)}%</span>
+                        </div>
+                    ))}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, color: themeData.text || '#333' }}>{cat}</span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: themeData.text || '#111' }}>{fmt(amt)}원</span>
-                  </div>
-                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 4 }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: CATEGORY_COLORS[cat] || '#B0B0B0', width: `${(amt/totalExpense)*100}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))
+            </div>
           )}
         </div>
 

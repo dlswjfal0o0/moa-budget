@@ -7,39 +7,51 @@ const TEXT = '#1A0E05'
 const TEXT2 = '#8B6F5E'
 
 function HomeMockup() {
+  const circ = Math.PI * 44
   return (
     <div style={{ flex: 1, background: '#f8f8f8', overflow: 'hidden' }}>
-      <div style={{ background: PRIMARY, padding: '10px 12px', color: 'white' }}>
-        <div style={{ fontSize: 8, opacity: 0.8, marginBottom: 2 }}>6월 가계부</div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>1,250,000원</div>
+      <div style={{ background: PRIMARY, padding: '8px 12px 10px', color: 'white' }}>
+        <div style={{ fontSize: 8, opacity: 0.8, marginBottom: 1 }}>6월 가계부</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>1,250,000원</div>
         <div style={{ display: 'flex', gap: 16 }}>
           <div><div style={{ fontSize: 7, opacity: 0.7 }}>수입</div><div style={{ fontSize: 9, fontWeight: 600 }}>+2,000,000원</div></div>
           <div><div style={{ fontSize: 7, opacity: 0.7 }}>지출</div><div style={{ fontSize: 9, fontWeight: 600 }}>-750,000원</div></div>
         </div>
       </div>
       <div style={{ background: 'white', margin: '5px 5px 0', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ fontSize: 8, fontWeight: 600, color: '#111' }}>월 예산</span>
-          <span style={{ fontSize: 7, color: PRIMARY }}>75% 사용</span>
+        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 2 }}>월 예산</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: 110, height: 62 }}>
+            <svg width="110" height="62" viewBox="0 0 110 62">
+              <path d="M 8 54 A 47 47 0 0 1 102 54" fill="none" stroke="#f0f0f0" strokeWidth="10" strokeLinecap="round" />
+              <path d="M 8 54 A 47 47 0 0 1 102 54" fill="none" stroke={PRIMARY} strokeWidth="10" strokeLinecap="round"
+                strokeDasharray={circ} strokeDashoffset={circ * 0.25} />
+            </svg>
+            <div style={{ position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#111' }}>75%</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 2 }}>
+            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 6, color: '#aaa' }}>사용</div><div style={{ fontSize: 8, fontWeight: 600, color: '#ef4444' }}>750,000원</div></div>
+            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 6, color: '#aaa' }}>잔여</div><div style={{ fontSize: 8, fontWeight: 600, color: '#22c55e' }}>250,000원</div></div>
+          </div>
         </div>
-        <div style={{ height: 5, background: '#f0f0f0', borderRadius: 99, marginBottom: 3 }}>
-          <div style={{ height: '100%', width: '75%', background: PRIMARY, borderRadius: 99 }} />
-        </div>
-        <div style={{ fontSize: 7, color: '#22c55e' }}>250,000원 남음</div>
       </div>
       <div style={{ background: 'white', margin: '4px 5px 0', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 5 }}>카테고리별 지출</div>
-        {[['식비', '#FF6B6B', '65%'], ['교통', '#4ECDC4', '15%'], ['쇼핑', '#45B7D1', '20%']].map(([n, c, w]) => (
-          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-            <div style={{ width: 16, height: 16, borderRadius: 4, background: c, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 7, color: 'white', fontWeight: 700 }}>{n[0]}</span>
-            </div>
-            <div style={{ flex: 1, height: 4, background: '#f0f0f0', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: w, background: c, borderRadius: 99 }} />
-            </div>
-            <span style={{ fontSize: 7, color: '#888', minWidth: 22 }}>{w}</span>
+        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 5 }}>카테고리별 소비</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 54, height: 54, borderRadius: '50%', flexShrink: 0,
+            background: `conic-gradient(#FF6B6B 0% 65%, #4ECDC4 65% 80%, #45B7D1 80% 90%, #96CEB4 90% 100%)` }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {[['식비','#FF6B6B','65%'],['교통','#4ECDC4','15%'],['쇼핑','#45B7D1','10%']].map(([n,c,w])=>(
+              <div key={n} style={{ display:'flex', alignItems:'center', gap: 4 }}>
+                <div style={{ width:6,height:6,borderRadius:'50%',background:c,flexShrink:0 }}/>
+                <span style={{ fontSize:8,color:'#555',flex:1 }}>{n}</span>
+                <span style={{ fontSize:8,color:'#888' }}>{w}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   )
@@ -48,53 +60,47 @@ function HomeMockup() {
 function CalendarMockup() {
   const days = ['일','월','화','수','목','금','토']
   const weeks = [[1,2,3,4,5,6,7],[8,9,10,11,12,13,14],[15,16,17,18,19,20,21]]
-  const expDays = [3,7,12,15,20], incDays = [10,17]
+  const exp = { 3:'-6,500', 7:'-28,000', 15:'-50,000', 20:'-8,000' }
+  const inc = { 10:'+500,000' }
   return (
     <div style={{ flex: 1, background: 'white', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid #f0f0f0' }}>
-        <span style={{ fontSize: 8, color: '#888' }}>‹</span>
-        <span style={{ fontSize: 9, fontWeight: 700, color: '#111' }}>2026년 6월</span>
-        <span style={{ fontSize: 8, color: '#888' }}>›</span>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 12px', borderBottom:'1px solid #f0f0f0' }}>
+        <span style={{ fontSize:8, color:'#888' }}>‹</span>
+        <span style={{ fontSize:9, fontWeight:700, color:'#111' }}>2026년 6월</span>
+        <span style={{ fontSize:8, color:'#888' }}>›</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '4px 8px 0' }}>
-        {days.map((d, i) => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 7, color: i===0 ? '#ef4444' : i===6 ? PRIMARY : '#888', padding: '2px 0' }}>{d}</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', padding:'3px 4px 0' }}>
+        {days.map((d,i)=>(
+          <div key={d} style={{ textAlign:'center', fontSize:7, color:i===0?'#ef4444':i===6?PRIMARY:'#888', padding:'2px 0' }}>{d}</div>
         ))}
       </div>
-      <div style={{ padding: '2px 8px' }}>
-        {weeks.map((week, wi) => (
-          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 3 }}>
-            {week.map(day => (
-              <div key={day} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 8, color: day === 2 ? PRIMARY : '#111', fontWeight: day === 2 ? 700 : 400 }}>{day}</div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                  {expDays.includes(day) && <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#ef4444' }} />}
-                  {incDays.includes(day) && <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#22c55e' }} />}
-                </div>
+      <div style={{ padding:'0 4px' }}>
+        {weeks.map((week,wi)=>(
+          <div key={wi} style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:2 }}>
+            {week.map(day=>(
+              <div key={day} style={{ textAlign:'center', padding:'1px 0' }}>
+                <div style={{ fontSize:8, color:day===2?PRIMARY:'#111', fontWeight:day===2?700:400 }}>{day}</div>
+                {exp[day] && <div style={{ fontSize:5.5, color:'#ef4444', lineHeight:1.2 }}>{exp[day]}</div>}
+                {inc[day] && <div style={{ fontSize:5.5, color:'#22c55e', lineHeight:1.2 }}>{inc[day]}</div>}
               </div>
             ))}
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 5, padding: '5px 8px', borderTop: '1px solid #f5f5f5' }}>
-        <div style={{ flex: 1, background: '#FFF5F5', borderRadius: 6, padding: '5px 7px' }}>
-          <div style={{ fontSize: 7, color: '#888' }}>이번 주 지출</div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#ef4444' }}>-125,000원</div>
+      <div style={{ padding:'4px 6px', borderTop:'1px solid #f5f5f5' }}>
+        <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>고정지출</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:4 }}>
+          {[{n:'월세',d:1,a:'500,000',p:true},{n:'넷플릭스',d:5,a:'17,000',p:false},{n:'보험료',d:10,a:'85,000',p:true},{n:'통신비',d:15,a:'55,000',p:false}].map(item=>(
+            <div key={item.n} style={{ background:'#f8f8f8', borderRadius:6, padding:'5px 6px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:3, marginBottom:1 }}>
+                <div style={{ width:8,height:8,borderRadius:2, background:item.p?PRIMARY:'#e0e0e0', flexShrink:0 }}/>
+                <span style={{ fontSize:7, fontWeight:600, color:item.p?'#bbb':'#111', textDecoration:item.p?'line-through':'none' }}>{item.n}</span>
+              </div>
+              <div style={{ fontSize:6, color:'#bbb' }}>매월 {item.d}일</div>
+              <div style={{ fontSize:8, fontWeight:600, color:item.p?'#bbb':'#ef4444' }}>{item.a}원</div>
+            </div>
+          ))}
         </div>
-        <div style={{ flex: 1, background: '#F0FFF4', borderRadius: 6, padding: '5px 7px' }}>
-          <div style={{ fontSize: 7, color: '#888' }}>수입</div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#22c55e' }}>+500,000원</div>
-        </div>
-      </div>
-      <div style={{ padding: '5px 8px' }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 4 }}>고정지출</div>
-        {[['월세', '500,000원', true], ['넷플릭스', '17,000원', false]].map(([name, amt, done]) => (
-          <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: done ? PRIMARY : '#f0f0f0', border: done ? 'none' : '1px solid #ddd', flexShrink: 0 }} />
-            <span style={{ fontSize: 7, color: done ? '#bbb' : '#111', textDecoration: done ? 'line-through' : 'none', flex: 1 }}>{name}</span>
-            <span style={{ fontSize: 7, color: done ? '#bbb' : '#ef4444' }}>{amt}</span>
-          </div>
-        ))}
       </div>
     </div>
   )
@@ -102,44 +108,51 @@ function CalendarMockup() {
 
 function LedgerMockup() {
   return (
-    <div style={{ flex: 1, background: '#f8f8f8', overflow: 'hidden' }}>
-      <div style={{ background: 'white', padding: '6px 10px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', gap: 5, marginBottom: 5 }}>
-          {['주간','월간','직접'].map((t, i) => (
-            <div key={t} style={{ padding: '2px 8px', borderRadius: 20, background: i===1 ? PRIMARY : '#f0f0f0', fontSize: 7, color: i===1 ? 'white' : '#666' }}>{t}</div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {['전체','소비','수입'].map((t, i) => (
-            <div key={t} style={{ padding: '2px 8px', borderRadius: 20, background: i===0 ? '#111' : '#f0f0f0', fontSize: 7, color: i===0 ? 'white' : '#666' }}>{t}</div>
+    <div style={{ flex:1, background:'#f8f8f8', overflow:'hidden', position:'relative' }}>
+      <div style={{ background:'white', padding:'6px 10px', borderBottom:'1px solid #f0f0f0' }}>
+        <div style={{ display:'flex', gap:5, marginBottom:4 }}>
+          {['주간','월간','직접'].map((t,i)=>(
+            <div key={t} style={{ padding:'2px 8px', borderRadius:20, background:i===1?PRIMARY:'#f0f0f0', fontSize:7, color:i===1?'white':'#666' }}>{t}</div>
           ))}
         </div>
       </div>
-      <div style={{ padding: '4px 7px' }}>
+      <div style={{ padding:'4px 7px' }}>
         {[
-          { date: '06/02', items: [{ title: '스타벅스', cat: '식비', color: '#FF6B6B', amount: '-6,500', type: 'e' }, { title: '버스', cat: '교통', color: '#4ECDC4', amount: '-1,400', type: 'e' }] },
-          { date: '06/01', items: [{ title: '급여', cat: '급여', color: '#4ADE80', amount: '+2,000,000', type: 'i' }] }
-        ].map(({ date, items }) => (
+          { date:'06/02', items:[{t:'스타벅스',c:'식비',col:'#FF6B6B',a:'-6,500',tp:'e'},{t:'버스',c:'교통',col:'#4ECDC4',a:'-1,400',tp:'e'}]},
+          { date:'06/01', items:[{t:'급여',c:'급여',col:'#4ADE80',a:'+2,000,000',tp:'i'}]}
+        ].map(({date,items})=>(
           <div key={date}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '4px 0 3px' }}>
-              <span style={{ fontSize: 7, color: '#aaa', whiteSpace: 'nowrap', fontWeight: 600 }}>{date}</span>
-              <div style={{ flex: 1, height: 0.5, background: '#e0e0e0' }} />
-              <span style={{ fontSize: 7, color: '#bbb', whiteSpace: 'nowrap' }}>-7,900원</span>
+            <div style={{ display:'flex', alignItems:'center', gap:5, margin:'4px 0 3px' }}>
+              <span style={{ fontSize:7, color:'#aaa', fontWeight:600 }}>{date}</span>
+              <div style={{ flex:1, height:0.5, background:'#e0e0e0' }}/>
             </div>
-            {items.map((item, i) => (
-              <div key={i} style={{ background: 'white', borderRadius: 8, padding: '5px 7px', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 20, height: 20, borderRadius: 6, background: item.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 8, fontWeight: 700, color: item.color }}>{item.cat[0]}</span>
+            {items.map((item,i)=>(
+              <div key={i} style={{ background:'white', borderRadius:8, padding:'5px 7px', marginBottom:3, display:'flex', alignItems:'center', gap:5 }}>
+                <div style={{ width:20,height:20,borderRadius:6, background:item.col+'22', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span style={{ fontSize:8, fontWeight:700, color:item.col }}>{item.c[0]}</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 8, fontWeight: 500, color: '#111' }}>{item.title}</div>
-                  <div style={{ fontSize: 6, color: '#bbb' }}>{item.cat}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:8, fontWeight:500, color:'#111' }}>{item.t}</div>
+                  <div style={{ fontSize:6, color:'#bbb' }}>{item.c}</div>
                 </div>
-                <div style={{ fontSize: 8, fontWeight: 700, color: item.type === 'e' ? '#ef4444' : '#22c55e' }}>{item.amount}</div>
+                <div style={{ fontSize:8, fontWeight:700, color:item.tp==='e'?'#ef4444':'#22c55e' }}>{item.a}</div>
               </div>
             ))}
           </div>
         ))}
+      </div>
+      {/* 설정 바텀시트 */}
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.28)' }}>
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'white', borderRadius:'14px 14px 0 0', padding:'8px 12px 10px' }}>
+          <div style={{ width:22,height:3,borderRadius:99, background:'#e0e0e0', margin:'0 auto 7px' }}/>
+          <div style={{ fontSize:8, fontWeight:700, color:'#111', marginBottom:6 }}>⚙️ 설정</div>
+          {[['주 시작 요일','월요일'],['정렬 순서','날짜 최신순'],['잔여 예산 이월','켜짐'],['카테고리 관리','8개 항목']].map(([k,v])=>(
+            <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', borderBottom:'1px solid #f8f8f8' }}>
+              <span style={{ fontSize:7, color:'#333' }}>{k}</span>
+              <span style={{ fontSize:7, color:PRIMARY, fontWeight:600 }}>{v}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -148,38 +161,38 @@ function LedgerMockup() {
 function AnalysisMockup() {
   const bars = [45,20,80,30,65,45,90,35,50,20,40,15]
   return (
-    <div style={{ flex: 1, background: '#f8f8f8', overflow: 'hidden', padding: '5px 6px' }}>
-      <div style={{ background: 'white', borderRadius: 8, padding: '6px 8px', marginBottom: 4 }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 4 }}>지난 달 대비</div>
-        <div style={{ display: 'flex', gap: 5 }}>
-          <div style={{ flex: 1, background: '#FFF5F5', borderRadius: 5, padding: '4px 6px' }}>
-            <div style={{ fontSize: 6, color: '#888' }}>지출</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#ef4444' }}>750,000원</div>
-            <div style={{ fontSize: 6, color: '#ef4444' }}>▲ 5.2% 증가</div>
+    <div style={{ flex:1, background:'#f8f8f8', overflow:'hidden', padding:'5px 6px' }}>
+      <div style={{ background:'white', borderRadius:8, padding:'6px 8px', marginBottom:4 }}>
+        <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>지난 달 대비</div>
+        <div style={{ display:'flex', gap:5 }}>
+          <div style={{ flex:1, background:'#FFF5F5', borderRadius:5, padding:'4px 6px' }}>
+            <div style={{ fontSize:6, color:'#888' }}>지출</div>
+            <div style={{ fontSize:9, fontWeight:700, color:'#ef4444' }}>750,000원</div>
+            <div style={{ fontSize:6, color:'#ef4444' }}>▲ 5.2% 증가</div>
           </div>
-          <div style={{ flex: 1, background: '#F0FFF4', borderRadius: 5, padding: '4px 6px' }}>
-            <div style={{ fontSize: 6, color: '#888' }}>수입</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#22c55e' }}>2,000,000원</div>
-            <div style={{ fontSize: 6, color: '#aaa' }}>– 변동 없음</div>
+          <div style={{ flex:1, background:'#F0FFF4', borderRadius:5, padding:'4px 6px' }}>
+            <div style={{ fontSize:6, color:'#888' }}>수입</div>
+            <div style={{ fontSize:9, fontWeight:700, color:'#22c55e' }}>2,000,000원</div>
+            <div style={{ fontSize:6, color:'#aaa' }}>– 변동 없음</div>
           </div>
         </div>
       </div>
-      <div style={{ background: 'white', borderRadius: 8, padding: '6px 8px', marginBottom: 4 }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 4 }}>일별 지출</div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 32 }}>
-          {bars.map((h, i) => (
-            <div key={i} style={{ flex: 1, height: `${h}%`, background: PRIMARY, borderRadius: '2px 2px 0 0', opacity: 0.75 }} />
+      <div style={{ background:'white', borderRadius:8, padding:'6px 8px', marginBottom:4 }}>
+        <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>일별 지출</div>
+        <div style={{ display:'flex', alignItems:'flex-end', gap:2, height:32 }}>
+          {bars.map((h,i)=>(
+            <div key={i} style={{ flex:1, height:`${h}%`, background:PRIMARY, borderRadius:'2px 2px 0 0', opacity:0.75 }}/>
           ))}
         </div>
       </div>
-      <div style={{ background: 'white', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <span style={{ fontSize: 8, fontWeight: 600, color: '#111' }}>AI 소비 분석</span>
-          <div style={{ background: PRIMARY, borderRadius: 10, padding: '2px 7px', fontSize: 6, color: 'white' }}>AI 분석</div>
+      <div style={{ background:'white', borderRadius:8, padding:'6px 8px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+          <span style={{ fontSize:8, fontWeight:600, color:'#111' }}>AI 소비 분석</span>
+          <div style={{ background:PRIMARY, borderRadius:10, padding:'2px 7px', fontSize:6, color:'white' }}>AI 분석</div>
         </div>
-        <div style={{ background: '#F0FFF4', borderRadius: 6, padding: '5px 7px', borderLeft: `2px solid #22c55e` }}>
-          <div style={{ fontSize: 7, color: '#22c55e', fontWeight: 600, marginBottom: 2 }}>🌟 소비 점수 78점</div>
-          <div style={{ fontSize: 6, color: '#555', lineHeight: 1.4 }}>식비 지출이 전월 대비 15% 증가했어요. 주 2회 외식으로 줄여보세요.</div>
+        <div style={{ background:'#F0FFF4', borderRadius:6, padding:'5px 7px', borderLeft:`2px solid #22c55e` }}>
+          <div style={{ fontSize:7, color:'#22c55e', fontWeight:600, marginBottom:2 }}>🌟 소비 점수 78점</div>
+          <div style={{ fontSize:6, color:'#555', lineHeight:1.4 }}>식비가 전월 대비 15% 증가했어요</div>
         </div>
       </div>
     </div>
@@ -188,43 +201,55 @@ function AnalysisMockup() {
 
 function MyMockup() {
   return (
-    <div style={{ flex: 1, background: '#f8f8f8', overflow: 'hidden' }}>
-      <div style={{ background: PRIMARY, padding: '10px 12px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+    <div style={{ flex:1, background:'#f8f8f8', overflow:'hidden', position:'relative' }}>
+      <div style={{ background:PRIMARY, padding:'10px 12px', color:'white', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:30,height:30,borderRadius:'50%', background:'rgba(255,255,255,0.25)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14 }}>🐾</div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700 }}>yein</div>
-            <div style={{ fontSize: 7, opacity: 0.7 }}>yein@gmail.com</div>
+            <div style={{ fontSize:11, fontWeight:700 }}>모아</div>
+            <div style={{ fontSize:7, opacity:0.7 }}>moa@gmail.com</div>
           </div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 7, padding: '4px 5px', fontSize: 10 }}>⚙️</div>
+        <div style={{ background:'rgba(255,255,255,0.2)', borderRadius:7, padding:'4px 5px', fontSize:10 }}>⚙️</div>
       </div>
-      <div style={{ background: 'white', margin: '5px 5px 0', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ fontSize: 7, color: '#888' }}>총 자산</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>3,750,000원</div>
+      <div style={{ background:'white', margin:'5px 5px 0', borderRadius:8, padding:'6px 8px' }}>
+        <div style={{ fontSize:7, color:'#888' }}>총 자산</div>
+        <div style={{ fontSize:14, fontWeight:700, color:'#111' }}>3,750,000원</div>
       </div>
-      <div style={{ background: 'white', margin: '4px 5px 0', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 5 }}>카드 실적</div>
-        {[['신한카드', 75, false], ['현대카드', 92, true]].map(([name, pct, done]) => (
-          <div key={name} style={{ marginBottom: 5 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-              <span style={{ fontSize: 7, color: '#111' }}>{name}</span>
-              {done && <span style={{ fontSize: 6, background: '#dcfce7', color: '#16a34a', borderRadius: 10, padding: '1px 5px' }}>달성 ✓</span>}
+      <div style={{ background:'white', margin:'4px 5px 0', borderRadius:8, padding:'6px 8px' }}>
+        <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>카드 실적</div>
+        {[['신한카드',75,false],['현대카드',92,true]].map(([name,pct,done])=>(
+          <div key={name} style={{ marginBottom:4 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+              <span style={{ fontSize:7, color:'#111' }}>{name}</span>
+              {done && <span style={{ fontSize:6, background:'#dcfce7', color:'#16a34a', borderRadius:10, padding:'1px 5px' }}>달성 ✓</span>}
             </div>
-            <div style={{ height: 4, background: '#f0f0f0', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: done ? '#22c55e' : PRIMARY, borderRadius: 99 }} />
+            <div style={{ height:4, background:'#f0f0f0', borderRadius:99 }}>
+              <div style={{ height:'100%', width:`${pct}%`, background:done?'#22c55e':PRIMARY, borderRadius:99 }}/>
             </div>
           </div>
         ))}
       </div>
-      <div style={{ background: 'white', margin: '4px 5px 0', borderRadius: 8, padding: '6px 8px' }}>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#111', marginBottom: 4 }}>계좌</div>
-        {[['카카오뱅크', '1,250,000원'], ['토스뱅크', '380,000원']].map(([bank, bal]) => (
-          <div key={bank} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #f8f8f8' }}>
-            <span style={{ fontSize: 7, color: '#333' }}>{bank}</span>
-            <span style={{ fontSize: 7, fontWeight: 600, color: '#111' }}>{bal}</span>
+      {/* 설정 바텀시트 */}
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.28)' }}>
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'white', borderRadius:'14px 14px 0 0', padding:'8px 12px 10px' }}>
+          <div style={{ width:22,height:3,borderRadius:99, background:'#e0e0e0', margin:'0 auto 7px' }}/>
+          <div style={{ fontSize:8, fontWeight:700, color:'#111', marginBottom:6 }}>⚙️ 설정</div>
+          <div style={{ marginBottom:6 }}>
+            <div style={{ fontSize:7, color:'#888', marginBottom:4 }}>테마 변경</div>
+            <div style={{ display:'flex', gap:5 }}>
+              {['#3182F6','#C05070','#7050B0','#6E9E2E','#C88A82'].map(c=>(
+                <div key={c} style={{ width:18,height:18,borderRadius:'50%',background:c,border:c==='#3182F6'?'2px solid #333':'none' }}/>
+              ))}
+            </div>
           </div>
-        ))}
+          {[['PDF 내보내기',''],['엑셀 내보내기',''],['로그아웃','danger']].map(([k,type])=>(
+            <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', borderBottom:'1px solid #f8f8f8' }}>
+              <span style={{ fontSize:7, color:type==='danger'?'#ef4444':'#333' }}>{k}</span>
+              <span style={{ fontSize:7, color:'#bbb' }}>›</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -341,7 +366,7 @@ export default function HowToUse() {
 
       {/* 기능 설명 */}
       <div style={{ flex: 1, padding: '16px 28px 0', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: TEXT, marginBottom: 3, letterSpacing: -0.5 }}>{slide.title}</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 600, color: TEXT, marginBottom: 3, letterSpacing: -0.5 }}>{slide.title}</h2>
         <p style={{ fontSize: 14, color: TEXT2, marginBottom: 12 }}>{slide.desc}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {slide.features.map((f, i) => (
