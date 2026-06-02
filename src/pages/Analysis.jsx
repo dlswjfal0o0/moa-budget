@@ -10,6 +10,29 @@ import BottomNav from '../components/BottomNav'
 import { CATEGORY_COLORS } from '../styles/theme'
 import { inputStyle, pageWrapper, cardStyle } from '../styles/styles'
 
+function UtilityChart({ type, utilities, primary }) {
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - (5 - i))
+    return { year: d.getFullYear(), month: d.getMonth() + 1, label: `${d.getMonth() + 1}월` }
+  })
+  const data = months.map(m => ({
+    label: m.label,
+    amount: utilities.find(u => u.type === type && u.year === m.year && u.month === m.month)?.amount || 0
+  }))
+  const max = Math.max(...data.map(d => d.amount), 1)
+  return (
+    <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 48, marginTop: 8 }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{ width: '100%', height: Math.max((d.amount / max) * 36, d.amount > 0 ? 2 : 0), background: i === 5 ? primary : `${primary}55`, borderRadius: '2px 2px 0 0', transition: 'height 0.5s' }} />
+          <span style={{ fontSize: 9, color: i === 5 ? '#555' : '#bbb' }}>{d.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Analysis() {
   const { themeData, themeName } = useTheme()
   const navigate = useNavigate()
@@ -27,6 +50,14 @@ export default function Analysis() {
   const now = new Date()
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
+  const [showUtilities, setShowUtilities] = useState(false)
+  const [utilities, setUtilities] = useState([])
+  const [showAddUtility, setShowAddUtility] = useState(false)
+  const [editingUtility, setEditingUtility] = useState(null)
+  const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
+  const [utilityAI, setUtilityAI] = useState(null)
+  const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -37,6 +68,8 @@ export default function Analysis() {
         if (snap.exists()) {
           const data = snap.data()
           if (data.budgets) setBudgets(data.budgets)
+          if (data.showUtilities !== undefined) setShowUtilities(data.showUtilities)
+          if (data.utilities) setUtilities(data.utilities)
         }
       }
     })
@@ -164,7 +197,42 @@ export default function Analysis() {
     setLoadingAi(false)
   }
 
-  
+  const saveUtilities = async (updated) => {
+    setUtilities(updated)
+    if (user) await setDoc(doc(db, 'users', user.uid), { utilities: updated }, { merge: true })
+  }
+
+  const getUtilityAI = async () => {
+    const types = ['관리비', '수도세', '전기세', '가스비']
+    const summary = types.map(type => {
+        const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
+        if (!cur) return null
+        const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
+        const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
+        const prevYear = utilities.find(u => u.type === type && u.year === viewYear - 1 && u.month === viewMonth + 1)
+        return `${type}: 이번달 ${fmt(cur.amount)}원 / 전월 ${prev ? fmt(prev.amount) + '원' : '없음'} / 전년도 ${prevYear ? fmt(prevYear.amount) + '원' : '없음'}`
+    }).filter(Boolean).join('\n')
+
+    if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
+    setLoadingUtilityAI(true)
+    setUtilityAI(null)
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514', max_tokens: 600,
+                system: '한국어로 응답하는 공과금 분석 AI. 순수 JSON만 출력. 마크다운 금지.',
+                messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 전월/전년도와 비교해서 친근하게 분석해줘.\n{"items":[{"type":"전기세","emoji":"⚡","comment":"코멘트"}],"overall":"전체 총평 한 줄"}` }]
+            })
+        })
+        const data = await res.json()
+        const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
+        try { setUtilityAI(JSON.parse(text)) } catch { setUtilityAI({ overall: text }) }
+    } catch { setUtilityAI({ overall: '분석에 실패했어요.' }) }
+    setLoadingUtilityAI(false)
+  }
+
   return (
     <div
       style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }}
@@ -180,6 +248,21 @@ export default function Analysis() {
         </div>
       </div>
 
+      {showUtilities && (
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px 0' }}>
+            {['소비', '공과금'].map(tab => (
+                <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                        fontSize: 14, fontWeight: 700, transition: 'all 0.2s',
+                        background: activeAnalysisTab === tab ? (themeData?.primary || '#4F46E5') : '#f0f0f0',
+                        color: activeAnalysisTab === tab ? 'white' : '#888' }}>
+                    {tab}
+                </button>
+            ))}
+        </div>
+      )}
+
+      {(!showUtilities || activeAnalysisTab === '소비') && (
       <div style={{ padding: '16px' }}>
         {/* 지난 달 대비 */}
         <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
@@ -461,6 +544,124 @@ export default function Analysis() {
           )}
         </div>
       </div>
+      )}
+
+      {showUtilities && activeAnalysisTab === '공과금' && (
+        <div style={{ padding: '16px 16px 100px' }}>
+            {['관리비', '수도세', '전기세', '가스비'].map(type => {
+                const emoji = { 관리비: '🏢', 수도세: '💧', 전기세: '⚡', 가스비: '🔥' }[type]
+                const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
+                const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
+                const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
+                const diff = cur && prev ? cur.amount - prev.amount : null
+                return (
+                    <div key={type} style={{ background: themeData?.card || '#fff', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 20 }}>{emoji}</span>
+                                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{type}</span>
+                            </div>
+                            <button onClick={() => {
+                                setNewUtility({ type, amount: cur?.amount || '', day: cur?.day || '' })
+                                setEditingUtility(cur?.id || null)
+                                setShowAddUtility(true)
+                            }} style={{ background: themeData?.primary || '#4F46E5', border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
+                                {cur ? '수정' : '+ 추가'}
+                            </button>
+                        </div>
+                        {cur ? (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 }}>
+                                    <div>
+                                        <p style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{fmt(cur.amount)}원</p>
+                                        {cur.day && <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>납부일: 매월 {cur.day}일</p>}
+                                    </div>
+                                {diff !== null && (
+                                    <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontSize: 12, fontWeight: 600, color: diff > 0 ? '#ef4444' : '#22c55e' }}>
+                                            {diff > 0 ? `▲ +${fmt(diff)}원` : `▼ ${fmt(Math.abs(diff))}원`}
+                                        </p>
+                                        <p style={{ fontSize: 11, color: '#bbb' }}>전월 {fmt(prev.amount)}원</p>
+                                    </div>
+                                )}
+                            </div>
+                            <UtilityChart type={type} utilities={utilities} primary={themeData?.primary || '#4F46E5'} />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                                <button onClick={() => saveUtilities(utilities.filter(u => u.id !== cur.id))}
+                                    style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 12, cursor: 'pointer' }}>삭제</button>
+                            </div>
+                        </>
+                    ) : (
+                        <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>이번 달 데이터가 없어요</p>
+                    )}
+                </div>
+            )
+        })}
+
+        {/* AI 공과금 분석 */}
+        <div style={{ background: themeData?.card || '#fff', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>AI 공과금 분석</p>
+                <button onClick={getUtilityAI} disabled={loadingUtilityAI}
+                    style={{ padding: '7px 16px', borderRadius: 20, border: 'none', cursor: loadingUtilityAI ? 'not-allowed' : 'pointer',
+                        background: loadingUtilityAI ? '#e0e0e0' : (themeData?.primary || '#4F46E5'),
+                        color: loadingUtilityAI ? '#888' : '#fff', fontSize: 13 }}>
+                    {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
+                </button>
+            </div>
+            {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
+            {loadingUtilityAI && <p style={{ fontSize: 14, color: '#888', textAlign: 'center', padding: '20px 0' }}>공과금 패턴을 분석하고 있어요...</p>}
+            {utilityAI && (
+                <>
+                    {utilityAI.items?.map((item, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                            <span style={{ fontSize: 18 }}>{item.emoji}</span>
+                            <div>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{item.type}</p>
+                                <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{item.comment}</p>
+                            </div>
+                        </div>
+                    ))}
+                    {utilityAI.overall && (
+                        <div style={{ marginTop: 10, background: themeData?.primaryLight || '#EEF2FF', borderRadius: 10, padding: '10px 12px' }}>
+                            <p style={{ fontSize: 13, color: themeData?.primary || '#4F46E5', fontWeight: 500 }}>{utilityAI.overall}</p>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+
+        {/* 추가/수정 모달 */}
+        {showAddUtility && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', zIndex: 999 }}
+                onClick={() => setShowAddUtility(false)}>
+                <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: 24 }} onClick={e => e.stopPropagation()}>
+                    <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{newUtility.type} 입력</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                        <input type="number" placeholder="금액 (원)" value={newUtility.amount}
+                            onChange={e => setNewUtility(p => ({ ...p, amount: e.target.value }))}
+                            style={{ padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
+                        <input type="number" placeholder="납부일 (예: 15)" min="1" max="31" value={newUtility.day}
+                            onChange={e => setNewUtility(p => ({ ...p, day: e.target.value }))}
+                            style={{ padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setShowAddUtility(false)}
+                            style={{ flex: 1, padding: 14, borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', fontSize: 15, cursor: 'pointer' }}>취소</button>
+                        <button onClick={() => {
+                            if (!newUtility.amount) return alert('금액을 입력해주세요.')
+                            const entry = { id: editingUtility || Date.now(), type: newUtility.type, amount: Number(newUtility.amount), day: newUtility.day, year: viewYear, month: viewMonth + 1 }
+                            const filtered = utilities.filter(u => !(u.type === newUtility.type && u.year === viewYear && u.month === viewMonth + 1))
+                            saveUtilities([...filtered, entry])
+                            setShowAddUtility(false)
+                            setEditingUtility(null)
+                        }} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: themeData?.primary || '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+  )}
 
       <BottomNav />
     </div>

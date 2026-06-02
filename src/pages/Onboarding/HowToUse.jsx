@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const PRIMARY = '#3182F6'
-const BG = '#fefaf4'
+const BG = '#fff'
 const TEXT = '#1A0E05'
 const TEXT2 = '#8B6F5E'
 

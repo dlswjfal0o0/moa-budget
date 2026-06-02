@@ -15,21 +15,20 @@ export default function SplashScreen() {
       <div style={{ position: 'absolute', bottom: -60, left: -60, width: 180, height: 180, borderRadius: '50%', background: PRIMARY, opacity: 0.05 }} />
 
       {/* 앱 아이콘 */}
-      <div style={{ width: 100, height: 100, borderRadius: 26, overflow: 'hidden', marginBottom: 24, boxShadow: `0 8px 32px ${PRIMARY}30` }}>
+      <div style={{ width: 100, height: 100, borderRadius: 26, overflow: 'hidden', marginBottom: 24 }}>
         <img
-          src="/icon-192.png"
+          src="/moa_icon.png"
           alt="모아"
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           onError={e => {
             e.target.style.display = 'none'
             e.target.parentElement.style.background = PRIMARY
-            e.target.parentElement.innerHTML = '<span style="font-size:44px;display:flex;align-items:center;justify-content:center;height:100%">💰</span>'
           }}
         />
       </div>
 
-      <h1 style={{ fontSize: 38, fontWeight: 800, color: TEXT, marginBottom: 6, letterSpacing: -1 }}>모아</h1>
-      <p style={{ fontSize: 16, color: TEXT2, marginBottom: 64, letterSpacing: 0.3 }}>내 돈, 내가 관리해요</p>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: TEXT, marginBottom: 6, letterSpacing: 0 }}>모아</h1>
+      <p style={{ fontSize: 16, color: TEXT2, marginBottom: 64, letterSpacing: 0.3 }}>발 달린 돈이 어디 가는지 궁금하다면</p>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
