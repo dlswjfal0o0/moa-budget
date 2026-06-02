@@ -8,12 +8,6 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 
-const CATEGORY_COLORS = {
-  식비: '#FF6B6B', 교통: '#4ECDC4', 쇼핑: '#45B7D1',
-  문화: '#96CEB4', 의료: '#FFD93D', 주거: '#C9B1FF',
-  통신: '#98D8C8', 기타: '#B0B0B0',
-}
-
 function BudgetGauge({ spent, total, primary, fmt }) {
   const pct = total > 0 ? Math.min((spent / total) * 100, 100) : 0
   const r = 52
