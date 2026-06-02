@@ -168,31 +168,34 @@ function AnalysisMockup() {
           <div style={{ flex:1, background:'#FFF5F5', borderRadius:5, padding:'4px 6px' }}>
             <div style={{ fontSize:6, color:'#888' }}>지출</div>
             <div style={{ fontSize:9, fontWeight:700, color:'#ef4444' }}>750,000원</div>
-            <div style={{ fontSize:6, color:'#ef4444' }}>▲ 5.2% 증가</div>
+            <div style={{ fontSize:6, color:'#ef4444' }}>▲ 5.2%</div>
           </div>
           <div style={{ flex:1, background:'#F0FFF4', borderRadius:5, padding:'4px 6px' }}>
             <div style={{ fontSize:6, color:'#888' }}>수입</div>
             <div style={{ fontSize:9, fontWeight:700, color:'#22c55e' }}>2,000,000원</div>
-            <div style={{ fontSize:6, color:'#aaa' }}>– 변동 없음</div>
+            <div style={{ fontSize:6, color:'#aaa' }}>변동없음</div>
           </div>
         </div>
       </div>
       <div style={{ background:'white', borderRadius:8, padding:'6px 8px', marginBottom:4 }}>
         <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>일별 지출</div>
-        <div style={{ display:'flex', alignItems:'flex-end', gap:2, height:32 }}>
+        <div style={{ display:'flex', alignItems:'flex-end', gap:2, height:28 }}>
           {bars.map((h,i)=>(
             <div key={i} style={{ flex:1, height:`${h}%`, background:PRIMARY, borderRadius:'2px 2px 0 0', opacity:0.75 }}/>
           ))}
         </div>
       </div>
       <div style={{ background:'white', borderRadius:8, padding:'6px 8px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
           <span style={{ fontSize:8, fontWeight:600, color:'#111' }}>AI 소비 분석</span>
-          <div style={{ background:PRIMARY, borderRadius:10, padding:'2px 7px', fontSize:6, color:'white' }}>AI 분석</div>
+          <div style={{ background:'#F0FFF4', borderRadius:10, padding:'2px 7px', fontSize:6, color:'#22c55e', fontWeight:600 }}>78점 🌟</div>
         </div>
-        <div style={{ background:'#F0FFF4', borderRadius:6, padding:'5px 7px', borderLeft:`2px solid #22c55e` }}>
-          <div style={{ fontSize:7, color:'#22c55e', fontWeight:600, marginBottom:2 }}>🌟 소비 점수 78점</div>
-          <div style={{ fontSize:6, color:'#555', lineHeight:1.4 }}>식비가 전월 대비 15% 증가했어요</div>
+        <div style={{ background:'#F0FFF4', borderRadius:6, padding:'5px 7px', borderLeft:'2px solid #22c55e', marginBottom:4 }}>
+          <div style={{ fontSize:7, color:'#333', lineHeight:1.4 }}>이번 달 소비 패턴이 양호해요. 식비가 전월 대비 15% 증가했어요.</div>
+        </div>
+        <div style={{ background:'#f8f8f8', borderRadius:6, padding:'5px 7px' }}>
+          <div style={{ fontSize:6, color:'#888', marginBottom:2 }}>💡 절감 포인트</div>
+          <div style={{ fontSize:7, color:'#555' }}>외식을 주 2회로 줄이면 ~50,000원 절약 가능해요</div>
         </div>
       </div>
     </div>
@@ -255,66 +258,116 @@ function MyMockup() {
   )
 }
 
+function LedgerSettingsMockup() {
+  return (
+    <div style={{ flex: 1, background: '#f8f8f8', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ padding: '6px 8px' }}>
+        {[{t:'스타벅스',c:'식비',col:'#FF6B6B',a:'-6,500'},{t:'버스',c:'교통',col:'#4ECDC4',a:'-1,400'}].map((item,i)=>(
+          <div key={i} style={{ background:'white', borderRadius:7, padding:'5px 7px', marginBottom:3, display:'flex', alignItems:'center', gap:5, opacity:0.5 }}>
+            <div style={{ width:18,height:18,borderRadius:5,background:item.col+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+              <span style={{ fontSize:7,fontWeight:700,color:item.col }}>{item.c[0]}</span>
+            </div>
+            <span style={{ fontSize:8,flex:1,color:'#111' }}>{item.t}</span>
+            <span style={{ fontSize:8,fontWeight:700,color:'#ef4444' }}>{item.a}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.32)' }}>
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'white', borderRadius:'12px 12px 0 0', padding:'8px 10px' }}>
+          <div style={{ width:18,height:3,borderRadius:99,background:'#e0e0e0',margin:'0 auto 6px' }}/>
+          <p style={{ fontSize:8,fontWeight:700,color:'#111',marginBottom:5 }}>⚙️ 가계부 설정</p>
+          {[['주 시작 요일','월요일'],['정렬 순서','최신순'],['잔여 예산 이월','켜짐']].map(([k,v])=>(
+            <div key={k} style={{ display:'flex',justifyContent:'space-between',padding:'3px 0',borderBottom:'1px solid #f8f8f8' }}>
+              <span style={{ fontSize:7,color:'#333' }}>{k}</span>
+              <span style={{ fontSize:7,color:PRIMARY,fontWeight:600 }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ height:0.5,background:'#f0f0f0',margin:'5px 0' }}/>
+          <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+            <div>
+              <p style={{ fontSize:7,fontWeight:600,color:'#111' }}>분석 공과금 탭</p>
+              <p style={{ fontSize:6,color:'#888' }}>공과금 탭 추가</p>
+            </div>
+            <div style={{ width:22,height:12,borderRadius:6,background:PRIMARY,position:'relative',flexShrink:0 }}>
+              <div style={{ width:8,height:8,borderRadius:'50%',background:'white',position:'absolute',top:2,right:2 }}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MySettingsMockup() {
+  return (
+    <div style={{ flex:1, background:'#f8f8f8', overflow:'hidden', position:'relative' }}>
+      <div style={{ background:PRIMARY, padding:'8px 10px', color:'white', opacity:0.5 }}>
+        <div style={{ fontSize:9, fontWeight:700 }}>모아</div>
+        <div style={{ fontSize:6, opacity:0.8 }}>moa@gmail.com</div>
+      </div>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.32)' }}>
+        <div style={{ position:'absolute', inset:'16px 6px 0', background:'white', borderRadius:'12px 12px 0 0', padding:'8px 8px', overflow:'hidden' }}>
+          <div style={{ width:18,height:3,borderRadius:99,background:'#e0e0e0',margin:'0 auto 5px' }}/>
+          <p style={{ fontSize:8,fontWeight:700,color:'#111',marginBottom:5 }}>설정</p>
+          <p style={{ fontSize:6,color:'#888',marginBottom:4 }}>테마</p>
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:3,marginBottom:6 }}>
+            {[{n:'토스',c:'#3182F6'},{n:'형광펜(블루)',c:'#3A8BC7',sel:true},{n:'형광펜(핑크)',c:'#C05070'},{n:'아날로그',c:'#6E9E2E'}].map(t=>(
+              <div key={t.n} style={{ background:t.sel?'#EEF2FF':'#f8f8f8', borderRadius:5, padding:'3px 5px', border:t.sel?`1px solid ${PRIMARY}`:'1px solid transparent', display:'flex', alignItems:'center', gap:3 }}>
+                <div style={{ width:8,height:8,borderRadius:'50%',background:t.c,flexShrink:0 }}/>
+                <span style={{ fontSize:5.5,color:'#333' }}>{t.n}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize:6,color:'#888',marginBottom:3 }}>데이터 내보내기</p>
+          {[['📊 엑셀로 내보내기'],['📄 PDF로 내보내기']].map(([label])=>(
+            <div key={label} style={{ padding:'4px 0',borderBottom:'1px solid #f8f8f8' }}>
+              <span style={{ fontSize:7,color:'#333' }}>{label}</span>
+            </div>
+          ))}
+          <div style={{ marginTop:5,padding:'4px 0' }}>
+            <span style={{ fontSize:7,color:'#ef4444',fontWeight:600 }}>→ 로그아웃</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const SLIDES = [
   {
     id: 'home', tab: '홈',
     title: '홈 대시보드',
     desc: '이번 달 소비 현황을 한눈에',
-    features: [
-      '이번 달 잔액 · 수입 · 지출 요약',
-      '카테고리별 지출 비율 & 바 차트',
-      '기간별 예산 설정 + AI 조언',
-      '최근 내역 빠른 확인',
-    ],
-    Mockup: HomeMockup,
+    features: ['이번 달 잔액 · 수입 · 지출 요약', '반원 그래프로 예산 달성률 확인', '카테고리별 원형 차트', '최근 내역 빠른 확인'],
+    Mockup: HomeMockup, SettingsMockup: null,
   },
   {
     id: 'calendar', tab: '달력',
     title: '달력',
     desc: '날짜별 소비 패턴을 파악해요',
-    features: [
-      '날짜별 수입 · 지출 금액 표시',
-      '주간 · 월간 합계 한눈에',
-      '고정지출 납부 여부 체크박스',
-      '날짜 클릭 시 상세 내역 확인',
-    ],
-    Mockup: CalendarMockup,
+    features: ['날짜별 수입 · 지출 금액 표시', '주간 · 월간 합계 한눈에', '2열 그리드 고정지출 + 납부일', '날짜 클릭 시 상세 내역 확인'],
+    Mockup: CalendarMockup, SettingsMockup: null,
   },
   {
     id: 'ledger', tab: '가계부',
     title: '가계부',
     desc: '내역 관리의 모든 것',
-    features: [
-      '주간 · 월간 · 직접 기간 정렬',
-      '날짜별 구분선 & 일별 합계',
-      '카드 · 계좌 · 현금 결제수단 분류',
-      '⚙️ 설정: 카테고리 관리 · 이월 설정',
-    ],
-    Mockup: LedgerMockup,
+    features: ['주간 · 월간 · 직접 기간 정렬', '날짜별 구분선 & 일별 합계', '카드 · 계좌 · 현금 결제수단 분류', '⚙️ 카테고리 · 이월 · 공과금 탭 설정'],
+    Mockup: LedgerMockup, SettingsMockup: LedgerSettingsMockup,
   },
   {
     id: 'analysis', tab: '분석',
     title: '분석',
     desc: 'AI가 소비 패턴을 분석해요',
-    features: [
-      '지난 달 대비 수입 · 지출 비교',
-      '일별 지출 바차트',
-      'AI 소비 점수 & 절감 팁 제안',
-      '이상 지출 감지 & 절감 목표',
-    ],
-    Mockup: AnalysisMockup,
+    features: ['지난 달 대비 수입 · 지출 비교', '일별 지출 바차트', 'AI 소비 점수 & 절감 팁 제안', '공과금 탭: 전기 · 수도 · 가스 비교'],
+    Mockup: AnalysisMockup, SettingsMockup: null,
   },
   {
     id: 'my', tab: 'MY',
     title: 'MY',
     desc: '나의 자산과 앱 설정',
-    features: [
-      '카드 실적 달성률 · 혜택 · 내역 확인',
-      '계좌 · 현금 잔액 관리 & 총 자산',
-      '테마 변경 (6가지 스타일)',
-      '⚙️ 설정: PDF · 엑셀 내보내기',
-    ],
-    Mockup: MyMockup,
+    features: ['카드 실적 달성률 · 혜택 · 내역 확인', '계좌 · 현금 잔액 & 총 자산', '테마 변경 (6가지 스타일)', '⚙️ PDF · 엑셀 내보내기 · 로그아웃'],
+    Mockup: MyMockup, SettingsMockup: MySettingsMockup,
   },
 ]
 
@@ -354,15 +407,33 @@ export default function HowToUse() {
       </div>
 
       {/* 폰 목업 */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
-        <div style={{ width: 190, height: 340, background: 'white', borderRadius: 26, border: `2px solid ${PRIMARY}20`, overflow: 'hidden', boxShadow: `0 16px 48px ${PRIMARY}22`, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ height: 22, background: PRIMARY, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', flexShrink: 0 }}>
-            <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)' }}>9:41</span>
-            <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)' }}>●●●</span>
-          </div>
-          <Mockup />
+      {slide.SettingsMockup ? (
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', padding: '0 12px' }}>
+            {[[slide.Mockup, '실제 화면'], [slide.SettingsMockup, '설정 화면']].map(([Comp, label], i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 148, height: 310, background: 'white', borderRadius: 22, border: `2px solid ${PRIMARY}20`, overflow: 'hidden', boxShadow: `0 10px 32px ${PRIMARY}18`, display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ height: 20, background: PRIMARY, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 10px', flexShrink: 0 }}>
+                            <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.8)' }}>9:41</span>
+                            <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.8)' }}>●●●</span>
+                        </div>
+                        <Comp />
+                    </div>
+                    <span style={{ fontSize: 11, color: TEXT2, fontWeight: 500 }}>{label}</span>
+                </div>
+            ))}
         </div>
-      </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 16px' }}>
+            <div style={{ width: 190, height: 340, background: 'white', borderRadius: 26, border: `2px solid ${PRIMARY}20`, overflow: 'hidden', boxShadow: `0 16px 48px ${PRIMARY}22`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ height: 22, background: PRIMARY, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', flexShrink: 0 }}>
+                    <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)' }}>9:41</span>
+                    <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.8)' }}>●●●</span>
+                </div>
+                <slide.Mockup />
+            </div>
+            <span style={{ fontSize: 11, color: TEXT2, fontWeight: 500 }}>실제 화면</span>
+        </div>
+      )}
 
       {/* 기능 설명 */}
       <div style={{ flex: 1, padding: '16px 28px 0', overflow: 'hidden' }}>

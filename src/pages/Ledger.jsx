@@ -57,6 +57,7 @@ export default function Ledger() {
   const [userPayments, setUserPayments] = useState(['현금', '계좌이체'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드' })
   const touchStartX = useRef(null)
+  const [showUtilities, setShowUtilities] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -68,6 +69,8 @@ export default function Ledger() {
           const data = snap.data()
           if (data.categories) setCategories({ ...DEFAULT_CATEGORIES, ...data.categories })
           if (data.rolloverBudget !== undefined) setRolloverBudget(data.rolloverBudget)
+          
+          if (snap.data().showUtilities !== undefined) setShowUtilities(snap.data().showUtilities)
         }
       }
     })
@@ -429,6 +432,23 @@ export default function Ledger() {
                 style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none', background: '#fafafa' }}
                 onKeyDown={e => e.key === 'Enter' && handleAddCategory()} />
               <button onClick={handleAddCategory} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: themeData.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>추가</button>
+            </div>
+            {/* 구분선 */}
+            <div style={{ height: 1, background: '#f0f0f0', margin: '20px 0 16px' }} />
+
+            {/* 분석 공과금 탭 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>분석 공과금 탭</p>
+                    <p style={{ fontSize: 12, color: '#888', marginTop: 3 }}>분석 화면에 공과금 탭을 추가해요</p>
+                </div>
+                <div onClick={async () => {
+                    const next = !showUtilities
+                    setShowUtilities(next)
+                    if (user) await setDoc(doc(db, 'users', user.uid), { showUtilities: next }, { merge: true })
+                }} style={{ width: 46, height: 26, borderRadius: 13, background: showUtilities ? (themeData?.primary || '#4F46E5') : '#e0e0e0', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, left: showUtilities ? 22 : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+                </div>
             </div>
           </div>
         </div>

@@ -220,7 +220,7 @@ export default function Calendar() {
                         </div>
                     )
                 })}
-            </div>
+        </div>
 
           {showAddFixed && (
             <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
