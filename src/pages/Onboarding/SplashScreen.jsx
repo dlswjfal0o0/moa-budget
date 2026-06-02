@@ -1,45 +1,57 @@
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../../contexts/ThemeContext'
+
+const BG = '#fefaf4'
+const PRIMARY = '#3182F6'
+const TEXT = '#1A0E05'
+const TEXT2 = '#8B6F5E'
 
 export default function SplashScreen() {
+  const { themeData } = useTheme()
+  const PRIMARY = themeData?.primary || '#3182F6'
   const navigate = useNavigate()
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', height: '100vh', padding: '0 32px',
-      background: '#ffffff'
-    }}>
-      <div style={{
-        width: 80, height: 80, borderRadius: 24,
-        background: '#4F46E5', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 20, fontSize: 38
-      }}>
-        💰
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '0 32px', background: BG, position: 'relative', overflow: 'hidden' }}>
+      {/* 배경 장식 */}
+      <div style={{ position: 'absolute', top: -80, right: -80, width: 240, height: 240, borderRadius: '50%', background: PRIMARY, opacity: 0.06 }} />
+      <div style={{ position: 'absolute', bottom: -60, left: -60, width: 180, height: 180, borderRadius: '50%', background: PRIMARY, opacity: 0.05 }} />
+
+      {/* 앱 아이콘 */}
+      <div style={{ width: 100, height: 100, borderRadius: 26, overflow: 'hidden', marginBottom: 24, boxShadow: `0 8px 32px ${PRIMARY}30` }}>
+        <img
+          src="/icon-192.png"
+          alt="모아"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={e => {
+            e.target.style.display = 'none'
+            e.target.parentElement.style.background = PRIMARY
+            e.target.parentElement.innerHTML = '<span style="font-size:44px;display:flex;align-items:center;justify-content:center;height:100%">💰</span>'
+          }}
+        />
       </div>
 
-      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#111', marginBottom: 8 }}>모아</h1>
-      <p style={{ fontSize: 15, color: '#888', marginBottom: 60 }}>내 돈, 내가 관리해요</p>
+      <h1 style={{ fontSize: 38, fontWeight: 800, color: TEXT, marginBottom: 6, letterSpacing: -1 }}>모아</h1>
+      <p style={{ fontSize: 16, color: TEXT2, marginBottom: 64, letterSpacing: 0.3 }}>내 돈, 내가 관리해요</p>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
           onClick={() => navigate('/how-to-use')}
-          style={{
-            width: '100%', padding: '16px', borderRadius: 14,
-            background: '#4F46E5', color: '#fff', border: 'none',
-            fontSize: 16, fontWeight: 600, cursor: 'pointer'
-          }}>
+          style={{ width: '100%', padding: '16px', borderRadius: 14, background: PRIMARY, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.3 }}>
           시작하기
         </button>
         <button
-          onClick={() => navigate('/auth')}
-          style={{
-            width: '100%', padding: '16px', borderRadius: 14,
-            background: '#fff', color: '#333', border: '1.5px solid #e0e0e0',
-            fontSize: 16, fontWeight: 500, cursor: 'pointer'
-          }}>
+          onClick={() => navigate('/auth', { state: { mode: 'login' } })}
+          style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'transparent', color: TEXT, border: `1.5px solid ${TEXT}18`, fontSize: 16, fontWeight: 500, cursor: 'pointer' }}>
           로그인
         </button>
+      </div>
+
+      {/* 하단 도트 */}
+      <div style={{ position: 'absolute', bottom: 48, display: 'flex', gap: 8, alignItems: 'center' }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{ width: i === 0 ? 20 : 6, height: 6, borderRadius: 3, background: i === 0 ? PRIMARY : `${PRIMARY}25`, transition: 'width 0.3s' }} />
+        ))}
       </div>
     </div>
   )

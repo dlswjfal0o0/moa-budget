@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -9,7 +9,8 @@ import { auth, googleProvider } from '../../firebase/config'
 
 export default function Auth() {
   const navigate = useNavigate()
-  const [mode, setMode] = useState('signup')
+  const location = useLocation()
+  const [mode, setMode] = useState(location.state?.mode || 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -61,7 +62,7 @@ export default function Auth() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '48px 28px 32px', background: '#fff' }}>
       <div style={{ flex: 1 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 6 }}>
-          {mode === 'signup' ? '시작해볼까요?' : '다시 만나요 👋'}
+          {mode === 'signup' ? '시작해볼까요?' : '다시 만나서 반가워요 👋'}
         </h2>
         <p style={{ fontSize: 14, color: '#999', marginBottom: 32 }}>
           {mode === 'signup' ? '계정을 만들어 데이터를 안전하게 저장하세요' : '계정에 로그인하세요'}
@@ -84,7 +85,7 @@ export default function Auth() {
           disabled={loading}
           style={{
             width: '100%', padding: '15px', borderRadius: 14,
-            background: loading ? '#a5b4fc' : '#4F46E5', color: '#fff',
+            background: loading ? '#a5b4fc' : '#3182F6', color: '#fff',
             border: 'none', fontSize: 16, fontWeight: 600,
             cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20
           }}>
@@ -120,7 +121,7 @@ export default function Auth() {
         {mode === 'signup' ? '이미 계정이 있나요? ' : '계정이 없나요? '}
         <span
           onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError('') }}
-          style={{ color: '#4F46E5', fontWeight: 600, cursor: 'pointer' }}>
+          style={{ color: '#3182F6', fontWeight: 600, cursor: 'pointer' }}>
           {mode === 'signup' ? '로그인' : '회원가입'}
         </span>
       </p>
