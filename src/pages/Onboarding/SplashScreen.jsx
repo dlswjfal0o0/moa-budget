@@ -11,7 +11,7 @@ const TEXT2 = '#6B7280'
 export default function SplashScreen() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, u => {
-        if (u) navigate('/', { replace: true })
+        if (u) navigate('/home', { replace: true })
     })
     return unsub
   }, [])
