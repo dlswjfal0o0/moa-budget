@@ -66,6 +66,27 @@ function HomeMockup() {
           </div>
         </div>
       </div>
+      {/* 다가오는 결제 알림 */}
+      <div style={{ background:'white',margin:'4px 5px 0',borderRadius:8,padding:'5px 7px' }}>
+        <div style={{ display:'flex',alignItems:'center',gap:4,marginBottom:5 }}>
+            <span style={{ fontSize:11 }}>💳</span>
+            <span style={{ fontSize:8,fontWeight:600,color:'#111' }}>다가오는 결제</span>
+        </div>
+        {[
+            { title:'월세', days:3, amount:'500,000', color:'#ef4444' },
+            { title:'티빙', days:8, amount:'13,900', color:'#f59e0b' },
+        ].map((item,i)=>(
+            <div key={i} style={{ display:'flex',justifyContent:'space-between',alignItems:'center',
+                borderLeft:`2px solid ${item.color}`,paddingLeft:6,
+                marginBottom:i===0?4:0 }}>
+                <div>
+                    <div style={{ fontSize:7,fontWeight:600,color:'#111' }}>{item.title}</div>
+                    <div style={{ fontSize:6,color:item.color }}>📅 {item.days}일 뒤 결제 예정이에요</div>
+                </div>
+                <div style={{ fontSize:8,fontWeight:700,color:'#ef4444' }}>-{item.amount}원</div>
+            </div>
+        ))}
+    </div>
       <div style={{ background:'white', margin:'4px 5px 0', borderRadius:8, padding:'6px 8px', animation:'moaFadeUp 0.5s 0.5s ease both' }}>
         <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:5 }}>카테고리별 소비</div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -140,7 +161,7 @@ function CalendarMockup() {
       <div style={{ padding:'4px 5px',borderTop:'1px solid #f5f5f5' }}>
         <div style={{ fontSize:8,fontWeight:600,color:'#111',marginBottom:3 }}>고정지출</div>
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:3 }}>
-          {[{n:'월세',d:1,a:'500,000',p:true},{n:'넷플릭스',d:5,a:'17,000',p:false},{n:'보험료',d:10,a:'85,000',p:true},{n:'통신비',d:15,a:'55,000',p:false}].map(item=>(
+          {[{n:'월세',d:1,a:'500,000',p:true},{n:'티빙',d:5,a:'13,900',p:false},{n:'보험료',d:10,a:'85,000',p:true},{n:'통신비',d:15,a:'55,000',p:false}].map(item=>(
             <div key={item.n} style={{ background:'#f8f8f8',borderRadius:5,padding:'4px 5px' }}>
               <div style={{ display:'flex',alignItems:'center',gap:3,marginBottom:1 }}>
                 <div style={{ width:7,height:7,borderRadius:2,background:item.p?PRIMARY:'#e0e0e0',flexShrink:0 }}/>

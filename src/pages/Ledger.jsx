@@ -429,6 +429,8 @@ export default function Ledger() {
               <Toggle on={rolloverBudget} onChange={handleToggleRollover} color={themeData.primary} />
             </div>
 
+            <div style={{ height: 1, background: '#f0f0f0', margin: '20px 0 16px' }} />
+
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카테고리 관리</p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               {[{ label: '지출', val: 'expense' }, { label: '수입', val: 'income' }].map(opt => (
