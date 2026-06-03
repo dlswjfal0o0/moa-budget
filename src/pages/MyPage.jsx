@@ -23,6 +23,7 @@ export default function MyPage() {
   const [nickname, setNickname] = useState(() => localStorage.getItem('moa_nickname') || '')
   const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
+  const [showSettings, setShowSettings] = useState(false)
   const [cards, setCards] = useState(() => {
     try { const c = localStorage.getItem('moa_cards'); return c ? JSON.parse(c) : [] } catch { return [] }
   })
@@ -82,14 +83,15 @@ export default function MyPage() {
       }
     })
     return unsub
-    useEffect(() => {
-        localStorage.setItem('moa_cards', JSON.stringify(cards))
-    }, [cards])
+  }, [])                       // ← 첫 번째 useEffect 여기서 닫기
 
-    useEffect(() => {
-        localStorage.setItem('moa_accounts', JSON.stringify(accounts))
-    }, [accounts])
-  }, [])
+  useEffect(() => {            // ← 별도 useEffect
+    localStorage.setItem('moa_cards', JSON.stringify(cards))
+  }, [cards])
+
+  useEffect(() => {            // ← 별도 useEffect
+    localStorage.setItem('moa_accounts', JSON.stringify(accounts))
+  }, [accounts])
 
   const saveToFirestore = async (updates) => {
     if (!user) return
