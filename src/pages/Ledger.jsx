@@ -421,15 +421,13 @@ export default function Ledger() {
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: '1px solid #f0f0f0', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', marginBottom: 20 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 3 }}>잔여 예산 이월</p>
                 <p style={{ fontSize: 12, color: '#888' }}>남은 예산을 다음 달로 이월</p>
               </div>
               <Toggle on={rolloverBudget} onChange={handleToggleRollover} color={themeData.primary} />
             </div>
-
-            <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0 16px' }} />
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카테고리 관리</p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
