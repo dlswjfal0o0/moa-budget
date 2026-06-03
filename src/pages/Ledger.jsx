@@ -413,7 +413,6 @@ export default function Ledger() {
                 <p style={{ fontSize: 12, color: '#888' }}>남은 예산을 다음 달로 이월</p>
               </div>
               <Toggle on={rolloverBudget} onChange={handleToggleRollover} color={themeData.primary} />
-              <Toggle on={showUtilities} onChange={handleToggleUtilities} color={themeData.primary} />
             </div>
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카테고리 관리</p>
