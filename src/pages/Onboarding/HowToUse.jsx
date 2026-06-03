@@ -521,10 +521,10 @@ function MySettingsMockup() {
       <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:3,marginBottom:7 }}>
         {[
           {n:'기본',c:'#3182F6',d:'화이트&블루',sel:true},
-          {n:'형광펜 (블루)',c:'#3A8BC7',d:'시원한 블루'},
-          {n:'형광펜 (핑크)',c:'#C05070',d:'달콤한 핑크'},
-          {n:'형광펜 (퍼플)',c:'#7050B0',d:'우아한 퍼플'},
-          {n:'아날로그',c:'#6E9E2E',d:'자연 그린'},
+          {n:'오션 블루',c:'#3A8BC7',d:'시원한 블루'},
+          {n:'빈티지 핑크',c:'#C05070',d:'달콤한 핑크'},
+          {n:'퍼플',c:'#7050B0',d:'우아한 퍼플'},
+          {n:'스프링 그린',c:'#6E9E2E',d:'자연 그린'},
           {n:'핀터레스트',c:'#C88A82',d:'코지한 감성'},
         ].map(t=>(
           <div key={t.n} style={{ background:t.sel?'#EEF2FF':'#f8f8f8',borderRadius:6,padding:'4px 5px',border:t.sel?`1.5px solid ${PRIMARY}`:'1.5px solid transparent' }}>
