@@ -158,6 +158,7 @@ export default function Home() {
     .filter(f => !f.done && f.dueDate)
     .map(f => {
         const today = new Date()
+        today.setHours(0, 0, 0, 0)  // ← 자정 기준으로 정규화
         const dueDay = parseInt(f.dueDate.split('-')[2])
         let next = new Date(today.getFullYear(), today.getMonth(), dueDay)
         if (next < today) next = new Date(today.getFullYear(), today.getMonth() + 1, dueDay)

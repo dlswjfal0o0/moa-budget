@@ -237,7 +237,11 @@ export default function Calendar() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <input style={inputStyle} placeholder="항목명 (예: 월세, 넷플릭스)" value={newFixed.title} onChange={e => setNewFixed(f => ({ ...f, title: e.target.value }))} />
                 <input style={inputStyle} type="number" placeholder="금액" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
-                <input style={inputStyle} type="date" placeholder="납부일 (선택)" value={newFixed.dueDate} onChange={e => setNewFixed(f => ({ ...f, dueDate: e.target.value }))} />
+                <div>
+                    <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4, paddingLeft: 2 }}>납부일 (선택)</p>
+                    <input style={inputStyle} type="date" value={newFixed.dueDate}
+                        onChange={e => setNewFixed(f => ({ ...f, dueDate: e.target.value }))} />
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={() => setShowAddFixed(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: themeData.card, cursor: 'pointer', fontSize: 13 }}>취소</button>
