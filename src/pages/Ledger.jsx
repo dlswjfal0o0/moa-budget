@@ -24,11 +24,14 @@ const getWeekStart = (baseDate, startDay) => {
   return d
 }
 
-const Toggle = ({ on, onChange }) => (
-  <div onClick={() => onChange(!on)} style={{ width: 44, height: 26, borderRadius: 13, background: on ? themeData.primary : '#ddd', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
-    <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: on ? 21 : 3, transition: 'left 0.2s' }} />
-  </div>
-)
+const Toggle = ({ on, onChange }) => {
+  const { themeData } = useTheme()
+  return (
+    <div onClick={() => onChange(!on)} style={{ width: 44, height: 26, borderRadius: 13, background: on ? themeData.primary : '#ddd', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: on ? 21 : 3, transition: 'left 0.2s' }} />
+    </div>
+  )
+}
 
 export default function Ledger() {
   const { themeData, themeName } = useTheme()
@@ -409,7 +412,8 @@ export default function Ledger() {
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 3 }}>잔여 예산 이월</p>
                 <p style={{ fontSize: 12, color: '#888' }}>남은 예산을 다음 달로 이월</p>
               </div>
-              <Toggle on={rolloverBudget} onChange={handleToggleRollover} />
+              <Toggle on={rolloverBudget} onChange={handleToggleRollover} color={themeData.primary} />
+              <Toggle on={showUtilities} onChange={handleToggleUtilities} color={themeData.primary} />
             </div>
 
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카테고리 관리</p>
