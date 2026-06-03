@@ -172,6 +172,31 @@ export default function Ledger() {
     return filtered
   }
 
+  const autoUpdateUtility = async (title, amount, date) => {
+    const UTILITY_KEYWORDS = ['관리비', '수도세', '전기세', '가스비']
+    const matched = UTILITY_KEYWORDS.find(k => title.includes(k))
+    if (!matched || !user) return
+
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = d.getMonth() + 1
+
+    const snap = await getDoc(doc(db, 'users', user.uid))
+    const utilities = snap.exists() && snap.data().utilities ? snap.data().utilities : []
+
+    const existing = utilities.find(u => u.type === matched && u.year === year && u.month === month)
+    const updated = existing
+        ? utilities.map(u =>
+            u.type === matched && u.year === year && u.month === month
+                ? { ...u, amount: Number(amount) }
+                : u
+          )
+        : [...utilities, { id: Date.now(), type: matched, year, month, amount: Number(amount) }]
+
+    await setDoc(doc(db, 'users', user.uid), { utilities: updated }, { merge: true })
+    localStorage.setItem('moa_utilities', JSON.stringify(updated))
+  }
+
   const handleSubmit = async () => {
     if (!form.title || !form.amount) return alert('제목과 금액을 입력해주세요.')
     const monthDate = new Date(form.date)
@@ -182,6 +207,9 @@ export default function Ledger() {
     } else {
       await addDoc(collection(db, 'transactions'), data)
     }
+    if (form.type === 'expense') {
+    await autoUpdateUtility(form.title, form.amount, form.date)
+  }
     setShowForm(false)
     setEditItem(null)
     setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false })
