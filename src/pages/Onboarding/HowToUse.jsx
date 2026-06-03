@@ -158,7 +158,7 @@ function CalendarMockup() {
 
 function LedgerMockup() {
   const items = [
-    {date:'06/02',sep:'-7,900',rows:[{t:'스타벅스',c:'식비',col:'#FF6B6B',a:'-6,500',tp:'e'},{t:'버스',c:'교통',col:'#4ECDC4',a:'-1,400',tp:'e'}]},
+    {date:'06/02',sep:'-7,900',rows:[{t:'투썸플레이스',c:'식비',col:'#FF6B6B',a:'-6,500',tp:'e'},{t:'버스',c:'교통',col:'#4ECDC4',a:'-1,400',tp:'e'}]},
     {date:'06/01',sep:'+2,000,000',rows:[{t:'급여',c:'급여',col:'#4ADE80',a:'+2,000,000',tp:'i'},{t:'마트',c:'식비',col:'#FF6B6B',a:'-45,000',tp:'e'}]}
   ]
   let delay = 0.4
@@ -519,7 +519,7 @@ const SLIDES = [
   { id:'home', tab:'홈', title:'홈 대시보드', desc:'이번 달 소비 현황을 한눈에',
     features:['이번 달 잔액 · 수입 · 지출 요약','반원 그래프로 예산 달성률 확인','카테고리별 원형 차트','최근 내역 빠른 확인'],
     Mockup:HomeMockup, SettingsMockup:null },
-  { id:'calendar', tab:'달력', title:'달력', desc:'날짜별 소비 패턴을 파악해요',
+  { id:'calendar', tab:'캘린더', title:'캘린더', desc:'날짜별 소비 패턴을 파악해요',
     features:['날짜별 수입 · 지출 금액 표시','주간 · 월간 합계 카드','2열 그리드 고정지출 + 납부일','날짜 클릭 시 상세 내역 확인'],
     Mockup:CalendarMockup, SettingsMockup:null },
   { id:'ledger', tab:'가계부', title:'가계부', desc:'내역 관리의 모든 것',

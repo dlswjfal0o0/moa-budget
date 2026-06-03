@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import YearMonthPicker from '../components/YearMonthPicker'
 
 export default function Calendar() {
   const { themeData, themeName } = useTheme()
@@ -18,6 +19,7 @@ export default function Calendar() {
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [selectedDate, setSelectedDate] = useState(null)
+  const [showYMPicker, setShowYMPicker] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -99,7 +101,10 @@ export default function Calendar() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>‹</button>
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>{viewYear}년 {viewMonth + 1}월</p>
+          <p onClick={() => setShowYMPicker(true)}
+            style={{ fontSize: 18, fontWeight: 700, color: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#bbb' }}>▾</span>
+          </p>
           <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>›</button>
         </div>
@@ -237,6 +242,14 @@ export default function Calendar() {
           )}
         </div>
       </div>
+      {showYMPicker && (
+        <YearMonthPicker
+            viewYear={viewYear}
+            viewMonth={viewMonth}
+            onConfirm={(y, m) => { setViewYear(y); setViewMonth(m) }}
+            onClose={() => setShowYMPicker(false)}
+        />
+      )}
       <BottomNav />
     </div>
   )
