@@ -53,7 +53,14 @@ export default function Home() {
   const navigate = useNavigate()
   const { themeData } = useTheme()
   const [user, setUser] = useState(null)
-  const [transactions, setTransactions] = useState([])
+  const [transactions, setTransactions] = useState(() => {
+    try {
+        const now = new Date()
+        const ms = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+        const cached = localStorage.getItem(`moa_txns_${ms}`)
+        return cached ? JSON.parse(cached) : []
+    } catch { return [] }
+  })
   const [budgets, setBudgets] = useState([])
   const [showAddBudget, setShowAddBudget] = useState(false)
   const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '' })
@@ -79,7 +86,11 @@ export default function Home() {
   useEffect(() => {
     if (!user) return
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr))
-    getDocs(q).then(snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+    getDocs(q).then(snap => {
+        const txns = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        setTransactions(txns)
+        localStorage.setItem(`moa_txns_${monthStr}`, JSON.stringify(txns))
+    })
   }, [user])
 
   const saveBudgets = async (updated) => {
