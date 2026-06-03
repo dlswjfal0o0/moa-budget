@@ -291,7 +291,7 @@ export default function MyPage() {
             const pct = Math.min((card.used / card.limit) * 100, 100)
             const achieved = card.used >= card.limit
             return (
-              <div key={card.id} style={{ marginBottom: 10, background: themeData.card, borderRadius: 14,
+              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14,
                 padding: '12px 14px', border: `1.5px solid ${t.primary}18`, cursor: 'pointer' }}
                 onClick={() => {
                     setSelectedCard(card)
