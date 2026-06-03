@@ -239,8 +239,23 @@ export default function Calendar() {
                 <input style={inputStyle} type="number" placeholder="금액" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
                 <div>
                     <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4, paddingLeft: 2 }}>납부일 (선택)</p>
-                    <input style={inputStyle} type="date" value={newFixed.dueDate}
-                        onChange={e => setNewFixed(f => ({ ...f, dueDate: e.target.value }))} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                            style={{ ...inputStyle, flex: 1 }}
+                            type="number" min="1" max="31"
+                            placeholder="예: 10"
+                            value={newFixed.dueDate ? parseInt(newFixed.dueDate.split('-')[2]) : ''}
+                            onChange={e => {
+                                const day = e.target.value
+                                if (!day) { setNewFixed(f => ({ ...f, dueDate: '' })); return }
+                                const d = Math.min(31, Math.max(1, parseInt(day)))
+                                const now = new Date()
+                                const dueDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+                                setNewFixed(f => ({ ...f, dueDate }))
+                            }}
+                        />
+                        <span style={{ fontSize: 14, color: '#888', whiteSpace: 'nowrap' }}>일</span>
+                    </div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

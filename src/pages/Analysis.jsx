@@ -83,7 +83,12 @@ export default function Analysis() {
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
-  const [utilities, setUtilities] = useState([])
+  const [utilities, setUtilities] = useState(() => {
+    try {
+        const cached = localStorage.getItem('moa_utilities')
+        return cached ? JSON.parse(cached) : []
+    } catch { return [] }
+  })
   const [showAddUtility, setShowAddUtility] = useState(false)
   const [editingUtility, setEditingUtility] = useState(null)
   const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
@@ -100,7 +105,10 @@ export default function Analysis() {
           const data = snap.data()
           if (data.budgets) setBudgets(data.budgets)
           if (data.showUtilities !== undefined) setShowUtilities(data.showUtilities)
-          if (data.utilities) setUtilities(data.utilities)
+          if (data.utilities) {
+            setUtilities(data.utilities)
+            localStorage.setItem('moa_utilities', JSON.stringify(data.utilities))
+          }
         }
       }
     })
@@ -230,6 +238,7 @@ export default function Analysis() {
 
   const saveUtilities = async (updated) => {
     setUtilities(updated)
+    localStorage.setItem('moa_utilities', JSON.stringify(updated))  // ← 추가
     if (user) await setDoc(doc(db, 'users', user.uid), { utilities: updated }, { merge: true })
   }
 
@@ -241,7 +250,17 @@ export default function Analysis() {
         const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
         const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
         const prevYear = utilities.find(u => u.type === type && u.year === viewYear - 1 && u.month === viewMonth + 1)
-        return `${type}: 이번달 ${fmt(cur.amount)}원 / 전월 ${prev ? fmt(prev.amount) + '원' : '없음'} / 전년도 ${prevYear ? fmt(prevYear.amount) + '원' : '없음'}`
+
+        // ↓ 전년도 없으면 전월 기준으로 표기
+        let comparison = ''
+        if (prevYear) {
+            comparison = `전월 ${prev ? fmt(prev.amount) + '원' : '없음'} / 전년도 ${fmt(prevYear.amount)}원`
+        } else if (prev) {
+            comparison = `전월 ${fmt(prev.amount)}원 (전년도 데이터 없음)`
+        } else {
+            comparison = '비교 데이터 없음'
+        }
+        return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
     }).filter(Boolean).join('\n')
 
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
@@ -254,7 +273,7 @@ export default function Analysis() {
             body: JSON.stringify({
                 model: 'claude-sonnet-4-20250514', max_tokens: 600,
                 system: '한국어로 응답하는 공과금 분석 AI. 순수 JSON만 출력. 마크다운 금지.',
-                messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 전월/전년도와 비교해서 친근하게 분석해줘.\n{"items":[{"type":"전기세","emoji":"⚡","comment":"코멘트"}],"overall":"전체 총평 한 줄"}` }]
+                messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 비교 데이터 기준으로 친근하게 분석해줘. 전년도 데이터가 없으면 전월 데이터와 비교하고, 전월도 없으면 현재 수준이 적절한지 분석해줘.\n{"items":[{"type":"전기세","emoji":"⚡","comment":"코멘트"}],"overall":"전체 총평 한 줄"}` }]
             })
         })
         const data = await res.json()

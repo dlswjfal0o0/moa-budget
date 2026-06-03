@@ -100,11 +100,6 @@ export default function Home() {
     const daysLeft = Math.max(0, Math.ceil((new Date(budget.endDate) - new Date()) / 86400000))
     const remaining = budget.amount - spent
     const pct = Math.round((spent / budget.amount) * 100)
-    const categorySpend = expenses
-        .filter(t => t.date >= budget.startDate && t.date <= budget.endDate)
-        .reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
-    const catStr = Object.entries(categorySpend).map(([c, a]) => `${c}:${fmt(a)}원`).join(', ') || '없음'
-
     setLoadingInsightId(budget.id)
     try {
         const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -113,26 +108,15 @@ export default function Home() {
             body: JSON.stringify({
                 model: 'claude-sonnet-4-20250514',
                 max_tokens: 300,
-                system: '한국어로 응답하는 재무 AI. 마크다운 없이 순수 JSON만 출력.',
-                messages: [{
-                    role: 'user',
-                    content: `예산 "${budget.label}" 분석:
-  - 예산 ${fmt(budget.amount)}원 / 사용 ${fmt(spent)}원 (${pct}%) / 잔여 ${fmt(remaining)}원
-  - 남은 기간: ${daysLeft}일 / 카테고리: ${catStr}
-
-  {"status":"great|good|warning|danger","emoji":"이모지","message":"친근한 1줄 현황 설명","tip":"가장 중요한 절감 팁 1가지","daily":하루사용가능금액숫자}`
+                messages: [{ role: 'user', content:
+                    `예산 "${budget.label}": ${fmt(budget.amount)}원 중 ${fmt(spent)}원 사용 (${pct}%). 잔여 ${fmt(remaining)}원, 남은 기간 ${daysLeft}일. 친근하게 현황 분석과 절감 팁을 2~3문장으로 알려줘.`
                 }]
             })
         })
         const data = await res.json()
-        const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
-        try {
-            setBudgetInsights(prev => ({ ...prev, [budget.id]: JSON.parse(text) }))
-        } catch {
-            setBudgetInsights(prev => ({ ...prev, [budget.id]: { status: 'good', emoji: '💡', message: text, tip: null, daily: 0 } }))
-        }
+        setBudgetInsights(prev => ({ ...prev, [budget.id]: data.content[0].text }))
     } catch {
-        setBudgetInsights(prev => ({ ...prev, [budget.id]: { status: 'good', emoji: '⚠️', message: '분석에 실패했어요.', tip: null, daily: 0 } }))
+        setBudgetInsights(prev => ({ ...prev, [budget.id]: '분석에 실패했어요.' }))
     }
     setLoadingInsightId(null)
   }
