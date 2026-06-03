@@ -17,6 +17,7 @@ export default function MyPage() {
   const { themeName, setThemeName, themeData: t } = useTheme()
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
+  const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
   const [cardTransactions, setCardTransactions] = useState([])
   const [user, setUser] = useState(null)
   const [nickname, setNickname] = useState('')
@@ -296,6 +297,7 @@ export default function MyPage() {
                             setSelectedCard(card)
                             setCardDetailTab('benefits')
                             const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
+                            setCardHistoryMonth(null)
                             getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
                         }}
                         style={{ fontSize: 13, fontWeight: 600, color: t.primary, cursor: 'pointer', textDecoration: 'underline' }}>
@@ -502,117 +504,152 @@ export default function MyPage() {
       {/* 카드 상세 모달 */}
       {selectedCard && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 430, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 430, maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-            {/* 카드 헤더 */}
-            <div style={{ background: t.primary, padding: '24px 20px 20px', borderRadius: '20px 20px 0 0', color: '#fff' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                <p style={{ fontSize: 18, fontWeight: 700 }}>{selectedCard.name}</p>
-                <button onClick={() => setSelectedCard(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
-              </div>
-              <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, opacity: 0.9 }}>
-                **** **** **** {selectedCard.cardNumber || '****'}
-              </p>
-              <div style={{ display: 'flex', gap: 24 }}>
-                <div>
-                  <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>유효기간</p>
-                  <p style={{ fontSize: 13 }}>{selectedCard.expiry || '--/--'}</p>
-                </div>
-                {selectedCard.linkedAccount && (
-                  <div>
-                    <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>연동 계좌</p>
-                    <p style={{ fontSize: 13 }}>{selectedCard.linkedAccount}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 혜택/내역 탭 */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0' }}>
-              {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }].map(tab => (
-                <button key={tab.key} onClick={() => setCardDetailTab(tab.key)}
-                  style={{ flex: 1, padding: '14px', border: 'none', background: 'none', cursor: 'pointer',
-                    fontSize: 14, fontWeight: cardDetailTab === tab.key ? 600 : 400,
-                    color: cardDetailTab === tab.key ? t.primary : '#888',
-                    borderBottom: cardDetailTab === tab.key ? `2px solid ${t.primary}` : '2px solid transparent' }}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ padding: '16px 20px 40px' }}>
-              {cardDetailTab === 'benefits' ? (
-                <div>
-                  {(selectedCard.benefits || []).length === 0 && (
-                    <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>혜택을 추가해보세요</p>
-                  )}
-                  {(selectedCard.benefits || []).map((b, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f8f8f8' }}>
-                      <p style={{ fontSize: 14, color: '#333' }}>• {b}</p>
-                      <button onClick={() => {
-                        const updated = cards.map(c => c.id === selectedCard.id
-                          ? { ...c, benefits: c.benefits.filter((_, j) => j !== i) } : c)
-                        setCards(updated); saveToFirestore({ cards: updated })
-                        setSelectedCard(prev => ({ ...prev, benefits: prev.benefits.filter((_, j) => j !== i) }))
-                      }} style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                {/* 카드 헤더 */}
+                <div style={{ background: t.primary, padding: '24px 20px 20px', borderRadius: '20px 20px 0 0', color: '#fff', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                        <p style={{ fontSize: 18, fontWeight: 700 }}>{selectedCard.name}</p>
+                        <button onClick={() => setSelectedCard(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                     </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                    <input id="benefitInput" placeholder="혜택 입력 (예: 스타벅스 10% 할인)"
-                      style={{ flex: 1, padding: '11px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none', background: '#fafafa' }} />
-                    <button onClick={() => {
-                      const val = document.getElementById('benefitInput').value.trim()
-                      if (!val) return
-                      const updated = cards.map(c => c.id === selectedCard.id
-                        ? { ...c, benefits: [...(c.benefits || []), val] } : c)
-                      setCards(updated); saveToFirestore({ cards: updated })
-                      setSelectedCard(prev => ({ ...prev, benefits: [...(prev.benefits || []), val] }))
-                      document.getElementById('benefitInput').value = ''
-                    }} style={{ padding: '11px 16px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>추가</button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  {cardTransactions.length === 0 ? (
-                    <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>이 카드로 결제한 내역이 없어요</p>
-                  ) : (
-                    (() => {
-                      const byMonth = cardTransactions.reduce((acc, tx) => {
-                        const m = tx.month || tx.date?.slice(0, 7) || '기타'
-                        if (!acc[m]) acc[m] = []
-                        acc[m].push(tx)
-                        return acc
-                      }, {})
-                      return Object.keys(byMonth).sort((a, b) => b.localeCompare(a)).map(month => (
-                        <div key={month}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: t.primary, whiteSpace: 'nowrap' }}>
-                              {month.replace('-', '년 ')}월
-                            </span>
-                            <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
-                            <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
-                              -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
-                            </span>
-                          </div>
-                          {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
-                            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-                              <div>
-                                <p style={{ fontSize: 14, color: '#111', marginBottom: 2 }}>{tx.title}</p>
-                                <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
-                              </div>
-                              <p style={{ fontSize: 14, fontWeight: 600, color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                                {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
-                              </p>
-                            </div>
-                          ))}
+                    <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, opacity: 0.9 }}>
+                        **** **** **** {selectedCard.cardNumber || '****'}
+                    </p>
+                    <div style={{ display: 'flex', gap: 24 }}>
+                        <div>
+                            <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>유효기간</p>
+                            <p style={{ fontSize: 13 }}>{selectedCard.expiry || '--/--'}</p>
                         </div>
-                      ))
-                    })()
-                  )}
+                        {selectedCard.linkedAccount && (
+                            <div>
+                                <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>연동 계좌</p>
+                                <p style={{ fontSize: 13 }}>{selectedCard.linkedAccount}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-              )}
+
+                {/* 혜택/내역 탭 */}
+                <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                    {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }].map(tab => (
+                        <button key={tab.key} onClick={() => setCardDetailTab(tab.key)}
+                            style={{ flex: 1, padding: '14px', border: 'none', background: 'none', cursor: 'pointer',
+                                fontSize: 14, fontWeight: cardDetailTab === tab.key ? 600 : 400,
+                                color: cardDetailTab === tab.key ? t.primary : '#888',
+                                borderBottom: cardDetailTab === tab.key ? `2px solid ${t.primary}` : '2px solid transparent' }}>
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* 스크롤 콘텐츠 */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+                    {cardDetailTab === 'benefits' ? (
+                        <div>
+                            {(selectedCard.benefits || []).length === 0 && (
+                                <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>혜택을 추가해보세요</p>
+                            )}
+                            {(selectedCard.benefits || []).map((b, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f8f8f8' }}>
+                                    <p style={{ fontSize: 14, color: '#333' }}>• {b}</p>
+                                    <button onClick={() => {
+                                        const updated = cards.map(c => c.id === selectedCard.id
+                                            ? { ...c, benefits: c.benefits.filter((_, j) => j !== i) } : c)
+                                        setCards(updated); saveToFirestore({ cards: updated })
+                                        setSelectedCard(prev => ({ ...prev, benefits: prev.benefits.filter((_, j) => j !== i) }))
+                                    }} style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div>
+                            {/* 연/월 스크롤 선택 */}
+                            {cardTransactions.length > 0 && (() => {
+                                const availableMonths = [...new Set(
+                                    cardTransactions.map(tx => tx.month || tx.date?.slice(0, 7) || '')
+                                )].filter(Boolean).sort((a, b) => b.localeCompare(a))
+                                return (
+                                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, marginBottom: 4 }}>
+                                        <button onClick={() => setCardHistoryMonth(null)}
+                                            style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                                                background: cardHistoryMonth === null ? t.primary : '#f0f0f0',
+                                                color: cardHistoryMonth === null ? '#fff' : '#666', fontSize: 12 }}>전체</button>
+                                        {availableMonths.map(m => (
+                                            <button key={m} onClick={() => setCardHistoryMonth(m)}
+                                                style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                                                    background: cardHistoryMonth === m ? t.primary : '#f0f0f0',
+                                                    color: cardHistoryMonth === m ? '#fff' : '#666', fontSize: 12 }}>
+                                                {m.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )
+                            })()}
+
+                            {/* 내역 목록 */}
+                            {cardTransactions.length === 0 ? (
+                                <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>이 카드로 결제한 내역이 없어요</p>
+                            ) : (() => {
+                                const filtered = cardHistoryMonth
+                                    ? cardTransactions.filter(tx => (tx.month || tx.date?.slice(0, 7)) === cardHistoryMonth)
+                                    : cardTransactions
+                                const byMonth = filtered.reduce((acc, tx) => {
+                                    const m = tx.month || tx.date?.slice(0, 7) || '기타'
+                                    if (!acc[m]) acc[m] = []
+                                    acc[m].push(tx)
+                                    return acc
+                                }, {})
+                                return filtered.length === 0 ? (
+                                    <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
+                                ) : Object.keys(byMonth).sort((a, b) => b.localeCompare(a)).map(month => (
+                                    <div key={month}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
+                                            <span style={{ fontSize: 12, fontWeight: 600, color: t.primary, whiteSpace: 'nowrap' }}>
+                                                {month.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}
+                                            </span>
+                                            <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
+                                            <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
+                                                -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                                            </span>
+                                        </div>
+                                        {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
+                                            <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
+                                                <div>
+                                                    <p style={{ fontSize: 14, color: '#111', marginBottom: 2 }}>{tx.title}</p>
+                                                    <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
+                                                </div>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                                                    {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))
+                            })()}
+                        </div>
+                    )}
+                </div>
+
+                {/* 혜택 입력 — 하단 고정 */}
+                {cardDetailTab === 'benefits' && (
+                    <div style={{ padding: '12px 20px 36px', borderTop: '1px solid #f0f0f0', background: '#fff', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <input id="benefitInput" placeholder="혜택 입력 (예: 스타벅스 10% 할인)"
+                                style={{ flex: 1, padding: '11px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none', background: '#fafafa' }} />
+                            <button onClick={() => {
+                                const val = document.getElementById('benefitInput').value.trim()
+                                if (!val) return
+                                const updated = cards.map(c => c.id === selectedCard.id
+                                    ? { ...c, benefits: [...(c.benefits || []), val] } : c)
+                                setCards(updated); saveToFirestore({ cards: updated })
+                                setSelectedCard(prev => ({ ...prev, benefits: [...(prev.benefits || []), val] }))
+                                document.getElementById('benefitInput').value = ''
+                            }} style={{ padding: '11px 16px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>추가</button>
+                        </div>
+                    </div>
+                )}
+
             </div>
-          </div>
         </div>
       )}
 
