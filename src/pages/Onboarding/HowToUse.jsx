@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 
 const PRIMARY = '#3182F6'
 const BG = '#fff'
-const TEXT = '#1A0E05'
-const TEXT2 = '#8B6F5E'
+const TEXT = '#111827'
+const TEXT2 = '#6B7280'
 
 function useCountUp(target, duration = 1000, delay = 0) {
   const [value, setValue] = useState(0)
@@ -627,13 +627,13 @@ export default function HowToUse() {
 
       {/* 기능 설명 */}
       <div style={{ flex: 1, padding: '16px 28px 0', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 600, color: TEXT, marginBottom: 3, letterSpacing: -0.5 }}>{slide.title}</h2>
-        <p style={{ fontSize: 14, color: TEXT2, marginBottom: 12 }}>{slide.desc}</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 600, color: TEXT, marginBottom: 6, letterSpacing: '0px', lineHeight: 1.3 }}>{slide.title}</h2>
+        <p style={{ fontSize: 14, color: TEXT2, marginBottom: 16, letterSpacing: '0.2px', lineHeight: 1.6 }}>{slide.desc}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {slide.features.map((f, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY, flexShrink: 0, marginTop: 5 }} />
-              <p style={{ fontSize: 13, color: '#2D1C0D', lineHeight: 1.4, margin: 0 }}>{f}</p>
+              <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0, letterSpacing: '0.1px' }}>{f}</p>
             </div>
           ))}
         </div>

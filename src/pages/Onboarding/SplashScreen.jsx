@@ -2,8 +2,8 @@ import { useNavigate } from 'react-router-dom'
 
 const BG = '#fff'
 const PRIMARY = '#3182F6'
-const TEXT = '#1A0E05'
-const TEXT2 = '#8B6F5E'
+const TEXT = '#111827'
+const TEXT2 = '#6B7280'
 
 export default function SplashScreen() {
   const navigate = useNavigate()
@@ -27,8 +27,8 @@ export default function SplashScreen() {
         />
       </div>
 
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: TEXT, marginBottom: 6, letterSpacing: 0 }}>모아</h1>
-      <p style={{ fontSize: 16, color: TEXT2, marginBottom: 64, letterSpacing: 0.3 }}>발 달린 돈이 어디 가는지 궁금하다면</p>
+      <h1 style={{ fontSize: 38, fontWeight: 700, color: TEXT, marginBottom: 8, letterSpacing: 0 }}>모아</h1>
+      <p style={{ fontSize: 15, color: TEXT2, marginBottom: 64, letterSpacing: '0.8px', lineHeight: 1.6 }}>발 달린 내 돈, 어디 가는지 궁금하다면</p>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
