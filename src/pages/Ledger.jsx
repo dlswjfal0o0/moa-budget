@@ -478,6 +478,7 @@ export default function Ledger() {
                 <div onClick={async () => {
                     const next = !showUtilities
                     setShowUtilities(next)
+                    localStorage.setItem('moa_showUtilities', String(next))
                     if (user) await setDoc(doc(db, 'users', user.uid), { showUtilities: next }, { merge: true })
                 }} style={{ width: 46, height: 26, borderRadius: 13, background: showUtilities ? (themeData?.primary || '#4F46E5') : '#e0e0e0', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, left: showUtilities ? 22 : 2, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />

@@ -51,7 +51,9 @@ export default function Analysis() {
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
-  const [showUtilities, setShowUtilities] = useState(false)
+  const [showUtilities, setShowUtilities] = useState(() =>
+    localStorage.getItem('moa_showUtilities') === 'true'
+  )
   const [utilities, setUtilities] = useState([])
   const [showAddUtility, setShowAddUtility] = useState(false)
   const [editingUtility, setEditingUtility] = useState(null)
