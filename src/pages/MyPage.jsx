@@ -471,7 +471,11 @@ export default function MyPage() {
             {/* 로그아웃 */}
             <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 20, paddingTop: 20 }}>
                 <button
-                    onClick={() => signOut(auth).then(() => { setShowSettings(false); navigate('/', { replace: true }) })}
+                    onClick={() => signOut(auth).then(() => { 
+                        localStorage.removeItem('moa_logged_in')
+                        setShowSettings(false); 
+                        navigate('/', { replace: true }) 
+                    })}
                     style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1.5px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>

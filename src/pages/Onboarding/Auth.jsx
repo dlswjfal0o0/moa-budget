@@ -41,6 +41,12 @@ export default function Auth() {
     } else {
       await signInWithEmailAndPassword(auth, email, password)
     }
+    // 이메일 로그인 성공 후
+    localStorage.setItem('moa_logged_in', 'true')
+    navigate('/home', { replace: true })
+
+    // Google 로그인 성공 후
+    localStorage.setItem('moa_logged_in', 'true')
     navigate('/home', { replace: true })
   } catch (e) {
     if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')

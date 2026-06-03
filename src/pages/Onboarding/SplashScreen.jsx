@@ -10,8 +10,18 @@ const TEXT2 = '#6B7280'
 
 export default function SplashScreen() {
   useEffect(() => {
+    // 이전에 로그인한 적 있으면 즉시 홈으로
+    if (localStorage.getItem('moa_logged_in') === 'true') {
+        navigate('/home', { replace: true })
+        return
+    }
+
+    // 처음이면 Firebase 확인
     const unsub = onAuthStateChanged(auth, u => {
-        if (u) navigate('/home', { replace: true })
+        if (u) {
+            localStorage.setItem('moa_logged_in', 'true')
+            navigate('/home', { replace: true })
+        }
     })
     return unsub
   }, [])
