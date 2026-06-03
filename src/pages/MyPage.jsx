@@ -36,6 +36,7 @@ export default function MyPage() {
   const [newCard, setNewCard] = useState({ name: '', limit: '', used: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
   const [newAccount, setNewAccount] = useState({ name: '', balance: '', number: '' })
   const [exporting, setExporting] = useState(false)
+  const [showUpdates, setShowUpdates] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -480,6 +481,35 @@ export default function MyPage() {
 
             {exporting && <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 16 }}>내보내는 중...</p>}
 
+            {/* 이용 방법 / 업데이트 / 피드백 */}
+            <div style={{ marginTop: 20 }}>
+                <div style={{ height: 1, background: '#f0f0f0', marginBottom: 4 }} />
+
+                <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
+                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, color: '#333' }}>이용 방법</span>
+                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
+                </button>
+
+                <div style={{ height: 1, background: '#f0f0f0' }} />
+
+                <button onClick={() => setShowUpdates(true)}
+                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, color: '#333' }}>업데이트 내용</span>
+                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
+                </button>
+
+                <div style={{ height: 1, background: '#f0f0f0' }} />
+
+                <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
+                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, color: '#333' }}>피드백</span>
+                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
+                </button>
+
+                <div style={{ height: 1, background: '#f0f0f0', marginBottom: 16 }} />
+            </div>
+
             {/* 로그아웃 */}
             <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 20, paddingTop: 20 }}>
                 <button
@@ -498,6 +528,53 @@ export default function MyPage() {
                 </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 업데이트 내역 모달 */}
+      {showUpdates && (
+        <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
+            <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 40px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                    <button onClick={() => setShowUpdates(false)}
+                        style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#333', padding: 0 }}>‹</button>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>업데이트 내용</p>
+                </div>
+
+                {[
+                    {
+                        version: 'v1.1.0',
+                        date: '2026.06.04',
+                        changes: [
+                            '공과금 탭 설정 연동성 오류 수정',
+                            '[ 가계부 ] “가스비”, “관리비” 등 공과금 목록 텍스트 자동 인식 → [ 분석 - 공과금 ] 자동 입력 기능 추가',
+                            '[ MY - 카드 정보 ] 혜택 입력창 고정 + 내역 연/월 설정 기능 추가',
+                            '[ MY - 설정 ] 이용 방법, 업데이트 사항, 피드백 탭 추가',
+                        ]
+                    },
+                    {
+                        version: 'v1.0.0',
+                        date: '2026.06.03',
+                        changes: [
+                            '모아 가계부 출시 🎉',
+                        ]
+                    },
+                ].map((v, i) => (
+                    <div key={i} style={{ marginBottom: 28 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{v.version}</span>
+                            <span style={{ fontSize: 12, color: '#aaa' }}>{v.date}</span>
+                        </div>
+                        {v.changes.map((c, j) => (
+                            <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                                <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>•</span>
+                                <p style={{ fontSize: 14, color: '#444', lineHeight: 1.5 }}>{c}</p>
+                            </div>
+                        ))}
+                        {i < 2 && <div style={{ height: 1, background: '#f5f5f5', marginTop: 16 }} />}
+                    </div>
+                ))}
+            </div>
         </div>
       )}
 
