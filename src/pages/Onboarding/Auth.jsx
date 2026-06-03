@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth'
 import { auth, googleProvider } from '../../firebase/config'
 
@@ -16,6 +17,10 @@ export default function Auth() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showReset, setShowReset] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSent, setResetSent] = useState(false)
+  const [resetError, setResetError] = useState('')
 
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 12,
@@ -58,6 +63,19 @@ export default function Auth() {
     setLoading(false)
   }
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail) return setResetError('이메일을 입력해주세요.')
+    try {
+        await sendPasswordResetEmail(auth, resetEmail)
+        setResetSent(true)
+        setResetError('')
+    } catch (err) {
+        if (err.code === 'auth/user-not-found') setResetError('등록되지 않은 이메일이에요.')
+        else if (err.code === 'auth/invalid-email') setResetError('올바른 이메일 형식이 아니에요.')
+        else setResetError('오류가 발생했어요. 다시 시도해주세요.')
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '48px 28px 32px', background: '#fff' }}>
       <div style={{ flex: 1 }}>
@@ -73,6 +91,13 @@ export default function Auth() {
           <input style={inputStyle} type="password" placeholder="비밀번호" value={password} onChange={e => setPassword(e.target.value)} />
           {mode === 'signup' && (
             <input style={inputStyle} type="password" placeholder="비밀번호 확인" value={confirm} onChange={e => setConfirm(e.target.value)} />
+          )}
+
+          {mode === 'login' && (
+            <button onClick={() => { setShowReset(true); setResetEmail(email) }}
+                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', padding: '2px 0', textAlign: 'right', width: '100%' }}>
+                비밀번호를 잊으셨나요?
+            </button>
           )}
         </div>
 
@@ -125,6 +150,44 @@ export default function Auth() {
           {mode === 'signup' ? '로그인' : '회원가입'}
         </span>
       </p>
+
+      {/* 비밀번호 찾기 모달 */}
+      {showReset && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => { setShowReset(false); setResetSent(false); setResetError(''); setResetEmail('') }}>
+          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
+            {resetSent ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 8 }}>이메일을 보냈어요!</p>
+                <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>
+                  <span style={{ fontWeight: 600, color: '#111' }}>{resetEmail}</span>으로<br/>
+                  비밀번호 재설정 링크를 보냈어요.
+                </p>
+                <button onClick={() => { setShowReset(false); setResetSent(false); setResetEmail('') }}
+                  style={{ marginTop: 24, width: '100%', padding: '14px', borderRadius: 12, background: '#111', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+                  확인
+                </button>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 6 }}>비밀번호 찾기</p>
+                <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>가입한 이메일로 재설정 링크를 보내드려요.</p>
+                <input type="email" placeholder="이메일 주소" value={resetEmail}
+                  onChange={e => { setResetEmail(e.target.value); setResetError('') }}
+                  style={{ ...inputStyle, marginBottom: 8 }} />
+                {resetError && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>{resetError}</p>}
+                <button onClick={handlePasswordReset}
+                  style={{ width: '100%', padding: '14px', borderRadius: 12, background: '#3182F6', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>
+                  재설정 링크 보내기
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
