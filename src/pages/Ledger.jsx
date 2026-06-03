@@ -394,7 +394,7 @@ export default function Ledger() {
 
       {/* 추가 버튼 */}
       <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드' }); setShowForm(true) }}
-        style={{ position: 'fixed', bottom: 90, right: '16px', width: 52, height: 52, borderRadius: '50%', background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', boxShadow: `0 4px 12px ${themeData.primary}66` }}>+</button>
+        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: '16px', width: 52, height: 52, borderRadius: '50%', background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', boxShadow: `0 4px 12px ${themeData.primary}66` }}>+</button>
 
       {/* 설정 모달 */}
       {showSettings && (

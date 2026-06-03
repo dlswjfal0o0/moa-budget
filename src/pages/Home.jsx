@@ -8,41 +8,32 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 
-function BudgetGauge({ spent, total, primary, fmt }) {
-  const pct = total > 0 ? Math.min((spent / total) * 100, 100) : 0
-  const r = 52
-  const circ = Math.PI * r
-  const offset = circ * (1 - pct / 100)
-  const color = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : primary
+function BudgetCard({ budget, spent, themeData, fmt }) {
+  const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0
+  const remaining = Math.max(budget.amount - spent, 0)
+  const color = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 0 8px' }}>
-      <div style={{ position: 'relative', width: 160, height: 90 }}>
-        <svg width="160" height="90" viewBox="0 0 160 90">
-          <path d="M 14 78 A 66 66 0 0 1 146 78"
-            fill="none" stroke="#f0f0f0" strokeWidth="16" strokeLinecap="round" />
-          <path d="M 14 78 A 66 66 0 0 1 146 78"
-            fill="none" stroke={color} strokeWidth="16" strokeLinecap="round"
-            strokeDasharray={Math.PI * 66}
-            strokeDashoffset={Math.PI * 66 * (1 - pct / 100)}
-            style={{ transition: 'stroke-dashoffset 1s ease' }} />
-        </svg>
-        <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', whiteSpace: 'nowrap' }}>
-          <p style={{ fontSize: 28, fontWeight: 800, color: '#111', lineHeight: 1 }}>{Math.round(pct)}<span style={{ fontSize: 16 }}>%</span></p>
+    <div style={{ background: themeData.card, borderRadius: 14, padding: '12px 14px' }}>
+      <p style={{ fontSize: 13, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{budget.label}</p>
+      <p style={{ fontSize: 10, color: '#bbb', marginBottom: 8 }}>
+        {budget.startDate?.slice(5).replace('-','/')} ~ {budget.endDate?.slice(5).replace('-','/')}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', width: 64, height: 36, flexShrink: 0 }}>
+          <svg width="64" height="36" viewBox="0 0 64 36">
+            <path d="M 5 32 A 27 27 0 0 1 59 32" fill="none" stroke="#f0f0f0" strokeWidth="7" strokeLinecap="round"/>
+            <path d="M 5 32 A 27 27 0 0 1 59 32" fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+              strokeDasharray={Math.PI * 27} strokeDashoffset={Math.PI * 27 * (1 - pct / 100)}
+              style={{ transition: 'stroke-dashoffset 0.8s ease' }}/>
+          </svg>
+          <p style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: 11, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+            {Math.round(pct)}%
+          </p>
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: 24, marginTop: 4 }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>사용</p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{fmt(spent)}원</p>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>예산</p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{fmt(total)}원</p>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>잔여</p>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#22c55e' }}>{fmt(Math.max(total - spent, 0))}원</p>
+        <div>
+          <p style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>잔여</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>{fmt(remaining)}원</p>
         </div>
       </div>
     </div>
@@ -211,69 +202,32 @@ export default function Home() {
           {budgets.length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
           ) : (
-            budgets.map(b => {
-              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s,t) => s+t.amount, 0)
-              const pct = Math.min((spent / b.amount) * 100, 100)
-              const insight = getLocalInsight(b, spent)
-              const aiText = budgetInsights[b.id]
-
-              return (
-                <div key={b.id} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: themeData.text || '#111' }}>{b.label}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate.slice(5)} ~ {b.endDate.slice(5)}</span>
-                      <button onClick={() => saveBudgets(budgets.filter(x => x.id !== b.id))} style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, color: '#ef4444' }}>-{fmt(spent)}원</span>
-                    <span style={{ fontSize: 13, color: '#888' }}>{fmt(b.amount)}원</span>
-                  </div>
-
-                  {/* 게이지 */}
-                  <BudgetGauge spent={spent} total={b.amount} primary={themeData?.primary || '#3182F6'} fmt={fmt} />
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: insight.color, fontWeight: 500 }}>{insight.msg}</span>
-                    <span style={{ fontSize: 12, color: '#bbb' }}>{Math.round(pct)}%</span>
-                  </div>
-
-                  {/* AI 조언 */}
-                  {budgetInsights[b.id] && (() => {
-                    const raw = budgetInsights[b.id]
-                    const ai = typeof raw === 'string'
-                        ? { status: 'good', emoji: '💡', message: raw, tip: null, daily: 0 }
-                        : raw
-                    const sc = {
-                        great:   { color: '#22c55e', bg: '#F0FFF4' },
-                        good:    { color: '#3b82f6', bg: '#EFF6FF' },
-                        warning: { color: '#f59e0b', bg: '#FFFBEB' },
-                        danger:  { color: '#ef4444', bg: '#FFF5F5' },
-                    }[ai.status] || { color: '#888', bg: '#f8f8f8' }
-
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {budgets.map(b => {
+                    const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
+                    const aiText = budgetInsights[b.id]
                     return (
-                        <div style={{ background: sc.bg, borderRadius: 10, padding: '12px 14px', marginTop: 8, borderLeft: `3px solid ${sc.color}` }}>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: sc.color, marginBottom: ai.tip ? 5 : 0 }}>
-                                {ai.emoji} {ai.message}
-                            </p>
-                            {ai.tip && (
-                                <p style={{ fontSize: 12, color: '#666', marginBottom: ai.daily > 0 ? 4 : 0 }}>
-                                    💡 {ai.tip}
-                                </p>
-                            )}
-                            {ai.daily > 0 && (
-                                <p style={{ fontSize: 12, color: '#888' }}>
-                                    📅 하루 {fmt(ai.daily)}원씩 가능해요
-                                </p>
-                            )}
+                        <div key={b.id} style={{ position: 'relative' }}>
+                            <button onClick={() => saveBudgets(budgets.filter(x => x.id !== b.id))}
+                                style={{ position: 'absolute', top: 6, right: 6, zIndex: 1, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 13, padding: 2 }}>✕</button>
+                            <BudgetCard budget={b} spent={spent} themeData={themeData} fmt={fmt} />
+                            <button onClick={() => getAiInsight(b, spent)} disabled={loadingInsightId === b.id}
+                                style={{ width: '100%', marginTop: 4, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '5px 0', color: themeData.primary, fontSize: 11, cursor: 'pointer' }}>
+                                {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언'}
+                            </button>
+                            {aiText && (() => {
+                                const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
+                                const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: '#888', bg: '#f8f8f8' }
+                                return (
+                                    <div style={{ background: sc.bg, borderRadius: 8, padding: '8px 10px', marginTop: 4, borderLeft: `2px solid ${sc.color}` }}>
+                                        <p style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>{ai.emoji} {ai.message}</p>
+                                    </div>
+                                )
+                            })()}
                         </div>
                     )
-                })()}
-                </div>
-              )
-            })
+                })}
+            </div>
           )}
 
           {/* 예산 추가 폼 */}

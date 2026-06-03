@@ -85,6 +85,10 @@ export default function Calendar() {
   const weekIncome = transactions.filter(t => t.type === 'income' && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
   const selectedDateStr = selectedDate ? `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}` : null
   const selectedTxs = selectedDateStr ? transactions.filter(t => t.date === selectedDateStr) : []
+  const fixedDueDays = fixedExpenses
+    .filter(f => !f.done)
+    .map(f => f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null)
+    .filter(Boolean)
 
   const inputStyle = {
     width: '100%', padding: '11px 14px', borderRadius: 10,
@@ -123,10 +127,11 @@ export default function Calendar() {
             const isToday = dateStr === todayStr
             const isSelected = day === selectedDate
             const dow = (firstDay + day - 1) % 7
+            const isFixedDay = fixedDueDays.includes(day)
             return (
               <div key={day} onClick={() => setSelectedDate(day === selectedDate ? null : day)}
                 style={{ padding: '6px 2px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
-                  background: isSelected ? '#EEF2FF' : 'transparent',
+                  background: isSelected ? '#EEF2FF' : isFixedDay ? `${themeData.primary}22` : 'transparent',
                   border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent' }}>
                 <p style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? themeData.primary : dow === 0 ? '#ef4444' : dow === 6 ? themeData.primary : '#111', marginBottom: 2 }}>
                   {isToday ? '●' : day}

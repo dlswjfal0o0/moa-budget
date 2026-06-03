@@ -33,6 +33,38 @@ function UtilityChart({ type, utilities, primary }) {
   )
 }
 
+function BudgetCard({ budget, spent, themeData, fmt }) {
+  const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0
+  const remaining = Math.max(budget.amount - spent, 0)
+  const color = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
+
+  return (
+    <div style={{ background: themeData.card, borderRadius: 14, padding: '12px 14px' }}>
+      <p style={{ fontSize: 13, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{budget.label}</p>
+      <p style={{ fontSize: 10, color: '#bbb', marginBottom: 8 }}>
+        {budget.startDate?.slice(5).replace('-','/')} ~ {budget.endDate?.slice(5).replace('-','/')}
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', width: 64, height: 36, flexShrink: 0 }}>
+          <svg width="64" height="36" viewBox="0 0 64 36">
+            <path d="M 5 32 A 27 27 0 0 1 59 32" fill="none" stroke="#f0f0f0" strokeWidth="7" strokeLinecap="round"/>
+            <path d="M 5 32 A 27 27 0 0 1 59 32" fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+              strokeDasharray={Math.PI * 27} strokeDashoffset={Math.PI * 27 * (1 - pct / 100)}
+              style={{ transition: 'stroke-dashoffset 0.8s ease' }}/>
+          </svg>
+          <p style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: 11, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+            {Math.round(pct)}%
+          </p>
+        </div>
+        <div>
+          <p style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>잔여</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>{fmt(remaining)}원</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const navigate = useNavigate()
@@ -303,48 +335,23 @@ export default function Analysis() {
             {budgets.length === 0 ? (
                 <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
             ) : (
-                budgets.map(b => {
-                    const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
-                    const pct = Math.min((spent / b.amount) * 100, 100)
-                    const insight = getLocalInsight(b, spent)
-                    const aiText = budgetInsights[b.id]
-
-                    return (
-                        <div key={b.id} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #f5f5f5' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{b.label}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate.slice(5)} ~ {b.endDate.slice(5)}</span>
-                                    <button onClick={() => saveBudgets(budgets.filter(x => x.id !== b.id))}
-                                        style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                                <span style={{ fontSize: 13, color: '#ef4444' }}>-{fmt(spent)}원</span>
-                                <span style={{ fontSize: 13, color: '#888' }}>{fmt(b.amount)}원</span>
-                            </div>
-                            <div style={{ background: '#f0f0f0', borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 8 }}>
-                                <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`,
-                                    transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-                                    background: pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary }} />
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                    <span style={{ fontSize: 12, color: insight.color, fontWeight: 500 }}>{insight.msg}</span>
-                                    <span style={{ fontSize: 12, color: '#bbb' }}>{Math.round(pct)}%</span>
-                                </div>
-                                {aiText && (
-                                    <div style={{ background: themeData.primaryLight || '#EEF2FF', borderRadius: 10, padding: '10px 12px', marginTop: 6, borderLeft: `3px solid ${themeData.primary}` }}>
-                                        <p style={{ fontSize: 12, color: '#333', lineHeight: 1.6 }}>{aiText}</p>
-                                    </div>
-                                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {budgets.map(b => {
+                        const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
+                        return (
+                            <div key={b.id} style={{ position: 'relative' }}>
+                                <button onClick={() => saveBudgets(budgets.filter(x => x.id !== b.id))}
+                                    style={{ position: 'absolute', top: 6, right: 6, zIndex: 1, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 13, padding: 2 }}>✕</button>
+                                <BudgetCard budget={b} spent={spent} themeData={themeData} fmt={fmt} />
                                 <button onClick={() => getAiInsight(b, spent)} disabled={loadingInsightId === b.id}
-                                    style={{ marginTop: 8, background: 'none', border: `1px solid ${themeData.primary}`, borderRadius: 20, padding: '4px 12px', color: themeData.primary, fontSize: 11, cursor: 'pointer' }}>
+                                    style={{ width: '100%', marginTop: 4, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '5px 0', color: themeData.primary, fontSize: 11, cursor: 'pointer' }}>
                                     {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언'}
                                 </button>
                             </div>
                         )
-                    })
-                )}
+                    })}
+                </div>
+            )}
 
                 {showAddBudget && (
                     <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
