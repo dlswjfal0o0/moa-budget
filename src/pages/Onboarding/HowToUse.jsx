@@ -624,7 +624,7 @@ export default function HowToUse() {
       `}</style>
 
       {/* 탭 인디케이터 */}
-      <div style={{ padding: '48px 16px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 16px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
         {SLIDES.map((s, i) => (
           <button key={s.id} onClick={() => setCurrent(i)}
             style={{ padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, transition: 'all 0.2s',

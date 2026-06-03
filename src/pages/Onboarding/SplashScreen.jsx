@@ -18,7 +18,7 @@ export default function SplashScreen() {
   const navigate = useNavigate()
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '0 32px', background: BG, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: 'env(safe-area-inset-top, 0px) 32px 0', background: BG, position: 'relative', overflow: 'hidden' }}>
       {/* 배경 장식 */}
       <div style={{ position: 'absolute', top: -80, right: -80, width: 240, height: 240, borderRadius: '50%', background: PRIMARY, opacity: 0.06 }} />
       <div style={{ position: 'absolute', bottom: -60, left: -60, width: 180, height: 180, borderRadius: '50%', background: PRIMARY, opacity: 0.05 }} />
