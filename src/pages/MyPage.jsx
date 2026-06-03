@@ -37,6 +37,7 @@ export default function MyPage() {
   const [newAccount, setNewAccount] = useState({ name: '', balance: '', number: '' })
   const [exporting, setExporting] = useState(false)
   const [showUpdates, setShowUpdates] = useState(false)
+  const [expandedVersion, setExpandedVersion] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -559,21 +560,39 @@ export default function MyPage() {
                             '모아 가계부 출시 🎉',
                         ]
                     },
-                ].map((v, i) => (
-                    <div key={i} style={{ marginBottom: 28 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{v.version}</span>
-                            <span style={{ fontSize: 12, color: '#aaa' }}>{v.date}</span>
+                ].map((v, i) => {
+                    const isOpen = expandedVersion === v.version
+                    return (
+                        <div key={i} style={{ marginBottom: 8 }}>
+                            {/* 버전 헤더 - 클릭으로 열기/닫기 */}
+                            <button
+                                onClick={() => setExpandedVersion(isOpen ? null : v.version)}
+                                style={{ width: '100%', background: isOpen ? '#f8f8f8' : '#fff', border: '1px solid #f0f0f0',
+                                    borderRadius: isOpen ? '12px 12px 0 0' : 12, padding: '14px 16px', cursor: 'pointer',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                    <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{v.version}</span>
+                                    <span style={{ fontSize: 12, color: '#aaa' }}>{v.date}</span>
+                                </div>
+                                <span style={{ fontSize: 13, color: '#bbb', transition: 'transform 0.2s',
+                                    display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
+                            </button>
+
+                            {/* 변경 내용 - 펼쳐질 때만 표시 */}
+                            {isOpen && (
+                                <div style={{ background: '#f8f8f8', border: '1px solid #f0f0f0', borderTop: 'none',
+                                    borderRadius: '0 0 12px 12px', padding: '12px 16px 16px' }}>
+                                    {v.changes.map((c, j) => (
+                                        <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                                            <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>•</span>
+                                            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.5 }}>{c}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        {v.changes.map((c, j) => (
-                            <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
-                                <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>•</span>
-                                <p style={{ fontSize: 14, color: '#444', lineHeight: 1.5 }}>{c}</p>
-                            </div>
-                        ))}
-                        {i < 2 && <div style={{ height: 1, background: '#f5f5f5', marginTop: 16 }} />}
-                    </div>
-                ))}
+                    )
+                })}
             </div>
         </div>
       )}
