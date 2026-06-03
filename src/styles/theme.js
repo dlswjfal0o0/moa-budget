@@ -20,31 +20,31 @@ export const COLORS = {
 
 export const THEMES = {
   toss: {
-    name: '토스 (기본)',
+    name: '기본',
     desc: '심플하고 직관적인 화이트&블루',
     bg: '#F2F4F6', primary: '#3182F6', primaryLight: '#E8F3FF',
     card: '#FFFFFF', text: '#191F28', bgClass: '',
   },
   pastelBlue: {
-    name: '형광펜 (블루)',
+    name: '오션 블루',
     desc: '상쾌하고 시원한 블루 감성',
     bg: '#FFFFFF', primary: '#3A8BC7', primaryLight: '#C8E4F8',
     card: '#F0F8FF', text: '#1A3A5C', bgClass: 'theme-pastel-blue-bg',
   },
   pastelPink: {
-    name: '형광펜 (핑크)',
+    name: '빈티지 핑크',
     desc: '사랑스럽고 달콤한 핑크 감성',
     bg: '#FFFFFF', primary: '#C05070', primaryLight: '#FFD0DF',
     card: '#FFF0F5', text: '#5C1A30', bgClass: 'theme-pastel-pink-bg',
   },
   pastelPurple: {
-    name: '형광펜 (퍼플)',
+    name: '퍼플',
     desc: '신비롭고 우아한 퍼플 감성',
     bg: '#FFFFFF', primary: '#7050B0', primaryLight: '#E0D0F8',
     card: '#F8F0FF', text: '#2A1050', bgClass: 'theme-pastel-purple-bg',
   },
   analog: {
-    name: '아날로그 (내추럴)',
+    name: '스프링 그린',
     desc: '싱그러운 자연 그린 감성',
     bg: '#F3F7E8', primary: '#6E9E2E', primaryLight: '#D0E8A0',
     card: '#EDF5DC', text: '#364020', bgClass: '',
