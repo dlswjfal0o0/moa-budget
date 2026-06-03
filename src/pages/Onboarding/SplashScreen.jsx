@@ -1,4 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from '../../firebase/config'
 
 const BG = '#fff'
 const PRIMARY = '#3182F6'
@@ -6,6 +9,12 @@ const TEXT = '#111827'
 const TEXT2 = '#6B7280'
 
 export default function SplashScreen() {
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, u => {
+        if (u) navigate('/', { replace: true })
+    })
+    return unsub
+  }, [])
   const navigate = useNavigate()
 
   return (
