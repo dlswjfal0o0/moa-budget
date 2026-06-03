@@ -61,6 +61,7 @@ export default function Home() {
   const [loadingInsightId, setLoadingInsightId] = useState(null)
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+  const [fixedExpenses, setFixedExpenses] = useState([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -69,6 +70,7 @@ export default function Home() {
         setUser(u)
         const snap = await getDoc(doc(db, 'users', u.uid))
         if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
+        if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
       }
     })
     return unsub
@@ -150,6 +152,18 @@ export default function Home() {
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
   const expenseByCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
   const fmt = n => n.toLocaleString('ko-KR')
+  const upcomingPayments = fixedExpenses
+    .filter(f => !f.done && f.dueDate)
+    .map(f => {
+        const today = new Date()
+        const dueDay = parseInt(f.dueDate.split('-')[2])
+        let next = new Date(today.getFullYear(), today.getMonth(), dueDay)
+        if (next < today) next = new Date(today.getFullYear(), today.getMonth() + 1, dueDay)
+        const daysLeft = Math.ceil((next - today) / 86400000)
+        return { ...f, daysLeft, dueDay }
+    })
+    .filter(f => f.daysLeft >= 0 && f.daysLeft <= 10)
+    .sort((a, b) => a.daysLeft - b.daysLeft)
   const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }))
 
   const inputStyle = {
@@ -270,6 +284,38 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* 다가오는 결제 */}
+        {upcomingPayments.length > 0 && (
+            <div style={{ background: themeData.card, borderRadius: 16, padding: 16, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 18 }}>💳</span>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>다가오는 결제</p>
+                </div>
+                {upcomingPayments.map((f, i) => {
+                    const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
+                    return (
+                        <div key={f.id || i} style={{ background: themeData.bg || '#f8f8f8', borderRadius: 12, padding: '10px 14px',
+                            marginBottom: i < upcomingPayments.length - 1 ? 8 : 0, borderLeft: `3px solid ${urgency}` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 3 }}>{f.title}</p>
+                                    <p style={{ fontSize: 12, color: urgency }}>
+                                        {f.daysLeft === 0 ? '🚨 오늘 결제 예정이에요!' :
+                                         f.daysLeft === 1 ? '⚠️ 내일 결제 예정이에요!' :
+                                         `📅 ${f.daysLeft}일 뒤에 결제 예정이에요`}
+                                    </p>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>-{fmt(f.amount)}원</p>
+                                    <p style={{ fontSize: 11, color: '#bbb' }}>매월 {f.dueDay}일</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                  })}
+            </div>
+        )}
 
         {/* 카테고리별 지출 */}
         <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>

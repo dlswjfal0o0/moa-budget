@@ -174,6 +174,12 @@ function LedgerMockup() {
             <div key={t} style={{ padding:'2px 8px',borderRadius:20,background:i===1?PRIMARY:'#f0f0f0',fontSize:7,color:i===1?'white':'#666' }}>{t}</div>
           ))}
         </div>
+        {/* 월간 헤더 */}
+        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'3px 10px 4px',borderBottom:'1px solid #f5f5f5' }}>
+            <span style={{ fontSize:7,color:'#bbb' }}>‹</span>
+            <span style={{ fontSize:8,fontWeight:700,color:'#111' }}>2026년 6월</span>
+            <span style={{ fontSize:7,color:'#bbb' }}>›</span>
+        </div>
         <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
           <div style={{ display:'flex',gap:5 }}>
             {['전체','소비','수입'].map((t,i)=>(
@@ -457,6 +463,17 @@ function LedgerSettingsMockup() {
         ))}
       </div>
       <div style={{ height:0.5,background:'#f0f0f0',marginBottom:6 }}/>
+      {/* 카드 대금 */}
+      <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6 }}>
+        <div>
+            <p style={{ fontSize:7,fontWeight:600,color:'#111' }}>카드 대금 표시</p>
+            <p style={{ fontSize:5.5,color:'#888' }}>대금은 회색, 지출 합계 제외</p>
+        </div>
+        <div style={{ width:22,height:12,borderRadius:6,background:'#e0e0e0',position:'relative',flexShrink:0 }}>
+            <div style={{ width:8,height:8,borderRadius:'50%',background:'white',position:'absolute',top:2,left:2 }}/>
+        </div>
+      </div>
+      <div style={{ height:0.5,background:'#f0f0f0',marginBottom:6 }}/>
       <div style={{ background:'#EEF2FF',borderRadius:9,padding:'6px 8px',border:`1.5px solid ${PRIMARY}44` }}>
         <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
           <div>
@@ -508,8 +525,10 @@ function MySettingsMockup() {
           </div>
         </div>
       ))}
-      <div style={{ marginTop:8,padding:'6px 0',borderTop:'1px solid #f0f0f0' }}>
-        <span style={{ fontSize:8,color:'#ef4444',fontWeight:600 }}>→ 로그아웃</span>
+      <div style={{ marginTop:8 }}>
+        <div style={{ padding:'9px 12px',borderRadius:8,border:'1px solid #FFE4E4',background:'#FFF5F5',display:'flex',alignItems:'center',justifyContent:'center',gap:5 }}>
+            <span style={{ fontSize:8,color:'#ef4444',fontWeight:600 }}>로그아웃</span>
+        </div>
       </div>
     </div>
   )

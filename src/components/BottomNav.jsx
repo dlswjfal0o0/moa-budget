@@ -12,7 +12,7 @@ const Icon = ({ name, color }) => {
 }
 
 const tabs = [
-  { path: '/calendar', label: '달력', icon: 'calendar' },
+  { path: '/calendar', label: '캘린더', icon: 'calendar' },
   { path: '/ledger', label: '가계부', icon: 'book' },
   { path: '/home', label: '홈', icon: 'home' },
   { path: '/analysis', label: '분석', icon: 'chart' },
