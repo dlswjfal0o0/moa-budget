@@ -21,6 +21,7 @@ export default function MyPage() {
   const [cardTransactions, setCardTransactions] = useState([])
   const [user, setUser] = useState(null)
   const [nickname, setNickname] = useState(() => localStorage.getItem('moa_nickname') || '')
+  const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
   const [cards, setCards] = useState(() => {
     try { const c = localStorage.getItem('moa_cards'); return c ? JSON.parse(c) : [] } catch { return [] }
