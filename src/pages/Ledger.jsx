@@ -405,7 +405,7 @@ export default function Ledger() {
             cursor: 'pointer', 
             zIndex: 100,  // ← 추가
             boxShadow: `0 4px 12px ${themeData.primary}66` 
-        }}>+
+        }}>+</button>
 
       {/* 설정 모달 */}
       {showSettings && (
