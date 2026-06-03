@@ -178,8 +178,19 @@ export default function Ledger() {
     if (!matched || !user) return
 
     const d = new Date(date)
-    const year = d.getFullYear()
-    const month = d.getMonth() + 1
+    let year = d.getFullYear()
+    let month = d.getMonth() + 1
+
+    // "n월 관리비" 패턴에서 월 추출
+    const monthMatch = title.match(/(\d{1,2})월/)
+    if (monthMatch) {
+        const mentioned = parseInt(monthMatch[1])
+        if (mentioned >= 1 && mentioned <= 12) {
+            // 12월인데 현재 1월이면 작년
+            if (month === 1 && mentioned === 12) year = year - 1
+            month = mentioned
+        }
+    }
 
     const snap = await getDoc(doc(db, 'users', user.uid))
     const utilities = snap.exists() && snap.data().utilities ? snap.data().utilities : []

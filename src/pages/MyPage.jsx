@@ -291,36 +291,34 @@ export default function MyPage() {
             const pct = Math.min((card.used / card.limit) * 100, 100)
             const achieved = card.used >= card.limit
             return (
-              <div key={card.id} style={{ marginBottom: 14 }}>
+              <div key={card.id} style={{ marginBottom: 10, background: themeData.card, borderRadius: 14,
+                padding: '12px 14px', border: `1.5px solid ${t.primary}18`, cursor: 'pointer' }}
+                onClick={() => {
+                    setSelectedCard(card)
+                    setCardDetailTab('benefits')
+                    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
+                    setCardHistoryMonth(null)
+                    getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+                }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span
-                        onClick={() => {
-                            setSelectedCard(card)
-                            setCardDetailTab('benefits')
-                            const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
-                            setCardHistoryMonth(null)
-                            getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-                        }}
-                        style={{ fontSize: 13, fontWeight: 600, color: t.primary, cursor: 'pointer', textDecoration: 'underline' }}>
-                        {card.name}
-                    </span>
-                    {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
-                  </div>
-                  <button onClick={() => handleDeleteCard(card.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
+                        {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
+                        style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: '#888' }}>{fmt(card.used)}원 사용</span>
-                  <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit)}원</span>
+                    <span style={{ fontSize: 12, color: '#888' }}>{fmt(card.used)}원 사용</span>
+                    <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit)}원</span>
                 </div>
                 <div style={{ background: '#f0f0f0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
                 </div>
-
                 {card.billingDay && (
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>결제일 매월 {card.billingDay}일</p>
+                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>결제일 매월 {card.billingDay}일</p>
                 )}
-              </div>
+            </div>
             )
           })}
           {showAddCard && (

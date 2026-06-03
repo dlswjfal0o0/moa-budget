@@ -65,6 +65,19 @@ function BudgetCard({ budget, spent, themeData, fmt }) {
   )
 }
 
+function CustomBarTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{label}일</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+        -{payload[0].value.toLocaleString()}원
+      </p>
+    </div>
+  )
+}
+
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const navigate = useNavigate()
@@ -410,11 +423,17 @@ export default function Analysis() {
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={dailyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={dailyData} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
                 <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false} tickFormatter={v => v > 0 ? `${Math.round(v/1000)}k` : ''} />
-                <Tooltip formatter={v => [`${fmt(v)}원`, '지출']} labelFormatter={l => `${l}일`} />
-                <Bar dataKey="amount" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                <YAxis tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false}
+                    tickFormatter={v => {
+                        if (v === 0) return ''
+                        if (v >= 10000) return `${Math.round(v / 10000)}만`
+                        if (v >= 1000) return `${Math.round(v / 1000)}천`
+                        return `${v}`
+                    }} />
+                <Tooltip content={<CustomBarTooltip />} />
+                <Bar dataKey="amount" fill={themeData?.primary || '#4F46E5'} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -612,7 +631,7 @@ export default function Analysis() {
                             <UtilityChart type={type} utilities={utilities} primary={themeData?.primary || '#4F46E5'} />
                             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                                 <button onClick={() => saveUtilities(utilities.filter(u => u.id !== cur.id))}
-                                    style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 12, cursor: 'pointer' }}>삭제</button>
+                                    style={{ background: 'none', border: '1px solid #fecaca', borderRadius: 6, color: '#ef4444', fontSize: 12, cursor: 'pointer', padding: '4px 10px' }}>삭제</button>
                             </div>
                         </>
                     ) : (
