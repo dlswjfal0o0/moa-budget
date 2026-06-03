@@ -34,7 +34,7 @@ function UtilityChart({ type, utilities, primary }) {
 }
 
 export default function Analysis() {
-  const { themeData, themeName } = useTheme()
+  const { themeData, themeName, showUtilities } = useTheme()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -51,9 +51,6 @@ export default function Analysis() {
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
-  const [showUtilities, setShowUtilities] = useState(() =>
-    localStorage.getItem('moa_showUtilities') === 'true'
-  )
   const [utilities, setUtilities] = useState([])
   const [showAddUtility, setShowAddUtility] = useState(false)
   const [editingUtility, setEditingUtility] = useState(null)

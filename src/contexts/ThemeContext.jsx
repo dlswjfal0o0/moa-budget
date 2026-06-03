@@ -18,6 +18,10 @@ export function ThemeProvider({ children }) {
 
   const themeData = THEMES[themeName] || THEMES.toss
 
+  const [showUtilities, setShowUtilities] = useState(() =>
+    localStorage.getItem('moa_showUtilities') === 'true'
+  )
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -26,13 +30,18 @@ export function ThemeProvider({ children }) {
                 setThemeName(snap.data().theme)
                 localStorage.setItem('theme', snap.data().theme)
             }
+
+            if (snap.data().showUtilities !== undefined) {
+                setShowUtilities(snap.data().showUtilities)
+                localStorage.setItem('moa_showUtilities', String(snap.data().showUtilities))
+            }
         }
     })
     return unsub
   }, [])
 
   return (
-    <ThemeContext.Provider value={{ themeName, setThemeName, themeData }}>
+    <ThemeContext.Provider value={{ themeName, setThemeName, themeData, showUtilities, setShowUtilities }}>
       {children}
     </ThemeContext.Provider>
   )
