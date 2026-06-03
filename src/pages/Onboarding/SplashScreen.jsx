@@ -42,13 +42,6 @@ export default function SplashScreen() {
           로그인
         </button>
       </div>
-
-      {/* 하단 도트 */}
-      <div style={{ position: 'absolute', bottom: 48, display: 'flex', gap: 8, alignItems: 'center' }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{ width: i === 0 ? 20 : 6, height: 6, borderRadius: 3, background: i === 0 ? PRIMARY : `${PRIMARY}25`, transition: 'width 0.3s' }} />
-        ))}
-      </div>
     </div>
   )
 }
