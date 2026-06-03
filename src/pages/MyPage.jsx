@@ -20,13 +20,17 @@ export default function MyPage() {
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
   const [cardTransactions, setCardTransactions] = useState([])
   const [user, setUser] = useState(null)
-  const [nickname, setNickname] = useState('')
-  const [editingNick, setEditingNick] = useState(false)
-  const [profileImg, setProfileImg] = useState(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [cards, setCards] = useState([])
-  const [accounts, setAccounts] = useState([])
-  const [cash, setCash] = useState('')
+  const [nickname, setNickname] = useState(() => localStorage.getItem('moa_nickname') || '')
+  const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
+  const [cards, setCards] = useState(() => {
+    try { const c = localStorage.getItem('moa_cards'); return c ? JSON.parse(c) : [] } catch { return [] }
+  })
+  const [accounts, setAccounts] = useState(() => {
+    try { const a = localStorage.getItem('moa_accounts'); return a ? JSON.parse(a) : [] } catch { return [] }
+  })
+  const [cash, setCash] = useState(() => {
+    const c = localStorage.getItem('moa_cash'); return c !== null && c !== '' ? Number(c) : ''
+  })
   const [editingCash, setEditingCash] = useState(false)
   const [cashInput, setCashInput] = useState('')
   const [editingAccountId, setEditingAccountId] = useState(null)
@@ -45,19 +49,45 @@ export default function MyPage() {
       else {
         setUser(u)
         setNickname(u.displayName || u.email?.split('@')[0] || '사용자')
-        if (u.photoURL) setProfileImg(u.photoURL)
+        localStorage.setItem('moa_nickname', u.displayName || u.email?.split('@')[0] || '사용자')
+
+        if (u.photoURL) {
+            setProfileImg(u.photoURL)
+            localStorage.setItem('moa_profileImg', u.photoURL)
+        }
+
         const snap = await getDoc(doc(db, 'users', u.uid))
         if (snap.exists()) {
-          const data = snap.data()
-          if (data.theme) setThemeName(data.theme)
-          if (data.cards) setCards(data.cards)
-          if (data.accounts) setAccounts(data.accounts)
-          if (data.cash !== undefined) { setCash(data.cash); setCashInput(String(data.cash)) }
-          if (data.profileImg) setProfileImg(data.profileImg)
+            const data = snap.data()
+            if (data.theme) setThemeName(data.theme)
+            if (data.cards) {
+                setCards(data.cards)
+                localStorage.setItem('moa_cards', JSON.stringify(data.cards))
+            }
+            if (data.accounts) {
+                setAccounts(data.accounts)
+                localStorage.setItem('moa_accounts', JSON.stringify(data.accounts))
+            }
+            if (data.cash !== undefined) {
+                setCash(data.cash)
+                setCashInput(String(data.cash))
+                localStorage.setItem('moa_cash', String(data.cash))
+            }
+            if (data.profileImg) {
+                setProfileImg(data.profileImg)
+                localStorage.setItem('moa_profileImg', data.profileImg)
+            }
         }
       }
     })
     return unsub
+    useEffect(() => {
+        localStorage.setItem('moa_cards', JSON.stringify(cards))
+    }, [cards])
+
+    useEffect(() => {
+        localStorage.setItem('moa_accounts', JSON.stringify(accounts))
+    }, [accounts])
   }, [])
 
   const saveToFirestore = async (updates) => {
@@ -551,7 +581,8 @@ export default function MyPage() {
                             '[ MY - 설정 ] 이용 방법, 업데이트 사항, 피드백 탭 추가',
                             '[ 분석 ] 막대 그래프 수정',
                             '[ 분석 - 공과금 ] 가계부 연동 세부사항 수정 + 삭제 기능 추가',
-                            '[ MY ] 카드 정보 탭 수정',
+                            '[ MY ] 카드 정보 UI 수정',
+                            '[ MY ] 버그 수정',
                         ]
                     },
                     {
