@@ -104,7 +104,6 @@ export default function Analysis() {
         if (snap.exists()) {
           const data = snap.data()
           if (data.budgets) setBudgets(data.budgets)
-          if (data.showUtilities !== undefined) setShowUtilities(data.showUtilities)
           if (data.utilities) {
             setUtilities(data.utilities)
             localStorage.setItem('moa_utilities', JSON.stringify(data.utilities))

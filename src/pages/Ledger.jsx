@@ -35,7 +35,7 @@ const Toggle = ({ on, onChange }) => {
 }
 
 export default function Ledger() {
-  const { themeData, themeName } = useTheme()
+  const { themeData, themeName, showUtilities, setShowUtilities } = useTheme()
   const navigate = useNavigate()
   const now = new Date()
   const [user, setUser] = useState(null)
@@ -61,7 +61,6 @@ export default function Ledger() {
   const [userPayments, setUserPayments] = useState(['현금', '계좌이체'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false })
   const touchStartX = useRef(null)
-  const [showUtilities, setShowUtilities] = useState(false)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardBilling, setShowCardBilling] = useState(false)
   const [userCards, setUserCards] = useState([])
@@ -81,7 +80,6 @@ export default function Ledger() {
           if (data.categories) setCategories({ ...DEFAULT_CATEGORIES, ...data.categories })
           if (data.rolloverBudget !== undefined) setRolloverBudget(data.rolloverBudget)
           
-          if (snap.data().showUtilities !== undefined) setShowUtilities(snap.data().showUtilities)
           if (data.showCardBilling !== undefined) setShowCardBilling(data.showCardBilling)
         }
       }
