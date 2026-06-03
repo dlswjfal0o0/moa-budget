@@ -186,7 +186,7 @@ export default function Home() {
   return (
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }}>
       {/* 헤더 */}
-      <div style={{ background: themeData.primary, padding: '48px 24px 24px', color: '#fff' }}>
+      <div style={{ background: themeData.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 24px', color: '#fff' }}>
         <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 2 }}>{now.getMonth()+1}월 가계부</p>
         <p style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>안녕하세요 👋</p>
         <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: '20px' }}>

@@ -97,7 +97,7 @@ export default function Calendar() {
       style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }}
       className={themeData.bgClass}
     >
-      <div style={{ background: themeData.card, padding: '48px 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>‹</button>

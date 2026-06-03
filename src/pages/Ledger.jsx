@@ -239,7 +239,7 @@ export default function Ledger() {
       className={themeData.bgClass}
     >
       {/* 헤더 */}
-      <div style={{ background: themeData.card, padding: '48px 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#111' }}>가계부</p>
           <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#888' }}>
@@ -394,7 +394,7 @@ export default function Ledger() {
 
       {/* 추가 버튼 */}
       <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드' }); setShowForm(true) }}
-        style={{ position: 'fixed', bottom: 90, right: 'calc(50% - 215px + 16px)', width: 52, height: 52, borderRadius: '50%', background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', boxShadow: `0 4px 12px ${themeData.primary}66` }}>+</button>
+        style={{ position: 'fixed', bottom: 90, right: '16px', width: 52, height: 52, borderRadius: '50%', background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', boxShadow: `0 4px 12px ${themeData.primary}66` }}>+</button>
 
       {/* 설정 모달 */}
       {showSettings && (
@@ -490,7 +490,7 @@ export default function Ledger() {
 
       {/* 전체화면 입력 폼 */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: themeData.card, zIndex: 200, overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: themeData.card, zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', padding: '48px 20px 16px', borderBottom: '1px solid #f0f0f0', background: themeData.card, position: 'sticky', top: 0, zIndex: 10 }}>
             <button onClick={() => { setShowForm(false); setEditItem(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#333' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -500,7 +500,7 @@ export default function Ledger() {
             <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
           </div>
 
-          <div style={{ padding: '20px 20px 60px' }}>
+          <div style={{ padding: '20px 20px 60px', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 12, padding: 4, marginBottom: 24 }}>
               {['expense', 'income'].map(type => (
                 <button key={type} onClick={() => setForm(f => ({ ...f, type, category: type === 'expense' ? categories.expense[0] : categories.income[0] }))}

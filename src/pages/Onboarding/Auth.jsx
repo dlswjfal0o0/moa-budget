@@ -110,7 +110,7 @@ export default function Auth() {
           disabled={loading}
           style={{
             width: '100%', padding: '15px', borderRadius: 14,
-            background: loading ? '#a5b4fc' : '#3182F6', color: '#fff',
+            background: loading ? '#a7cbfdff' : '#3182F6', color: '#fff',
             border: 'none', fontSize: 16, fontWeight: 600,
             cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20
           }}>
