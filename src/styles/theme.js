@@ -58,10 +58,17 @@ export const THEMES = {
 }
 
 export const CATEGORY_COLORS = {
-  식비: '#FF6B6B', 교통: '#4ECDC4', 쇼핑: '#45B7D1',
-  문화: '#96CEB4', 의료: '#FFD93D', 주거: '#C9B1FF',
-  통신: '#98D8C8', 기타: '#B0B0B0',
-  급여: '#4ADE80', 부업: '#34D399', 용돈: '#A78BFA', 투자: '#60A5FA'
+  '식비': '#FF6B6B', '교통': '#4ECDC4', '쇼핑': '#45B7D1',
+  '문화': '#96CEB4', '의료': '#FFD93D', '주거': '#C9B1FF',
+  '통신': '#98D8C8', '기타': '#B0B0B0'
+}
+
+const EXTRA_COLORS = ['#FF8C69','#A8E6CF','#FFD3A5','#DEB8EA','#87CEEB','#F4A460','#98FB98','#F0E68C','#87CEFA','#DDA0DD']
+
+export const getCategoryColor = (name) => {
+  if (CATEGORY_COLORS[name]) return CATEGORY_COLORS[name]
+  const hash = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  return EXTRA_COLORS[hash % EXTRA_COLORS.length]
 }
 
 export const CATEGORY_ICONS = {

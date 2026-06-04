@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { CATEGORY_COLORS } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
@@ -132,7 +132,7 @@ export default function Home() {
     return { color: '#22c55e', msg: `여유 있어요! 하루 ${fmt(daily)}원씩 쓸 수 있어요.` }
   }
 
-  const expenses = transactions.filter(t => t.type === 'expense')
+  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling)
   const incomes = transactions.filter(t => t.type === 'income')
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
@@ -278,7 +278,7 @@ export default function Home() {
                     <PieChart>
                         <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={3}>
                             {categoryData.map((entry, i) => (
-                                <Cell key={i} fill={CATEGORY_COLORS[entry.name] || '#B0B0B0'} />
+                                <Cell key={i} fill={getCategoryColor(entry.name)} />
                             ))}
                         </Pie>
                         <Tooltip formatter={v => [`${fmt(v)}원`]} />
@@ -287,7 +287,7 @@ export default function Home() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {categoryData.map((c, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: CATEGORY_COLORS[c.name] || '#B0B0B0', flexShrink: 0 }} />
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: getCategoryColor(c.name), flexShrink: 0 }} />
                             <span style={{ fontSize: 13, color: themeData.text || '#555', flex: 1 }}>{c.name}</span>
                             <span style={{ fontSize: 12, color: '#888' }}>{Math.round(c.value / totalExpense * 100)}%</span>
                         </div>
@@ -308,16 +308,16 @@ export default function Home() {
           ) : (
             [...transactions].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0,5).map(t => (
               <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: t.type === 'expense' ? '#FFF0F0' : '#F0FFF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: t.type === 'expense' ? '#FFF0F0' : '#F0FFF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
                     {t.type === 'expense' ? '💸' : '💰'}
                   </div>
-                  <div>
-                    <p style={{ fontSize: 14, color: themeData.text || '#111', marginBottom: 2 }}>{t.title}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, color: themeData.text || '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
                     <p style={{ fontSize: 12, color: '#bbb' }}>{t.date} · {t.category}</p>
                   </div>
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 600, color: t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: t.type === 'expense' ? '#ef4444' : '#22c55e', flexShrink: 0, whiteSpace: 'nowrap' }}>
                   {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                 </p>
               </div>

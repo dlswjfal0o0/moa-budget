@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
 
-import { CATEGORY_COLORS } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
 import { inputStyle, pageWrapper, cardStyle } from '../styles/styles'
 
 function UtilityChart({ type, utilities, primary }) {
@@ -180,7 +180,7 @@ export default function Analysis() {
   }
 
   const fmt = n => n.toLocaleString('ko-KR')
-  const expenses = transactions.filter(t => t.type === 'expense')
+  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling)
   const incomes = transactions.filter(t => t.type === 'income')
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
@@ -449,7 +449,7 @@ export default function Analysis() {
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
-                    {categoryData.map((entry, i) => <Cell key={i} fill={CATEGORY_COLORS[entry.name] || '#B0B0B0'} />)}
+                    {categoryData.map((entry, i) => <Cell key={i} fill={getCategoryColor(entry.name)} />)}
                   </Pie>
                   <Tooltip formatter={v => [`${fmt(v)}원`]} />
                 </PieChart>
@@ -457,7 +457,7 @@ export default function Analysis() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                 {categoryData.map((c, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: CATEGORY_COLORS[c.name] || '#B0B0B0' }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getCategoryColor(c.name) }} />
                     <span style={{ fontSize: 12, color: '#666' }}>{c.name} {Math.round(c.value / totalExpense * 100)}%</span>
                   </div>
                 ))}
@@ -574,17 +574,55 @@ export default function Analysis() {
 
         {/* 결제수단별 */}
         <div style={{ background: themeData.card, borderRadius: 16, padding: '16px' }}>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 12 }}>결제수단별 지출</p>
-          {Object.keys(byPayment).length === 0 ? (
-            <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
-          ) : (
-            Object.entries(byPayment).map(([method, amt]) => (
-              <div key={method} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-                <p style={{ fontSize: 14, color: '#333' }}>{method}</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{fmt(amt)}원</p>
-              </div>
-            ))
-          )}
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 12 }}>결제수단별 지출</p>
+            {expenses.length === 0 ? (
+                <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
+            ) : (() => {
+                const userCards = (() => { try { return JSON.parse(localStorage.getItem('moa_cards') || '[]').map(c => c.name) } catch { return [] } })()
+                const userAccounts = (() => { try { return JSON.parse(localStorage.getItem('moa_accounts') || '[]').map(a => a.name) } catch { return [] } })()
+
+                const isCard = p => p !== '현금' && p !== '계좌이체' && !userAccounts.includes(p)
+                const isTransfer = p => p === '계좌이체' || userAccounts.includes(p)
+
+                const cardExps = expenses.filter(t => isCard(t.payment || '카드'))
+                const transferExps = expenses.filter(t => isTransfer(t.payment || ''))
+                const cashExps = expenses.filter(t => (t.payment || '') === '현금')
+
+                const cardTotal = cardExps.reduce((s, t) => s + t.amount, 0)
+                const transferTotal = transferExps.reduce((s, t) => s + t.amount, 0)
+                const cashTotal = cashExps.reduce((s, t) => s + t.amount, 0)
+
+                const byCard = cardExps.reduce((acc, t) => { const k = t.payment || '카드'; acc[k] = (acc[k] || 0) + t.amount; return acc }, {})
+                const byAccount = transferExps.reduce((acc, t) => { const k = t.payment || '이체'; acc[k] = (acc[k] || 0) + t.amount; return acc }, {})
+
+                const Row = ({ label, amount, bold }) => (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f8f8f8' }}>
+                        <p style={{ fontSize: 14, color: bold ? '#111' : '#666', fontWeight: bold ? 600 : 400 }}>{label}</p>
+                        <p style={{ fontSize: 14, fontWeight: bold ? 700 : 500, color: '#111' }}>{fmt(amount)}원</p>
+                    </div>
+                )
+
+                return (
+                    <div>
+                        {cardTotal > 0 && <Row label="💳 카드" amount={cardTotal} bold />}
+                        {transferTotal > 0 && <Row label="🏦 이체" amount={transferTotal} bold />}
+                        {cashTotal > 0 && <Row label="💵 현금" amount={cashTotal} bold />}
+
+                        {Object.keys(byCard).length > 0 && (
+                            <>
+                                <div style={{ height: 1, background: '#f0f0f0', margin: '8px 0' }} />
+                                {Object.entries(byCard).map(([k, v]) => <Row key={k} label={`  · ${k}`} amount={v} />)}
+                            </>
+                        )}
+                        {Object.keys(byAccount).length > 0 && (
+                            <>
+                                <div style={{ height: 1, background: '#f0f0f0', margin: '8px 0' }} />
+                                {Object.entries(byAccount).map(([k, v]) => <Row key={k} label={`  · ${k}`} amount={v} />)}
+                            </>
+                        )}
+                    </div>
+                )
+            })()}
         </div>
       </div>
       )}

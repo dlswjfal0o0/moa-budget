@@ -236,7 +236,7 @@ export default function Ledger() {
 
   const handleEdit = (t) => {
     setEditItem(t)
-    setForm({ type: t.type, title: t.title, amount: String(t.amount), category: t.category, date: t.date, time: t.time || '12:00', memo: t.memo || '', payment: t.payment || '카드' })
+    setForm({ type: t.type, title: t.title, amount: String(t.amount), category: t.category, date: t.date, time: t.time || '12:00', memo: t.memo || '', payment: t.payment || '카드', cardBilling: t.cardBilling || false })
     setShowForm(true); setSelectedId(null)
   }
 
@@ -396,7 +396,7 @@ export default function Ledger() {
                             onTouchEnd={e => handleTouchEnd(e, t.id)}
                             onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
                             style={{ background: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                                opacity: t.cardBilling ? 0.5 : 1,
+                                background: t.cardBilling ? '#f9f9f9' : '#fff',
                                 transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
                                 transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', borderRadius: 12 }}>
                             <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: (CATEGORY_COLORS[t.category] || '#B0B0B0') + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>

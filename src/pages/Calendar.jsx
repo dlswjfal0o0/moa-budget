@@ -77,11 +77,11 @@ export default function Calendar() {
   for (let i = 0; i < firstDay; i++) days.push(null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
 
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  const totalExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling).reduce((s, t) => s + t.amount, 0)
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
   const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  const weekExpense = transactions.filter(t => t.type === 'expense' && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
+  const weekExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
   const weekIncome = transactions.filter(t => t.type === 'income' && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
   const selectedDateStr = selectedDate ? `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}` : null
   const selectedTxs = selectedDateStr ? transactions.filter(t => t.date === selectedDateStr) : []
