@@ -67,7 +67,8 @@ export default function Calendar() {
   const byDate = transactions.reduce((acc, t) => {
     if (!acc[t.date]) acc[t.date] = { expense: 0, income: 0 }
     if (t.type === 'expense' && !t.cardBilling) acc[t.date].expense += t.amount
-    else acc[t.date].income += t.amount
+    else if (t.type === 'income') acc[t.date].income += t.amount
+    // cardBilling은 달력에 표시 안 함
     return acc
   }, {})
 
@@ -153,13 +154,13 @@ export default function Calendar() {
             ) : (
               selectedTxs.map(t => (
                 <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f8f8f8' }}>
-                  <div>
-                    <p style={{ fontSize: 14, color: '#111', marginBottom: 2 }}>{t.title}</p>
-                    <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: t.cardBilling ? '#bbb' : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                    {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
-                  </p>
+                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
+                        <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                        <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.cardBilling ? '#bbb' : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                        {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                    </p>
                 </div>
               ))
             )}

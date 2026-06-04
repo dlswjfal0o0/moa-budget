@@ -745,11 +745,11 @@ export default function MyPage() {
                                         </div>
                                         {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
                                             <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-                                                <div>
-                                                    <p style={{ fontSize: 14, color: '#111', marginBottom: 2 }}>{tx.title}</p>
+                                                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
+                                                    <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.title}</p>
                                                     <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
                                                 </div>
-                                                <p style={{ fontSize: 14, fontWeight: 600, color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                                                <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
                                                     {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
                                                 </p>
                                             </div>
