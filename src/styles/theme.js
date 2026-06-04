@@ -82,3 +82,24 @@ export const DEFAULT_CATEGORIES = {
   expense: ['식비', '교통', '쇼핑', '문화', '의료', '주거', '통신', '기타'],
   income: ['급여', '부업', '용돈', '투자', '기타']
 }
+
+export const getCategoryColors = (categoryNames) => {
+  const map = {}
+  const usedColors = new Set(Object.values(CATEGORY_COLORS))
+  const extraPool = [
+    '#FF8C69','#A8E6CF','#FFD3A5','#DEB8EA','#87CEEB',
+    '#F4A460','#98FB98','#F0E68C','#87CEFA','#DDA0DD',
+    '#FFA07A','#66CDAA','#FFB6C1','#B0E0E6','#FFDAB9'
+  ].filter(c => !usedColors.has(c))
+
+  let ei = 0
+  categoryNames.forEach(name => {
+    if (CATEGORY_COLORS[name]) {
+      map[name] = CATEGORY_COLORS[name]
+    } else if (!map[name]) {
+      map[name] = extraPool[ei % extraPool.length] || '#888'
+      ei++
+    }
+  })
+  return map
+}

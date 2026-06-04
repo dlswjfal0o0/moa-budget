@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColors } from '../styles/theme'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
@@ -152,6 +152,7 @@ export default function Home() {
     .filter(f => f.daysLeft >= 0 && f.daysLeft <= 10)
     .sort((a, b) => a.daysLeft - b.daysLeft)
   const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }))
+  const colorMap = getCategoryColors(categoryData.map(c => c.name))
 
   const inputStyle = {
     width: '100%', padding: '11px 14px', borderRadius: 10,
@@ -278,7 +279,7 @@ export default function Home() {
                     <PieChart>
                         <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={3}>
                             {categoryData.map((entry, i) => (
-                                <Cell key={i} fill={getCategoryColor(entry.name)} />
+                                <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />
                             ))}
                         </Pie>
                         <Tooltip formatter={v => [`${fmt(v)}원`]} />
@@ -287,7 +288,7 @@ export default function Home() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {categoryData.map((c, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: getCategoryColor(c.name), flexShrink: 0 }} />
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colorMap[c.name] || '#B0B0B0', flexShrink: 0 }} />
                             <span style={{ fontSize: 13, color: themeData.text || '#555', flex: 1 }}>{c.name}</span>
                             <span style={{ fontSize: 12, color: '#888' }}>{Math.round(c.value / totalExpense * 100)}%</span>
                         </div>

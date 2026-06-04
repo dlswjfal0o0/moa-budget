@@ -66,7 +66,7 @@ export default function Calendar() {
   const fmt = n => n.toLocaleString('ko-KR')
   const byDate = transactions.reduce((acc, t) => {
     if (!acc[t.date]) acc[t.date] = { expense: 0, income: 0 }
-    if (t.type === 'expense') acc[t.date].expense += t.amount
+    if (t.type === 'expense' && !t.cardBilling) acc[t.date].expense += t.amount
     else acc[t.date].income += t.amount
     return acc
   }, {})
@@ -157,7 +157,7 @@ export default function Calendar() {
                     <p style={{ fontSize: 14, color: '#111', marginBottom: 2 }}>{t.title}</p>
                     <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
                   </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: t.cardBilling ? '#bbb' : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
                     {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                   </p>
                 </div>

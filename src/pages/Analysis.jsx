@@ -7,7 +7,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
 
-import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColors } from '../styles/theme'
 import { inputStyle, pageWrapper, cardStyle } from '../styles/styles'
 
 function UtilityChart({ type, utilities, primary }) {
@@ -202,6 +202,7 @@ export default function Analysis() {
 
   const byCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
   const categoryData = Object.entries(byCategory).map(([name, value]) => ({ name, value }))
+  const colorMap = getCategoryColors(categoryData.map(c => c.name))
   const byPayment = expenses.reduce((acc, t) => { const k = t.payment || '기타'; acc[k] = (acc[k] || 0) + t.amount; return acc }, {})
 
   const getAiFeedback = async () => {
@@ -449,7 +450,7 @@ export default function Analysis() {
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
-                    {categoryData.map((entry, i) => <Cell key={i} fill={getCategoryColor(entry.name)} />)}
+                    {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
                   </Pie>
                   <Tooltip formatter={v => [`${fmt(v)}원`]} />
                 </PieChart>
@@ -457,7 +458,7 @@ export default function Analysis() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                 {categoryData.map((c, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getCategoryColor(c.name) }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: colorMap[c.name] || '#B0B0B0' }} />
                     <span style={{ fontSize: 12, color: '#666' }}>{c.name} {Math.round(c.value / totalExpense * 100)}%</span>
                   </div>
                 ))}
