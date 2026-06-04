@@ -238,6 +238,13 @@ export default function Analysis() {
         })
         const data = await res.json()
         const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
+
+        if (!text) {
+            setAiFeedbackRaw('응답이 비어있어요. 잠시 후 다시 시도해주세요.')
+            setLoadingAi(false)
+            return
+        }
+
         try {
             setAiFeedbackData(JSON.parse(text))
         } catch {
