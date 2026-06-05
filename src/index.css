@@ -6,6 +6,8 @@
 * {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;           
+  -webkit-user-select: none;
   scrollbar-width: none;
   margin: 0;
   padding: 0;
