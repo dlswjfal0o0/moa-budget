@@ -254,6 +254,22 @@ export default function MyPage() {
   }
 
   const fmt = n => Number(n).toLocaleString('ko-KR')
+  const getAccountBalance = (account) => {
+    try {
+        const allTxns = []
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key?.startsWith('moa_txns_')) {
+                const txns = JSON.parse(localStorage.getItem(key) || '[]')
+                allTxns.push(...txns)
+            }
+        }
+        const net = allTxns
+            .filter(t => t.payment === account.name)
+            .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
+        return account.balance + net
+    } catch { return account.balance }
+  }
   const totalAsset = accounts.reduce((s, a) => s + a.balance, 0) + Number(cash || 0)
 
   const smallBtn = (onClick, label, bg, color) => (
@@ -362,7 +378,7 @@ export default function MyPage() {
                     <div style={{ display: 'flex', gap: 8 }}>
                         <input style={{ ...inputStyle, flex: 1 }} placeholder="유효기간 (MM/YY)" value={newCard.expiry} onChange={e => setNewCard(c => ({ ...c, expiry: e.target.value }))} />
                         <select style={{ ...inputStyle, flex: 1 }} value={newCard.linkedAccount} onChange={e => setNewCard(c => ({ ...c, linkedAccount: e.target.value }))}>
-                            <option value="">연동 계좌 선택</option>
+                            <option value="">연동 계좌 없음</option>
                             {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
                         </select>
                     </div>
@@ -409,7 +425,12 @@ export default function MyPage() {
                     {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{acc.number}</p>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(acc.balance)}원</p>
+                    <div>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
+                        {getAccountBalance(acc) !== acc.balance && (
+                            <p style={{ fontSize: 11, color: '#aaa' }}>기준잔액 {fmt(acc.balance)}원</p>
+                        )}
+                    </div>
                     <button onClick={() => handleEditAccount(acc)} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
                     <button onClick={() => handleDeleteAccount(acc.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
                   </div>

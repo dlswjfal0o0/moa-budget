@@ -78,6 +78,17 @@ function CustomBarTooltip({ active, payload, label }) {
   )
 }
 
+function CustomPieTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{payload[0].name}</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{payload[0].value.toLocaleString()}원</p>
+    </div>
+  )
+}
+
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const navigate = useNavigate()
@@ -459,7 +470,7 @@ export default function Analysis() {
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
                     {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
                   </Pie>
-                  <Tooltip formatter={v => [`${fmt(v)}원`]} />
+                  <Tooltip content={<CustomPieTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>

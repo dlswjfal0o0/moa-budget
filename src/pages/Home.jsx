@@ -8,6 +8,17 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 
+function CustomPieTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{payload[0].name}</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{payload[0].value.toLocaleString()}원</p>
+    </div>
+  )
+}
+
 function BudgetCard({ budget, spent, themeData, fmt }) {
   const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0
   const remaining = Math.max(budget.amount - spent, 0)
@@ -282,7 +293,7 @@ export default function Home() {
                                 <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />
                             ))}
                         </Pie>
-                        <Tooltip formatter={v => [`${fmt(v)}원`]} />
+                        <Tooltip content={<CustomPieTooltip />} />
                     </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
