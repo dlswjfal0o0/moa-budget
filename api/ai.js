@@ -1,48 +1,40 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const key = process.env.GEMINI_API_KEY
+  const key = process.env.GROQ_API_KEY
   if (!key) {
-    return res.status(200).json({ content: [{ text: 'GEMINI_API_KEY가 없어요.' }] })
+    return res.status(200).json({ content: [{ text: 'GROQ_API_KEY가 없어요.' }] })
   }
 
   const { messages, system } = req.body || {}
-  const prompt = [system, messages?.[0]?.content].filter(Boolean).join('\n\n')
 
-  // 여러 모델 순서대로 시도
-  const models = [
-    'gemini-pro',    
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash-8b',
-    'gemini-1.5-pro-latest'
-  ]
-
-  for (const modelName of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
-        })
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [
+          ...(system ? [{ role: 'system', content: system }] : []),
+          { role: 'user', content: messages?.[0]?.content || '' }
+        ],
+        max_tokens: 1024,
+        temperature: 0.7
       })
+    })
 
-      const data = await response.json()
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const data = await response.json()
+    const text = data.choices?.[0]?.message?.content || ''
 
-      if (text) {
-        console.log(`Success with model: ${modelName}`)
-        return res.status(200).json({ content: [{ text }] })
-      }
-
-      // 실패 이유 로그
-      console.log(`Model ${modelName} failed:`, JSON.stringify(data).slice(0, 200))
-    } catch (err) {
-      console.log(`Model ${modelName} error:`, err.message)
+    if (!text) {
+      return res.status(200).json({ content: [{ text: `Groq 오류: ${JSON.stringify(data).slice(0, 100)}` }] })
     }
-  }
 
-  res.status(200).json({ content: [{ text: '모든 모델 시도 실패. Vercel 로그를 확인해주세요.' }] })
+    res.status(200).json({ content: [{ text }] })
+  } catch (err) {
+    res.status(200).json({ content: [{ text: `연결 오류: ${err.message}` }] })
+  }
 }
