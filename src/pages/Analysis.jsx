@@ -239,11 +239,16 @@ export default function Analysis() {
                     role: 'user',
                     content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:
 
-  이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입
-  지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출
+                    이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입
+                    지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출
 
-  응답 형식:
-  {"rating":"good","score":75,"summary":"전체 소비 패턴 2줄 요약","cuts":[{"category":"카테고리명","tip":"구체적 절감 팁","save":절감가능금액숫자}],"unusual":["이상지출 설명 없으면 빈배열"],"saving_goal":목표절감금액숫자,"message":"이모지 포함 응원 메시지"}`
+                    규칙:
+                    - save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지)
+                    - save는 해당 카테고리에서 절약 가능한 예상 금액 (0 이상)
+                    - 모든 숫자 필드는 정수만 허용
+
+                    응답 형식 (이 형식 그대로만):
+                    {"rating":"good","score":75,"summary":"2줄 요약","cuts":[{"category":"카테고리명","tip":"절감 팁","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지"}`
                 }]
             })
         })
