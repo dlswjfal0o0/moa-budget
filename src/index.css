@@ -4,9 +4,7 @@
 }
 
 * {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;           
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;           
   -webkit-user-select: none;
   scrollbar-width: none;
   margin: 0;
