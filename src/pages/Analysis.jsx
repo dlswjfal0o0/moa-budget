@@ -309,7 +309,12 @@ export default function Analysis() {
             body: JSON.stringify({
                 model: 'claude-sonnet-4-20250514', max_tokens: 600,
                 system: '한국어로 응답하는 공과금 분석 AI. 순수 JSON만 출력. 마크다운 금지.',
-                messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 비교 데이터 기준으로 친근하게 분석해줘. 전년도 데이터가 없으면 전월 데이터와 비교하고, 전월도 없으면 현재 수준이 적절한지 분석해줘.\n{"items":[{"type":"전기세","emoji":"⚡","comment":"코멘트"}],"overall":"전체 총평 한 줄"}` }]
+                messages: [{ role: 'user', 
+                    content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해줘. 전년도 없으면 전월 비교, 전월도 없으면 현재 수준 분석.
+
+                    규칙: save는 순수 정수만, 수식 금지
+
+                    {"items":[{"type":"관리비","emoji":"🏢","status":"up","comment":"이모지 포함 친근한 한 줄 코멘트"}],"overall":"이모지 포함 전체 총평","tip":"이모지 포함 절약 팁 한 줄"}` }]
             })
         })
         const data = await res.json()
@@ -717,22 +722,39 @@ export default function Analysis() {
             {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
             {loadingUtilityAI && <p style={{ fontSize: 14, color: '#888', textAlign: 'center', padding: '20px 0' }}>공과금 패턴을 분석하고 있어요...</p>}
             {utilityAI && (
-                <>
-                    {utilityAI.items?.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
-                            <span style={{ fontSize: 18 }}>{item.emoji}</span>
-                            <div>
-                                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{item.type}</p>
-                                <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{item.comment}</p>
+                <div style={{ marginTop: 16 }}>
+                    {/* 항목별 카드 */}
+                    {utilityAI.items?.map((item, i) => {
+                        const statusColor = item.status === 'up' ? '#ef4444' : item.status === 'down' ? '#22c55e' : '#888'
+                        const statusIcon = item.status === 'up' ? '↑' : item.status === 'down' ? '↓' : item.status === 'new' ? '🆕' : '→'
+                        return (
+                            <div key={i} style={{ background: '#f8f8f8', borderRadius: 12, padding: '12px 14px', marginBottom: 10,
+                                borderLeft: `3px solid ${statusColor}` }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{item.emoji} {item.type}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: statusColor }}>{statusIcon}</span>
+                                </div>
+                                <p style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>{item.comment}</p>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
+
+                    {/* 전체 총평 */}
                     {utilityAI.overall && (
-                        <div style={{ marginTop: 10, background: themeData?.primaryLight || '#EEF2FF', borderRadius: 10, padding: '10px 12px' }}>
-                            <p style={{ fontSize: 13, color: themeData?.primary || '#4F46E5', fontWeight: 500 }}>{utilityAI.overall}</p>
+                        <div style={{ background: themeData?.primaryLight || '#EEF2FF', borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: themeData?.primary || '#4F46E5', lineHeight: 1.6 }}>
+                                {utilityAI.overall}
+                            </p>
                         </div>
                     )}
-                </>
+
+                    {/* 절약 팁 */}
+                    {utilityAI.tip && (
+                        <div style={{ background: '#F0FFF4', borderRadius: 12, padding: '12px 14px' }}>
+                            <p style={{ fontSize: 13, color: '#16a34a', lineHeight: 1.6 }}>💡 {utilityAI.tip}</p>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
 
