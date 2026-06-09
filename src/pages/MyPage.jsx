@@ -152,6 +152,18 @@ export default function MyPage() {
     setCards(updated); saveToFirestore({ cards: updated })
   }
 
+    const handleAddAccount = () => {
+    if (!newAccount.name || !newAccount.balance) return
+    const updated = [...accounts, { id: Date.now(), name: newAccount.name, balance: Number(newAccount.balance), number: newAccount.number || '' }]
+    setAccounts(updated); saveToFirestore({ accounts: updated })
+    setNewAccount({ name: '', balance: '', number: '' }); setShowAddAccount(false)
+  }
+
+  const handleDeleteAccount = (id) => {
+    const updated = accounts.filter(a => a.id !== id)
+    setAccounts(updated); saveToFirestore({ accounts: updated })
+  }
+  
   const handleEditAccount = (acc) => {
     setEditingAccountId(acc.id)
     setEditAccountData({ name: acc.name, balance: String(getAccountBalance(acc)), number: acc.number || '' })
@@ -162,7 +174,6 @@ export default function MyPage() {
     let net = 0
     try {
       net = allTxns.reduce((s, t) => {
-        if (t.cardBilling || t.isLoan) return s
         if (t.type === 'expense' && t.payment === origAcc.name) return s - (t.amount || 0)
         if (t.type === 'income' && t.payment === origAcc.name) return s + (t.amount || 0)
         if (t.type === 'transfer') {
