@@ -59,10 +59,11 @@ export default function Ledger() {
   const [catTab, setCatTab] = useState('expense')
   const [newCatName, setNewCatName] = useState('')
   const [userPayments, setUserPayments] = useState(['현금', '계좌이체'])
-  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '' })
+  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false })
   const touchStartX = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardBilling, setShowCardBilling] = useState(false)
+  const [showLoan, setShowLoan] = useState(() => localStorage.getItem('moa_showLoan') === 'true')
   const [userCards, setUserCards] = useState([])
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
@@ -82,6 +83,10 @@ export default function Ledger() {
           if (data.rolloverBudget !== undefined) setRolloverBudget(data.rolloverBudget)
           
           if (data.showCardBilling !== undefined) setShowCardBilling(data.showCardBilling)
+          if (data.showLoan !== undefined) {
+            setShowLoan(data.showLoan)
+            localStorage.setItem('moa_showLoan', String(data.showLoan))
+          }
         }
       }
     })
@@ -225,7 +230,7 @@ export default function Ledger() {
   }
     setShowForm(false)
     setEditItem(null)
-    setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '' })
+    setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false })
     fetchTransactions()
   }
 
@@ -241,7 +246,7 @@ export default function Ledger() {
     setForm({ type: t.type, title: t.title, amount: String(t.amount),
         category: t.category || (t.type === 'transfer' ? '이체' : '기타'),
         date: t.date, time: t.time || '12:00', memo: t.memo || '',
-        payment: t.payment || '카드', cardBilling: t.cardBilling || false,
+        payment: t.payment || '카드', cardBilling: t.cardBilling || false, isLoan: t.isLoan || false,
         toAccount: t.toAccount || '' })
     setShowForm(true); setSelectedId(null)
   }
@@ -254,8 +259,8 @@ export default function Ledger() {
   }
 
   const filtered = getFiltered()
-  const totalExpense = filtered.filter(t => t.type === 'expense' && !t.cardBilling).reduce((s, t) => s + t.amount, 0)
-  const totalIncome = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const totalExpense = filtered.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
+  const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
   const periodBtn = (p) => ({
@@ -369,14 +374,14 @@ export default function Ledger() {
                         </span>
                         <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                         <span style={{ fontSize: 11, whiteSpace: 'nowrap', display: 'flex', gap: 6 }}>
-                            {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling) && (
+                            {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan)) && (
                                 <span style={{ color: '#ef4444' }}>
-                                    -{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling).reduce((s, t) => s + t.amount, 0).toLocaleString()}원
+                                    -{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원
                                 </span>
                             )}
-                            {dateGroups[date].some(t => t.type === 'income') && (
+                            {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
                                 <span style={{ color: '#22c55e' }}>
-                                    +{dateGroups[date].filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0).toLocaleString()}원
+                                    +{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원
                                 </span>
                             )}
                             {showCardBilling && dateGroups[date].some(t => t.cardBilling) && (
@@ -402,7 +407,7 @@ export default function Ledger() {
                             onTouchEnd={e => handleTouchEnd(e, t.id)}
                             onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
                             style={{ background: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                                background: t.cardBilling ? '#f9f9f9' : '#fff',
+                                background: showLoan && t.isLoan ? (t.type === 'expense' ? '#fff5f5' : '#f0fdf4') : t.cardBilling ? '#f9f9f9' : '#fff',
                                 transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
                                 transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', borderRadius: 12 }}>
                             <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0,
@@ -419,7 +424,7 @@ export default function Ledger() {
                                 </p>
                             </div>
                             <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0,
-                                color: t.type === 'transfer' ? '#888' : t.cardBilling ? '#bbb' : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                                color: t.type === 'transfer' ? '#888' : t.cardBilling ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
                                 {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                             </p>
                         </div>
@@ -524,6 +529,22 @@ export default function Ledger() {
                 <Toggle on={showCardBilling} onChange={async (val) => {
                     setShowCardBilling(val)
                     if (user) await setDoc(doc(db, 'users', user.uid), { showCardBilling: val }, { merge: true })
+                }} />
+            </div>
+
+            {/* 구분선 */}
+            <div style={{ height: 1, background: '#f0f0f0', margin: '20px 0 16px' }} />
+
+            {/* 대출/상환 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>대출 / 상환 표시</p>
+                    <p style={{ fontSize: 12, color: '#888', marginTop: 3 }}>지출·수입 합계에서 제외, 연한 색으로 표시</p>
+                </div>
+                <Toggle on={showLoan} onChange={async (val) => {
+                    setShowLoan(val)
+                    localStorage.setItem('moa_showLoan', String(val))
+                    if (user) await setDoc(doc(db, 'users', user.uid), { showLoan: val }, { merge: true })
                 }} />
             </div>
 
@@ -724,13 +745,13 @@ export default function Ledger() {
             )}
 
                 {/* 카드 대금 체크 */}
-                {form.type === 'expense' && showCardBilling && (
+                {form.type !== 'transfer' && showLoan && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', marginBottom: 8 }}>
-                        <input type="checkbox" id="cardBilling" checked={form.cardBilling || false}
-                            onChange={e => setForm(f => ({ ...f, cardBilling: e.target.checked }))}
+                        <input type="checkbox" id="isLoan" checked={form.isLoan || false}
+                            onChange={e => setForm(f => ({ ...f, isLoan: e.target.checked }))}
                             style={{ width: 18, height: 18, cursor: 'pointer', accentColor: themeData.primary }} />
-                        <label htmlFor="cardBilling" style={{ fontSize: 14, color: '#555', cursor: 'pointer' }}>
-                            카드 대금 납부 <span style={{ fontSize: 12, color: '#bbb' }}>(지출 합계에서 제외)</span>
+                        <label htmlFor="isLoan" style={{ fontSize: 14, color: '#555', cursor: 'pointer' }}>
+                            대출 / 상환 <span style={{ fontSize: 12, color: '#bbb' }}>(합계에서 제외)</span>
                         </label>
                     </div>
                 )}

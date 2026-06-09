@@ -64,10 +64,11 @@ export default function Calendar() {
   }
 
   const fmt = n => n.toLocaleString('ko-KR')
+  const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const byDate = transactions.reduce((acc, t) => {
     if (!acc[t.date]) acc[t.date] = { expense: 0, income: 0 }
-    if (t.type === 'expense' && !t.cardBilling) acc[t.date].expense += t.amount
-    else if (t.type === 'income') acc[t.date].income += t.amount
+    if (t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan)) acc[t.date].expense += t.amount
+    else if (t.type === 'income' && (!showLoan || !t.isLoan)) acc[t.date].income += t.amount
     // cardBilling은 달력에 표시 안 함
     return acc
   }, {})
@@ -78,12 +79,12 @@ export default function Calendar() {
   for (let i = 0; i < firstDay; i++) days.push(null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
 
-  const totalExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling).reduce((s, t) => s + t.amount, 0)
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const totalExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
+  const totalIncome = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
   const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  const weekExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
-  const weekIncome = transactions.filter(t => t.type === 'income' && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
+  const weekExpense = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan) && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
+  const weekIncome = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan) && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
   const selectedDateStr = selectedDate ? `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}` : null
   const selectedTxs = selectedDateStr ? transactions.filter(t => t.date === selectedDateStr) : []
   const fixedDueDays = fixedExpenses
@@ -158,7 +159,7 @@ export default function Calendar() {
                         <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
                         <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
                     </div>
-                    <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.cardBilling ? '#bbb' : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.cardBilling ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
                         {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                     </p>
                 </div>

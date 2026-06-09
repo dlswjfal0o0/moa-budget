@@ -143,8 +143,9 @@ export default function Home() {
     return { color: '#22c55e', msg: `여유 있어요! 하루 ${fmt(daily)}원씩 쓸 수 있어요.` }
   }
 
-  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling)
-  const incomes = transactions.filter(t => t.type === 'income')
+  const showLoan = localStorage.getItem('moa_showLoan') === 'true'
+  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan))
+  const incomes = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
   const expenseByCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})

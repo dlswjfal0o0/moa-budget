@@ -162,13 +162,29 @@ export default function MyPage() {
 
   const handleEditAccount = (acc) => {
     setEditingAccountId(acc.id)
-    setEditAccountData({ name: acc.name, balance: String(acc.balance), number: acc.number || '' })
+    setEditAccountData({ name: acc.name, balance: String(getAccountBalance(acc)), number: acc.number || '' })
   }
 
   const handleSaveAccount = () => {
+    const origAcc = accounts.find(a => a.id === editingAccountId)
+    let net = 0
+    try {
+        const allTxns = []
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key?.startsWith('moa_txns_')) {
+                const txns = JSON.parse(localStorage.getItem(key) || '[]')
+                allTxns.push(...txns)
+            }
+        }
+        net = allTxns
+            .filter(t => t.payment === origAcc.name)
+            .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
+    } catch { net = 0 }
+    const newBaseBalance = Number(editAccountData.balance) - net
     const updated = accounts.map(a => a.id === editingAccountId
-      ? { ...a, name: editAccountData.name, balance: Number(editAccountData.balance), number: editAccountData.number }
-      : a)
+        ? { ...a, name: editAccountData.name, balance: newBaseBalance, number: editAccountData.number }
+        : a)
     setAccounts(updated); saveToFirestore({ accounts: updated }); setEditingAccountId(null)
   }
 
@@ -270,6 +286,23 @@ export default function MyPage() {
         return account.balance + net
     } catch { return account.balance }
   }
+  const getCardUsed = (card) => {
+    try {
+        const now = new Date()
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+        const allTxns = []
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key?.startsWith('moa_txns_')) {
+                const txns = JSON.parse(localStorage.getItem(key) || '[]')
+                allTxns.push(...txns)
+            }
+        }
+        return allTxns
+            .filter(t => t.payment === card.name && t.type === 'expense' && (t.month || t.date?.slice(0, 7)) === currentMonth)
+            .reduce((s, t) => s + (t.amount || 0), 0)
+    } catch { return card.used || 0 }
+  }
   const totalAsset = accounts.reduce((s, a) => s + a.balance, 0) + Number(cash || 0)
 
   const smallBtn = (onClick, label, bg, color) => (
@@ -337,8 +370,9 @@ export default function MyPage() {
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
           {cards.map(card => {
-            const pct = Math.min((card.used / card.limit) * 100, 100)
-            const achieved = card.used >= card.limit
+            const cardUsed = getCardUsed(card)
+            const pct = Math.min((cardUsed / card.limit) * 100, 100)
+            const achieved = cardUsed >= card.limit
             return (
               <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14,
                 padding: '12px 14px', border: `1.5px solid ${t.primary}18`, cursor: 'pointer' }}
@@ -358,7 +392,7 @@ export default function MyPage() {
                         style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, color: '#888' }}>{fmt(card.used)}원 사용</span>
+                    <span style={{ fontSize: 12, color: '#888' }}>{fmt(cardUsed)}원 사용 <span style={{ color: '#ccc' }}>(이번 달)</span></span>
                     <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit)}원</span>
                 </div>
                 <div style={{ background: '#f0f0f0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
@@ -383,7 +417,6 @@ export default function MyPage() {
                         </select>
                     </div>
                     <input style={inputStyle} type="number" placeholder="실적 목표 금액" value={newCard.limit} onChange={e => setNewCard(c => ({ ...c, limit: e.target.value }))} />
-                    <input style={inputStyle} type="number" placeholder="현재 사용 금액" value={newCard.used} onChange={e => setNewCard(c => ({ ...c, used: e.target.value }))} />
 
                     <input style={inputStyle} type="number" min="1" max="31"
                         placeholder="결제일 (예: 매월 15일 → 15)"
@@ -410,7 +443,7 @@ export default function MyPage() {
                 <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '12px', marginBottom: 10 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <input style={inputStyle} placeholder="은행/계좌 이름" value={editAccountData.name} onChange={e => setEditAccountData(d => ({ ...d, name: e.target.value }))} />
-                    <input style={inputStyle} type="number" placeholder="잔액" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
+                    <input style={inputStyle} type="number" placeholder="현재 잔액" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
                     <input style={inputStyle} placeholder="계좌번호 (선택)" value={editAccountData.number} onChange={e => setEditAccountData(d => ({ ...d, number: e.target.value }))} />
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
@@ -427,9 +460,6 @@ export default function MyPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div>
                         <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
-                        {getAccountBalance(acc) !== acc.balance && (
-                            <p style={{ fontSize: 11, color: '#aaa' }}>기준잔액 {fmt(acc.balance)}원</p>
-                        )}
                     </div>
                     <button onClick={() => handleEditAccount(acc)} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
                     <button onClick={() => handleDeleteAccount(acc.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
