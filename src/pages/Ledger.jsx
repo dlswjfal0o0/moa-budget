@@ -395,6 +395,7 @@ export default function Ledger() {
                     {/* 해당 날짜 거래 목록 */}
                     {dateGroups[date].map(t => (
                         <div key={t.id} style={{ position: 'relative', marginBottom: 8, borderRadius: 12, overflow: 'hidden' }}>
+                            {swipedId === t.id && (
                             <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                                 onClick={() => handleDelete(t.id)}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -402,6 +403,7 @@ export default function Ledger() {
                                     <path d="M10 11v6"/><path d="M14 11v6"/>
                                 </svg>
                             </div>
+                            )}
                         <div
                             onTouchStart={handleTouchStart}
                             onTouchEnd={e => handleTouchEnd(e, t.id)}
@@ -745,6 +747,18 @@ export default function Ledger() {
             )}
 
                 {/* 카드 대금 체크 */}
+                {form.type === 'expense' && showCardBilling && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', marginBottom: 8 }}>
+                        <input type="checkbox" id="cardBilling" checked={form.cardBilling || false}
+                            onChange={e => setForm(f => ({ ...f, cardBilling: e.target.checked }))}
+                            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: themeData.primary }} />
+                        <label htmlFor="cardBilling" style={{ fontSize: 14, color: '#555', cursor: 'pointer' }}>
+                            카드 대금 납부 <span style={{ fontSize: 12, color: '#bbb' }}>(지출 합계에서 제외)</span>
+                        </label>
+                    </div>
+                )}
+
+                {/* 대출/상환 체크 */}
                 {form.type !== 'transfer' && showLoan && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', marginBottom: 8 }}>
                         <input type="checkbox" id="isLoan" checked={form.isLoan || false}
