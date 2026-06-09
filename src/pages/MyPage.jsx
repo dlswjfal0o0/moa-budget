@@ -44,6 +44,7 @@ export default function MyPage() {
   const [exporting, setExporting] = useState(false)
   const [showUpdates, setShowUpdates] = useState(false)
   const [expandedVersion, setExpandedVersion] = useState(null)
+  const [allTxns, setAllTxns] = useState([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -79,6 +80,9 @@ export default function MyPage() {
                 setProfileImg(data.profileImg)
                 localStorage.setItem('moa_profileImg', data.profileImg)
             }
+            // 전체 거래내역 fetch (계좌 잔액 자동 연동)
+            const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', u.uid)))
+            setAllTxns(txSnap.docs.map(d => d.data()))
         }
       }
     })
@@ -148,18 +152,6 @@ export default function MyPage() {
     setCards(updated); saveToFirestore({ cards: updated })
   }
 
-  const handleAddAccount = () => {
-    if (!newAccount.name || !newAccount.balance) return
-    const updated = [...accounts, { id: Date.now(), name: newAccount.name, balance: Number(newAccount.balance), number: newAccount.number || '' }]
-    setAccounts(updated); saveToFirestore({ accounts: updated })
-    setNewAccount({ name: '', balance: '', number: '' }); setShowAddAccount(false)
-  }
-
-  const handleDeleteAccount = (id) => {
-    const updated = accounts.filter(a => a.id !== id)
-    setAccounts(updated); saveToFirestore({ accounts: updated })
-  }
-
   const handleEditAccount = (acc) => {
     setEditingAccountId(acc.id)
     setEditAccountData({ name: acc.name, balance: String(getAccountBalance(acc)), number: acc.number || '' })
@@ -169,17 +161,16 @@ export default function MyPage() {
     const origAcc = accounts.find(a => a.id === editingAccountId)
     let net = 0
     try {
-        const allTxns = []
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key?.startsWith('moa_txns_')) {
-                const txns = JSON.parse(localStorage.getItem(key) || '[]')
-                allTxns.push(...txns)
-            }
+      net = allTxns.reduce((s, t) => {
+        if (t.cardBilling || t.isLoan) return s
+        if (t.type === 'expense' && t.payment === origAcc.name) return s - (t.amount || 0)
+        if (t.type === 'income' && t.payment === origAcc.name) return s + (t.amount || 0)
+        if (t.type === 'transfer') {
+          if (t.payment === origAcc.name) return s - (t.amount || 0)
+          if (t.toAccount === origAcc.name) return s + (t.amount || 0)
         }
-        net = allTxns
-            .filter(t => t.payment === origAcc.name)
-            .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
+        return s
+      }, 0)
     } catch { net = 0 }
     const newBaseBalance = Number(editAccountData.balance) - net
     const updated = accounts.map(a => a.id === editingAccountId
@@ -272,18 +263,17 @@ export default function MyPage() {
   const fmt = n => Number(n).toLocaleString('ko-KR')
   const getAccountBalance = (account) => {
     try {
-        const allTxns = []
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key?.startsWith('moa_txns_')) {
-                const txns = JSON.parse(localStorage.getItem(key) || '[]')
-                allTxns.push(...txns)
-            }
+      const net = allTxns.reduce((s, t) => {
+        if (t.cardBilling || t.isLoan) return s
+        if (t.type === 'expense' && t.payment === account.name) return s - (t.amount || 0)
+        if (t.type === 'income' && t.payment === account.name) return s + (t.amount || 0)
+        if (t.type === 'transfer') {
+          if (t.payment === account.name) return s - (t.amount || 0)
+          if (t.toAccount === account.name) return s + (t.amount || 0)
         }
-        const net = allTxns
-            .filter(t => t.payment === account.name)
-            .reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
-        return account.balance + net
+        return s
+      }, 0)
+      return account.balance + net
     } catch { return account.balance }
   }
   const getCardUsed = (card) => {
@@ -303,7 +293,7 @@ export default function MyPage() {
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }
-  const totalAsset = accounts.reduce((s, a) => s + a.balance, 0) + Number(cash || 0)
+  const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + Number(cash || 0)
 
   const smallBtn = (onClick, label, bg, color) => (
     <button onClick={onClick} style={{ background: bg, border: 'none', borderRadius: 8, padding: '5px 12px', color, fontSize: 12, cursor: 'pointer' }}>{label}</button>
