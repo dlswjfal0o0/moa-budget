@@ -264,7 +264,6 @@ export default function MyPage() {
   const getAccountBalance = (account) => {
     try {
       const net = allTxns.reduce((s, t) => {
-        if (t.cardBilling || t.isLoan) return s
         if (t.type === 'expense' && t.payment === account.name) return s - (t.amount || 0)
         if (t.type === 'income' && t.payment === account.name) return s + (t.amount || 0)
         if (t.type === 'transfer') {
