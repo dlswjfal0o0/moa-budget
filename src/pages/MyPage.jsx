@@ -180,6 +180,11 @@ export default function MyPage() {
           if (t.payment === origAcc.name) return s - (t.amount || 0)
           if (t.toAccount === origAcc.name) return s + (t.amount || 0)
         }
+        // 카드 대금: 결제수단이 카드 이름인 경우 → 연동 계좌에서 차감
+        if (t.cardBilling && t.payment !== origAcc.name) {
+          const linkedCard = cards.find(c => c.name === t.payment && c.linkedAccount === origAcc.name)
+          if (linkedCard) return s - (t.amount || 0)
+        }
         return s
       }, 0)
     } catch { net = 0 }
@@ -280,6 +285,11 @@ export default function MyPage() {
         if (t.type === 'transfer') {
           if (t.payment === account.name) return s - (t.amount || 0)
           if (t.toAccount === account.name) return s + (t.amount || 0)
+        }
+        // 카드 대금: 결제수단이 카드 이름인 경우 → 연동 계좌에서 차감
+        if (t.cardBilling && t.payment !== account.name) {
+          const linkedCard = cards.find(c => c.name === t.payment && c.linkedAccount === account.name)
+          if (linkedCard) return s - (t.amount || 0)
         }
         return s
       }, 0)
