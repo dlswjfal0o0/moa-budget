@@ -218,27 +218,29 @@ export default function Calendar() {
                     return da - db
                 })
                 .map(f => {
-                    const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
-                    return (
-                        <div key={f.id} style={{ background: isDone ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                                <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
-                                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
-                                <button onClick={() => handleDeleteFixed(f.id)}
-                                    style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
-                            </div>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: f.done ? '#bbb' : '#111', textDecoration: f.done ? 'line-through' : 'none', marginBottom: 4 }}>
-                                {f.title}
-                            </p>
-                            {dayNum && (
-                                <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>매월 {dayNum}일</p>
-                            )}
-                            <p style={{ fontSize: 15, fontWeight: 700, color: f.done ? '#bbb' : '#ef4444' }}>
-                                -{fmt(f.amount)}원
-                            </p>
-                        </div>
-                    )
-                })}
+                  const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
+                  const isDone = (f.doneMonths || []).includes(currentMonthKey)   // ← 이 줄 추가
+                  return (
+                    <div key={f.id} style={{ background: isDone ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
+                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
+                        <button onClick={() => handleDeleteFixed(f.id)}
+                          style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
+                      </div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', marginBottom: 4 }}>
+                        {f.title}
+                      </p>
+                      {dayNum && (
+                        <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>매월 {dayNum}일</p>
+                      )}
+                      <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444' }}>
+                        -{fmt(f.amount)}원
+                      </p>
+                    </div>
+                  )
+                })
+            }
         </div>
 
           {showAddFixed && (
