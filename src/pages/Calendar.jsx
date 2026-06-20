@@ -47,14 +47,20 @@ export default function Calendar() {
 
   const handleAddFixed = () => {
     if (!newFixed.title || !newFixed.amount) return
-    const updated = [...fixedExpenses, { id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate, done: false }]
+    const updated = [...fixedExpenses, { id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate, doneMonths: [] }]
     saveFixed(updated)
     setNewFixed({ title: '', amount: '', dueDate: '' })
     setShowAddFixed(false)
   }
 
   const handleToggleFixed = (id) => {
-    const updated = fixedExpenses.map(f => f.id === id ? { ...f, done: !f.done } : f)
+    const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+    const updated = fixedExpenses.map(f => {
+        if (f.id !== id) return f
+        const doneMonths = f.doneMonths || []
+        const isDone = doneMonths.includes(monthKey)
+        return { ...f, doneMonths: isDone ? doneMonths.filter(m => m !== monthKey) : [...doneMonths, monthKey] }
+    })
     saveFixed(updated)
   }
 
@@ -87,8 +93,9 @@ export default function Calendar() {
   const weekIncome = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan) && t.date >= weekAgo && t.date <= todayStr).reduce((s, t) => s + t.amount, 0)
   const selectedDateStr = selectedDate ? `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}` : null
   const selectedTxs = selectedDateStr ? transactions.filter(t => t.date === selectedDateStr) : []
+  const currentMonthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
   const fixedDueDays = fixedExpenses
-    .filter(f => !f.done)
+    .filter(f => !(f.doneMonths || []).includes(currentMonthKey))
     .map(f => f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null)
     .filter(Boolean)
 
@@ -213,9 +220,9 @@ export default function Calendar() {
                 .map(f => {
                     const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
                     return (
-                        <div key={f.id} style={{ background: f.done ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: f.done ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
+                        <div key={f.id} style={{ background: isDone ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                                <input type="checkbox" checked={f.done} onChange={() => handleToggleFixed(f.id)}
+                                <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
                                     style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
                                 <button onClick={() => handleDeleteFixed(f.id)}
                                     style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
