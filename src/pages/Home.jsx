@@ -202,7 +202,7 @@ export default function Home() {
       <div style={{ padding: '20px 16px' }}>
         {/* 예산 관리 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>예산 관리</p>
             <button onClick={() => setShowAddBudget(true)}
               style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
@@ -251,14 +251,19 @@ export default function Home() {
                         </p>
                       </div>
                     </div>
-                    {/* AI 조언 */}
+                    {/* AI 조언 — 분석 탭과 동일 스타일 */}
                     {aiText && (() => {
                       const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
-                      const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: '#888', bg: '#f8f8f8' }
+                      const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: themeData.primary, bg: themeData.primary + '12' }
                       return (
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: sc.bg, borderRadius: 10, padding: '10px 12px', marginTop: 10 }}>
-                          <span style={{ fontSize: 16, flexShrink: 0 }}>{ai.emoji}</span>
-                          <p style={{ fontSize: 12, color: sc.color, fontWeight: 500, lineHeight: 1.5 }}>{ai.message}</p>
+                        <div style={{ background: sc.bg, borderRadius: 14, padding: '14px 16px', marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 22 }}>{ai.emoji}</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: sc.color, marginBottom: 4 }}>AI 예산 조언</p>
+                            <p style={{ fontSize: 12, color: '#555', lineHeight: 1.6 }}>{ai.message}</p>
+                          </div>
                         </div>
                       )
                     })()}
@@ -291,7 +296,7 @@ export default function Home() {
         {/* 다가오는 결제 */}
         {upcomingPayments.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16, paddingLeft: 4 }}>다가오는 결제</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16, paddingLeft: 16 }}>다가오는 결제</p>
             {upcomingPayments.map((f, i) => {
               const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
               const urgencyBg = f.daysLeft <= 3 ? '#fee2e2' : f.daysLeft <= 7 ? '#fef3c7' : (themeData.primary + '18')

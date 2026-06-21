@@ -302,7 +302,7 @@ export default function Analysis() {
           </div>
 
           {/* 일별 지출 */}
-          <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 16 }}>일별 지출</p>
             {dailyData.every(d => d.amount === 0) ? (
               <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
@@ -321,7 +321,7 @@ export default function Analysis() {
                     <Tooltip content={<CustomBarTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
                     <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                       {dailyData.map((entry, i) => (
-                        <Cell key={i} fill={entry.amount > 0 && entry.amount === maxExpense ? '#ef4444' : primary} />
+                        <Cell key={i} fill={entry.amount > 0 && entry.amount === maxExpense ? primary : (themeData.card || '#f0f0f0')} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -330,7 +330,7 @@ export default function Analysis() {
                   const maxDay = dailyData.find(d => d.amount === maxExpense)
                   return (
                     <p style={{ fontSize: 12, color: '#888', textAlign: 'center', marginTop: 6 }}>
-                      최고 지출일: <span style={{ color: '#ef4444', fontWeight: 700 }}>{maxDay?.day}일</span> (-{fmt(maxExpense)}원)
+                      최고 지출일: <span style={{ color: primary, fontWeight: 700 }}>{maxDay?.day}일</span> (-{fmt(maxExpense)}원)
                     </p>
                   )
                 })()}

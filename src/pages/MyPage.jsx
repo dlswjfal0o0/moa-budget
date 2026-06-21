@@ -51,6 +51,8 @@ export default function MyPage() {
   const [expandedCardId, setExpandedCardId] = useState(null)
   const [showAccountNumbers, setShowAccountNumbers] = useState(false)
   const [expandedAccountEditId, setExpandedAccountEditId] = useState(null)
+  const [selectedAccount, setSelectedAccount] = useState(null)
+  const [accountHistoryMonth, setAccountHistoryMonth] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -465,7 +467,7 @@ export default function MyPage() {
 
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
@@ -680,7 +682,7 @@ export default function MyPage() {
 
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
@@ -715,7 +717,7 @@ export default function MyPage() {
                 </div>
               ) : (
                 <>
-                  {/* 클릭 시 수정/삭제 토글 */}
+                  {/* 클릭 시 내역/수정/삭제 토글 */}
                   <div style={{ padding: '12px 14px', cursor: 'pointer' }}
                     onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -723,18 +725,22 @@ export default function MyPage() {
                         <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#333' }}>{acc.name}</p>
                         {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
-                        <button onClick={e => { e.stopPropagation(); setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id) }}
-                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 6, padding: '3px 7px', color: '#888', fontSize: 10, cursor: 'pointer', flexShrink: 0 }}>
-                          {expandedAccountHistoryId === acc.id ? '▲' : '월별 ▾'}
-                        </button>
-                      </div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
                     </div>
                   </div>
-                  {/* 수정/삭제 펼침 행 */}
+                  {/* 내역/수정/삭제 펼침 행 */}
                   {expandedAccountEditId === acc.id && (
                     <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                      <button onClick={e => {
+                        e.stopPropagation()
+                        setSelectedAccount(acc)
+                        setAccountHistoryMonth(null)
+                        setExpandedAccountEditId(null)
+                      }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: t.primary, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        내역
+                      </button>
+                      <div style={{ width: 1, background: '#f0f0f0' }} />
                       <button onClick={() => {
                         handleEditAccount(acc)
                         setExpandedAccountEditId(null)
@@ -750,46 +756,6 @@ export default function MyPage() {
                       </button>
                     </div>
                   )}
-                  {/* 월별 잔액 히스토리 */}
-                  {expandedAccountHistoryId === acc.id && (() => {
-                    const months = Array.from({ length: 6 }, (_, i) => {
-                      const d = new Date()
-                      d.setDate(1)
-                      d.setMonth(d.getMonth() - (5 - i))
-                      return { year: d.getFullYear(), month: d.getMonth() + 1, label: `${d.getMonth() + 1}월` }
-                    })
-                    const balances = months.map(m => getBalanceAtMonthEnd(acc, m.year, m.month))
-                    const maxAbs = Math.max(...balances.map(b => Math.abs(b)), 1)
-                    return (
-                      <div style={{ background: '#f8f8f8', padding: '12px 14px', borderTop: '1px solid #f0f0f0' }}>
-                        {/* 미니 바 차트 */}
-                        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 52, marginBottom: 8 }}>
-                          {balances.map((bal, i) => (
-                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                              <div style={{ width: '100%', borderRadius: 3, background: bal < 0 ? '#fca5a5' : (t.primary + '88'), height: `${Math.max(4, Math.abs(bal) / maxAbs * 36)}px` }} />
-                              <span style={{ fontSize: 9, color: '#bbb' }}>{months[i].label}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {/* 최근 3개월 요약 */}
-                        {balances.slice(-3).map((bal, i) => {
-                          const m = months[months.length - 3 + i]
-                          const now = new Date()
-                          const isCurrent = now.getFullYear() === m.year && now.getMonth() + 1 === m.month
-                          return (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderTop: '1px solid #efefef' }}>
-                              <span style={{ fontSize: 12, color: isCurrent ? t.primary : '#888', fontWeight: isCurrent ? 600 : 400 }}>
-                                {m.year} {m.month}월{isCurrent ? ' (이번 달)' : ''}
-                              </span>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: bal < 0 ? '#ef4444' : (t.text || '#111') }}>
-                                {fmt(bal)}원
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
                 </>
               )}
             </div>
@@ -1226,6 +1192,92 @@ export default function MyPage() {
             </div>
         </div>
       )}
+
+      {/* 계좌 내역 바텀시트 */}
+      {selectedAccount && (() => {
+        const accTxns = allTxns.filter(tx => tx.payment === selectedAccount.name || tx.toAccount === selectedAccount.name)
+        const availableMonths = [...new Set(
+          accTxns.map(tx => tx.month || tx.date?.slice(0, 7) || '')
+        )].filter(Boolean).sort((a, b) => b.localeCompare(a))
+        const filtered = accountHistoryMonth
+          ? accTxns.filter(tx => (tx.month || tx.date?.slice(0, 7)) === accountHistoryMonth)
+          : accTxns
+        const byMonth = filtered.reduce((acc, tx) => {
+          const m = tx.month || tx.date?.slice(0, 7) || '기타'
+          if (!acc[m]) acc[m] = []
+          acc[m].push(tx)
+          return acc
+        }, {})
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end' }}
+            onClick={() => setSelectedAccount(null)}>
+            <div style={{ width: '100%', background: t.card || '#fff', borderRadius: '20px 20px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+              onClick={e => e.stopPropagation()}>
+              {/* 헤더 */}
+              <div style={{ background: t.primary, padding: '20px 20px 18px', borderRadius: '20px 20px 0 0', color: '#fff', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <p style={{ fontSize: 17, fontWeight: 700 }}>{selectedAccount.name}</p>
+                  <button onClick={() => setSelectedAccount(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                </div>
+                {selectedAccount.number && (
+                  <p style={{ fontSize: 13, opacity: 0.85, letterSpacing: 1 }}>{maskAccountNumber(selectedAccount.number)}</p>
+                )}
+              </div>
+
+              {/* 월 필터 */}
+              <div style={{ padding: '12px 16px 0', flexShrink: 0, borderBottom: '1px solid #f0f0f0', paddingBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+                  <button onClick={() => setAccountHistoryMonth(null)}
+                    style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                      background: accountHistoryMonth === null ? t.primary : '#f0f0f0',
+                      color: accountHistoryMonth === null ? '#fff' : '#666', fontSize: 12 }}>전체</button>
+                  {availableMonths.map(m => (
+                    <button key={m} onClick={() => setAccountHistoryMonth(m)}
+                      style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                        background: accountHistoryMonth === m ? t.primary : '#f0f0f0',
+                        color: accountHistoryMonth === m ? '#fff' : '#666', fontSize: 12 }}>
+                      {m.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 내역 목록 */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 36px' }}>
+                {accTxns.length === 0 ? (
+                  <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '24px 0' }}>이 계좌와 연동된 내역이 없어요</p>
+                ) : filtered.length === 0 ? (
+                  <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '24px 0' }}>내역이 없어요</p>
+                ) : Object.keys(byMonth).sort((a, b) => b.localeCompare(a)).map(month => (
+                  <div key={month}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: t.primary, whiteSpace: 'nowrap' }}>
+                        {month.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}
+                      </span>
+                      <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
+                      <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
+                        -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                      </span>
+                    </div>
+                    {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
+                      <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
+                        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
+                          <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.title}</p>
+                          <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
+                        </div>
+                        <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap',
+                          color: tx.type === 'expense' ? '#ef4444' : tx.type === 'income' ? '#22c55e' : '#888' }}>
+                          {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <BottomNav />
     </div>
