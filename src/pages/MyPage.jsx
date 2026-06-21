@@ -452,15 +452,15 @@ export default function MyPage() {
       </div>
 
       <div style={{ padding: '16px' }}>
+
         {/* 총 자산 */}
-        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33` }}>
           <p style={{ fontSize: 13, color: '#888', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
           </div>
           <p style={{ fontSize: 12, color: '#aaa' }}>
             계좌 <span style={{ color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#ef4444' : '#666' }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
-            {' · '}카드 <span style={{ color: '#666' }}>{fmt(totalCardUsed)}원</span>
             {' · '}현금 <span style={{ color: '#666' }}>{fmt(getCashBalance())}원</span>
           </p>
         </div>
