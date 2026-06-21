@@ -25,7 +25,7 @@ function BudgetCard({ budget, spent, themeData, fmt }) {
   const color = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
 
   return (
-    <div style={{ background: themeData.card, borderRadius: 14, padding: '12px 14px' }}>
+    <div style={{ background: themeData.card, borderRadius: 16, padding: '12px 14px' }}>
       <p style={{ fontSize: 13, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{budget.label}</p>
       <p style={{ fontSize: 10, color: '#bbb', marginBottom: 8 }}>
         {budget.startDate?.slice(5).replace('-','/')} ~ {budget.endDate?.slice(5).replace('-','/')}
@@ -178,7 +178,7 @@ export default function Home() {
   const colorMap = getCategoryColors(categoryData.map(c => c.name))
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', borderRadius: 10,
+    width: '100%', padding: '11px 14px', borderRadius: 16,
     border: '1.5px solid #e8e8e8', fontSize: 14, outline: 'none',
     background: '#fafafa', color: '#111', boxSizing: 'border-box'
   }
@@ -219,14 +219,14 @@ export default function Home() {
               const aiText = budgetInsights[b.id]
               const arcLen = Math.PI * 34
               return (
-                <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 14, border: `1.5px solid ${themeData.primary}18`, overflow: 'hidden' }}>
+                <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, border: `1.5px solid ${themeData.primary}18`, overflow: 'hidden' }}>
                   {/* 클릭 시 수정/삭제 토글 */}
                   <div style={{ padding: '14px 14px 10px', cursor: 'pointer' }}
                     onClick={() => setExpandedBudgetEditId(expandedBudgetEditId === b.id ? null : b.id)}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, color: themeData.text || '#111' }}>{b.label}</span>
-                        {exceeded && <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444', borderRadius: 20, padding: '2px 7px', fontWeight: 600 }}>초과</span>}
+                        {exceeded && <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>초과</span>}
                       </div>
                       <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate?.slice(5).replace('-','/')} ~ {b.endDate?.slice(5).replace('-','/')}</span>
                     </div>
@@ -256,7 +256,7 @@ export default function Home() {
                       const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
                       const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: themeData.primary, bg: themeData.primary + '12' }
                       return (
-                        <div style={{ background: sc.bg, borderRadius: 14, padding: '14px 16px', marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{ background: sc.bg, borderRadius: 16, padding: '14px 16px', marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ width: 44, height: 44, borderRadius: '50%', background: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <span style={{ fontSize: 22 }}>{ai.emoji}</span>
                           </div>
@@ -268,7 +268,7 @@ export default function Home() {
                       )
                     })()}
                     <button onClick={e => { e.stopPropagation(); getAiInsight(b, spent) }} disabled={loadingInsightId === b.id}
-                      style={{ width: '100%', marginTop: 10, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '7px 0', color: themeData.primary, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                      style={{ width: '100%', marginTop: 10, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 16, padding: '7px 0', color: themeData.primary, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
                       {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언 보기'}
                     </button>
                   </div>
@@ -301,7 +301,7 @@ export default function Home() {
               const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
               const urgencyBg = f.daysLeft <= 3 ? '#fee2e2' : f.daysLeft <= 7 ? '#fef3c7' : (themeData.primary + '18')
               return (
-                <div key={f.id || i} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 14, border: `1.5px solid ${themeData.primary}18`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div key={f.id || i} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, border: `1.5px solid ${themeData.primary}18`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: urgencyBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={urgency} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
@@ -313,7 +313,7 @@ export default function Home() {
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>-{fmt(f.amount)}원</p>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 20, padding: '2px 8px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 9999, padding: '2px 8px' }}>
                       {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
                     </span>
                   </div>
@@ -357,8 +357,8 @@ export default function Home() {
                         </div>
                         <span style={{ fontSize: 11, color: '#888', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
                       </div>
-                      <div style={{ height: 5, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
                       </div>
                     </div>
                   )
@@ -380,7 +380,7 @@ export default function Home() {
             [...transactions].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0,5).map(t => (
               <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: t.type === 'expense' ? '#FFF0F0' : '#F0FFF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 12, background: t.type === 'expense' ? '#FFF0F0' : '#F0FFF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
                     {t.type === 'expense' ? '💸' : '💰'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -432,7 +432,7 @@ export default function Home() {
                       <button key={cat} onClick={() => setNewBudget(b => ({
                         ...b,
                         categories: selected ? b.categories.filter(c => c !== cat) : [...b.categories, cat]
-                      }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
+                      }))} style={{ padding: '6px 14px', borderRadius: 9999, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
                         background: selected ? themeData.primary + '18' : '#fff',
                         color: selected ? themeData.primary : '#888', fontSize: 12, fontWeight: selected ? 700 : 400, cursor: 'pointer' }}>
                         {cat}
@@ -486,7 +486,7 @@ export default function Home() {
                       <button key={cat} onClick={() => setEditBudgetData(d => ({
                         ...d,
                         categories: selected ? (d.categories || []).filter(c => c !== cat) : [...(d.categories || []), cat]
-                      }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
+                      }))} style={{ padding: '6px 14px', borderRadius: 9999, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
                         background: selected ? themeData.primary + '18' : '#fff',
                         color: selected ? themeData.primary : '#888', fontSize: 12, fontWeight: selected ? 700 : 400, cursor: 'pointer' }}>
                         {cat}

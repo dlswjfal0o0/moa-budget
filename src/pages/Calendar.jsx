@@ -115,7 +115,7 @@ export default function Calendar() {
   const fixedTotal = fixedExpenses.reduce((s, f) => s + f.amount, 0)
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', borderRadius: 10,
+    width: '100%', padding: '11px 14px', borderRadius: 16,
     border: '1.5px solid #e8e8e8', fontSize: 14, outline: 'none',
     background: '#fafafa', color: '#111', boxSizing: 'border-box'
   }
@@ -175,7 +175,7 @@ export default function Calendar() {
               return (
                 <div key={day} onClick={() => setSelectedDate(day === selectedDate ? null : day)}
                   style={{
-                    padding: '5px 2px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                    padding: '5px 2px', borderRadius: 12, cursor: 'pointer', textAlign: 'center',
                     background: isSelected ? '#EEF2FF' : isFixedDay ? `${themeData.primary}22` : 'transparent',
                     border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent'
                   }}>
@@ -225,21 +225,21 @@ export default function Calendar() {
         {/* 이번 주 / 이번 달 수입·지출 요약 */}
         <div style={{ padding: '12px 16px 0' }}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>이번 주 지출</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#ef4444' }}>-{fmt(weekExpense)}원</p>
             </div>
-            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>이번 주 수입</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#22c55e' }}>+{fmt(weekIncome)}원</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>{viewMonth + 1}월 지출</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#ef4444' }}>-{fmt(totalExpense)}원</p>
             </div>
-            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>{viewMonth + 1}월 수입</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#22c55e' }}>+{fmt(totalIncome)}원</p>
             </div>
@@ -261,7 +261,7 @@ export default function Calendar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>고정지출</p>
               {fixedExpenses.length > 0 && (
-                <span style={{ fontSize: 12, color: '#666', background: '#f2f4f7', borderRadius: 20, padding: '2px 10px', fontWeight: 500 }}>
+                <span style={{ fontSize: 12, color: '#666', background: '#f2f4f7', borderRadius: 9999, padding: '2px 10px', fontWeight: 500 }}>
                   {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
                 </span>
               )}
@@ -282,7 +282,7 @@ export default function Calendar() {
                 const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
                 const isDone = (f.doneMonths || []).includes(currentMonthKey)
                 return (
-                  <div key={f.id} style={{ borderRadius: 14, border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`, overflow: 'hidden', background: isDone ? '#fafafa' : '#fff' }}>
+                  <div key={f.id} style={{ borderRadius: 16, border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`, overflow: 'hidden', background: isDone ? '#fafafa' : '#fff' }}>
                     <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                       onClick={() => setExpandedFixedId(expandedFixedId === f.id ? null : f.id)}>
                       <input type="checkbox" checked={isDone} onChange={e => { e.stopPropagation(); handleToggleFixed(f.id) }}

@@ -58,7 +58,7 @@ function UtilityChart({ type, utilities, primary, viewYear, viewMonth }) {
 function CustomBarTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+    <div style={{ background: '#fff', borderRadius: 8, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
       <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{label}일</p>
       <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>-{payload[0].value.toLocaleString()}원</p>
     </div>
@@ -68,7 +68,7 @@ function CustomBarTooltip({ active, payload, label }) {
 function CustomPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+    <div style={{ background: '#fff', borderRadius: 8, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
       <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{payload[0].name}</p>
       <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{payload[0].value.toLocaleString()}원</p>
     </div>
@@ -256,10 +256,10 @@ export default function Analysis() {
       {/* 탭 (iOS 세그먼트 스타일) */}
       {showUtilities && (
         <div style={{ padding: '12px 16px 0' }}>
-          <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 12, padding: 3 }}>
+          <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 9999, padding: 3 }}>
             {['소비', '공과금'].map(tab => (
               <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
-                style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                   fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
                   background: activeAnalysisTab === tab ? primary : 'transparent',
                   color: activeAnalysisTab === tab ? '#fff' : '#888',
@@ -280,7 +280,7 @@ export default function Analysis() {
           <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 14 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>지출</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
@@ -289,7 +289,7 @@ export default function Analysis() {
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
@@ -374,8 +374,8 @@ export default function Analysis() {
                           </div>
                           <span style={{ fontSize: 11, color: '#888', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
                         </div>
-                        <div style={{ height: 5, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                        <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
                         </div>
                       </div>
                     )
@@ -390,7 +390,7 @@ export default function Analysis() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>AI 소비 분석</p>
               <button onClick={getAiFeedback} disabled={loadingAi}
-                style={{ padding: '7px 16px', borderRadius: 20, border: 'none', cursor: loadingAi ? 'not-allowed' : 'pointer',
+                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', cursor: loadingAi ? 'not-allowed' : 'pointer',
                   background: loadingAi ? '#e0e0e0' : primary, color: loadingAi ? '#888' : '#fff', fontSize: 13, fontWeight: 500 }}>
                 {loadingAi ? '분석 중...' : '✨ AI 분석'}
               </button>
@@ -421,7 +421,7 @@ export default function Analysis() {
               return (
                 <>
                   {/* 점수 카드 */}
-                  <div style={{ background: rc.bg, borderRadius: 14, padding: '16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ background: rc.bg, borderRadius: 16, padding: '16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div style={{ width: 60, height: 60, borderRadius: '50%', background: rc.color, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <span style={{ color: '#fff', fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{aiFeedbackData.score}</span>
                       <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>점</span>
@@ -444,9 +444,9 @@ export default function Analysis() {
                     <div style={{ marginBottom: 14 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>💡 절감 포인트</p>
                       {aiFeedbackData.cuts.map((cut, i) => (
-                        <div key={i} style={{ background: '#f8f8f8', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                        <div key={i} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 20 }}>{cut.category}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 9999 }}>{cut.category}</span>
                             {cut.save > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>최대 {fmt(cut.save)}원 절약</span>}
                           </div>
                           <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
@@ -460,7 +460,7 @@ export default function Analysis() {
                     <div style={{ marginBottom: 14 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>🚨 이상 지출 감지</p>
                       {aiFeedbackData.unusual.map((u, i) => (
-                        <div key={i} style={{ background: '#FFF5F5', borderRadius: 10, padding: '10px 12px', marginBottom: 6, borderLeft: '3px solid #ef4444', display: 'flex', gap: 8 }}>
+                        <div key={i} style={{ background: '#FFF5F5', borderRadius: 8, padding: '10px 12px', marginBottom: 6, borderLeft: '3px solid #ef4444', display: 'flex', gap: 8 }}>
                           <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
                           <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
                         </div>
@@ -470,7 +470,7 @@ export default function Analysis() {
 
                   {/* 절감 목표 */}
                   {aiFeedbackData.saving_goal > 0 && (
-                    <div style={{ background: '#F0FFF4', borderRadius: 10, padding: '12px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: '#F0FFF4', borderRadius: 16, padding: '12px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 13, color: '#333' }}>🎯 이번 달 절감 목표</span>
                       <span style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>{fmt(aiFeedbackData.saving_goal)}원</span>
                     </div>
@@ -478,7 +478,7 @@ export default function Analysis() {
 
                   {/* 응원 메시지 */}
                   {aiFeedbackData.message && (
-                    <div style={{ textAlign: 'center', padding: '14px', background: primaryLight, borderRadius: 12 }}>
+                    <div style={{ textAlign: 'center', padding: '14px', background: primaryLight, borderRadius: 16 }}>
                       <p style={{ fontSize: 14, color: primary, fontWeight: 500 }}>{aiFeedbackData.message}</p>
                     </div>
                   )}
@@ -486,7 +486,7 @@ export default function Analysis() {
               )
             })()}
             {aiFeedbackRaw && (
-              <div style={{ background: primaryLight, borderRadius: 12, padding: '14px', borderLeft: `3px solid ${primary}` }}>
+              <div style={{ background: primaryLight, borderRadius: 16, padding: '14px', borderLeft: `3px solid ${primary}` }}>
                 <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7 }}>{aiFeedbackRaw}</p>
               </div>
             )}
@@ -537,11 +537,11 @@ export default function Analysis() {
                   <div style={{ borderBottom: '1px solid #f5f5f5' }}>
                     <div onClick={() => setExpandedPayments(prev => { const next = new Set(prev); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next })}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', cursor: 'pointer' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 12, background: primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {icon}
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{label}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: primary, background: `${primary}18`, padding: '2px 8px', borderRadius: 20 }}>{pct}%</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: primary, background: `${primary}18`, padding: '2px 8px', borderRadius: 9999 }}>{pct}%</span>
                       <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#111', textAlign: 'right' }}>{fmt(amount)}원</span>
                       <span style={{ fontSize: 15, color: '#bbb', marginLeft: 4, display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
                     </div>
@@ -641,7 +641,7 @@ export default function Analysis() {
                               <p style={{ fontSize: 11, color: '#bbb' }}>전월 {fmt(prev.amount)}원</p>
                             </>
                           ) : (
-                            <span style={{ fontSize: 11, background: `${primary}18`, color: primary, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>첫 등록</span>
+                            <span style={{ fontSize: 11, background: `${primary}18`, color: primary, padding: '3px 10px', borderRadius: 9999, fontWeight: 600 }}>첫 등록</span>
                           )}
                         </div>
                       </div>
@@ -695,7 +695,7 @@ export default function Analysis() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>AI 공과금 분석</p>
               <button onClick={getUtilityAI} disabled={loadingUtilityAI}
-                style={{ padding: '7px 16px', borderRadius: 20, border: 'none', cursor: loadingUtilityAI ? 'not-allowed' : 'pointer',
+                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', cursor: loadingUtilityAI ? 'not-allowed' : 'pointer',
                   background: loadingUtilityAI ? '#e0e0e0' : primary, color: loadingUtilityAI ? '#888' : '#fff', fontSize: 13 }}>
                 {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
               </button>
@@ -720,14 +720,14 @@ export default function Analysis() {
                   const badgeColor = isUp ? '#f97316' : '#22c55e'
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < utilityAI.items.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: ustyle.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 12, background: ustyle.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <UtilityIcon type={type} color={ustyle.color} size={18} />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{type}</span>
                           {diff !== null && (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: `${badgeColor}18`, padding: '2px 8px', borderRadius: 20 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: `${badgeColor}18`, padding: '2px 8px', borderRadius: 9999 }}>
                               {isUp ? '↑' : '↓'} {diff > 0 ? '+' : ''}{fmt(diff)}원
                             </span>
                           )}
@@ -740,14 +740,14 @@ export default function Analysis() {
 
                 {/* 전체 총평 */}
                 {utilityAI.overall && (
-                  <div style={{ background: primaryLight, borderRadius: 12, padding: '12px 14px', marginTop: utilityAI.items?.length ? 12 : 0, marginBottom: 10 }}>
+                  <div style={{ background: primaryLight, borderRadius: 16, padding: '12px 14px', marginTop: utilityAI.items?.length ? 12 : 0, marginBottom: 10 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: primary, lineHeight: 1.6 }}>{utilityAI.overall}</p>
                   </div>
                 )}
 
                 {/* 절약 팁 */}
                 {utilityAI.tip && (
-                  <div style={{ background: '#F0FFF4', borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ background: '#F0FFF4', borderRadius: 16, padding: '12px 14px' }}>
                     <p style={{ fontSize: 13, color: '#16a34a', lineHeight: 1.6 }}>💡 {utilityAI.tip}</p>
                   </div>
                 )}
@@ -764,10 +764,10 @@ export default function Analysis() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
                   <input type="number" placeholder="금액 (원)" value={newUtility.amount}
                     onChange={e => setNewUtility(p => ({ ...p, amount: e.target.value }))}
-                    style={{ padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
+                    style={{ padding: '12px 14px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
                   <input type="number" placeholder="납부일 (예: 15)" min="1" max="31" value={newUtility.day}
                     onChange={e => setNewUtility(p => ({ ...p, day: e.target.value }))}
-                    style={{ padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
+                    style={{ padding: '12px 14px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 15, outline: 'none' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setShowAddUtility(false)}
