@@ -405,54 +405,6 @@ export default function MyPage() {
             const pct = Math.min((cardUsed / (card.limit || 1)) * 100, 100)
             const achieved = card.limit > 0 && cardUsed >= card.limit
 
-            // 수정 중인 카드
-            if (editingCardId === card.id) {
-              return (
-                <div key={card.id} style={{ marginBottom: 10, background: '#f8f8f8', borderRadius: 14, padding: '14px' }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 수정</p>
-
-                  {/* 카드 종류 */}
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
-                        <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
-                            style={{ flex: 1, padding: '9px', borderRadius: 10,
-                                border: `2px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
-                                background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
-                                color: editCardData.cardType === opt.val ? t.primary : '#666',
-                                fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <input style={inputStyle} placeholder="카드 이름" value={editCardData.name}
-                        onChange={e => setEditCardData(d => ({ ...d, name: e.target.value }))} />
-                    <input style={inputStyle} placeholder="카드번호 끝 4자리" maxLength={4} value={editCardData.cardNumber}
-                        onChange={e => setEditCardData(d => ({ ...d, cardNumber: e.target.value }))} />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <input style={{ ...inputStyle, flex: 1 }} placeholder="유효기간 (MM/YY)" value={editCardData.expiry}
-                            onChange={e => setEditCardData(d => ({ ...d, expiry: e.target.value }))} />
-                        <select style={{ ...inputStyle, flex: 1 }} value={editCardData.linkedAccount}
-                            onChange={e => setEditCardData(d => ({ ...d, linkedAccount: e.target.value }))}>
-                            <option value="">연동 계좌 없음</option>
-                            {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                        </select>
-                    </div>
-                    <input style={inputStyle} type="number" placeholder="실적 목표 금액" value={editCardData.limit}
-                        onChange={e => setEditCardData(d => ({ ...d, limit: e.target.value }))} />
-                    <input style={inputStyle} type="number" min="1" max="31" placeholder="결제일 (예: 15)" value={editCardData.billingDay}
-                        onChange={e => setEditCardData(d => ({ ...d, billingDay: e.target.value }))} />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => setEditingCardId(null)}
-                        style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 13 }}>취소</button>
-                    <button onClick={handleSaveCard}
-                        style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>저장</button>
-                  </div>
-                </div>
-              )
-            }
-
             // 일반 카드 아이템
             return (
               <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14,
@@ -546,6 +498,63 @@ export default function MyPage() {
 
                 <button onClick={handleAddCard} style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
                   추가하기
+                </button>
+              </div>
+            </div>
+          )}
+          {editingCardId && (
+            <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
+              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 60px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                  <button onClick={() => setEditingCardId(null)}
+                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 수정</p>
+                </div>
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카드 종류</p>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+                  {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
+                    <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
+                        style={{ flex: 1, padding: '13px', borderRadius: 12,
+                            border: `2px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
+                            background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
+                            color: editCardData.cardType === opt.val ? t.primary : '#666',
+                            fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                  ))}
+                </div>
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드 이름</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 신한카드" value={editCardData.name}
+                  onChange={e => setEditCardData(d => ({ ...d, name: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드번호 끝 4자리</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 1234" maxLength={4} value={editCardData.cardNumber}
+                  onChange={e => setEditCardData(d => ({ ...d, cardNumber: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>유효기간</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="MM/YY" value={editCardData.expiry}
+                  onChange={e => setEditCardData(d => ({ ...d, expiry: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>
+                  연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span>
+                </p>
+                <select style={{ ...inputStyle, marginBottom: 20 }} value={editCardData.linkedAccount}
+                  onChange={e => setEditCardData(d => ({ ...d, linkedAccount: e.target.value }))}>
+                  <option value="">연동 계좌 없음</option>
+                  {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                </select>
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>실적 목표 금액</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} type="number" placeholder="예: 300000" value={editCardData.limit}
+                  onChange={e => setEditCardData(d => ({ ...d, limit: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>결제일</p>
+                <input style={{ ...inputStyle, marginBottom: 36 }} type="number" min="1" max="31" placeholder="예: 15" value={editCardData.billingDay}
+                  onChange={e => setEditCardData(d => ({ ...d, billingDay: e.target.value }))} />
+
+                <button onClick={handleSaveCard}
+                  style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                  저장하기
                 </button>
               </div>
             </div>
