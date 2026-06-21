@@ -47,6 +47,7 @@ export default function MyPage() {
   const [allTxns, setAllTxns] = useState([])
   const [editingCardId, setEditingCardId] = useState(null)
   const [editCardData, setEditCardData] = useState({})
+  const [expandedAccountHistoryId, setExpandedAccountHistoryId] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -328,6 +329,26 @@ export default function MyPage() {
         return s
       }, 0)
       return account.balance + net
+    } catch { return account.balance }
+  }
+  const getBalanceAtMonthEnd = (account, year, month) => {
+    const lastDayStr = `${year}-${String(month).padStart(2,'0')}-${String(new Date(year, month, 0).getDate()).padStart(2,'0')}`
+    try {
+        const net = allTxns.reduce((s, t) => {
+            if (!t.date || t.date > lastDayStr) return s
+            if (t.type === 'expense' && t.payment === account.name) return s - (t.amount || 0)
+            if (t.type === 'income' && t.payment === account.name) return s + (t.amount || 0)
+            if (t.type === 'transfer') {
+                if (t.payment === account.name) return s - (t.amount || 0)
+                if (t.toAccount === account.name) return s + (t.amount || 0)
+            }
+            if (t.cardBilling && t.payment !== account.name) {
+                const linkedCard = cards.find(c => c.name === t.payment && c.linkedAccount === account.name)
+                if (linkedCard) return s - (t.amount || 0)
+            }
+            return s
+        }, 0)
+        return account.balance + net
     } catch { return account.balance }
   }
   const getCashBalance = () => {
@@ -612,19 +633,52 @@ export default function MyPage() {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f8f8f8' }}>
-                  <div>
-                    <p style={{ fontSize: 14, color: t.text || '#333' }}>{acc.name}</p>
-                    {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{acc.number}</p>}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: expandedAccountHistoryId === acc.id ? 'none' : '1px solid #f8f8f8' }}>
                     <div>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
+                      <p style={{ fontSize: 14, color: t.text || '#333' }}>{acc.name}</p>
+                      {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{acc.number}</p>}
                     </div>
-                    <button onClick={() => handleEditAccount(acc)} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
-                    <button onClick={() => handleDeleteAccount(acc.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
+                      <button onClick={() => setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id)}
+                        style={{ background: '#f0f0f0', border: 'none', borderRadius: 6, padding: '3px 8px', color: '#888', fontSize: 11, cursor: 'pointer' }}>
+                        {expandedAccountHistoryId === acc.id ? '▲' : '월별 ▾'}
+                      </button>
+                      <button onClick={() => handleEditAccount(acc)} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
+                      <button onClick={() => handleDeleteAccount(acc.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                    </div>
                   </div>
-                </div>
+                  {expandedAccountHistoryId === acc.id && (() => {
+                    const months = Array.from({ length: 6 }, (_, i) => {
+                      const d = new Date()
+                      d.setDate(1)
+                      d.setMonth(d.getMonth() - i)
+                      return { year: d.getFullYear(), month: d.getMonth() + 1 }
+                    }).reverse()
+                    return (
+                      <div style={{ background: '#f8f8f8', borderRadius: 10, padding: '10px 12px', marginBottom: 8, borderBottom: '1px solid #f8f8f8' }}>
+                        <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8, fontWeight: 600 }}>월말 잔액</p>
+                        {months.map(({ year, month }) => {
+                          const bal = getBalanceAtMonthEnd(acc, year, month)
+                          const label = `${year}.${String(month).padStart(2,'0')}`
+                          const now = new Date()
+                          const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1
+                          return (
+                            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #efefef' }}>
+                              <span style={{ fontSize: 12, color: isCurrentMonth ? t.primary : '#888', fontWeight: isCurrentMonth ? 600 : 400 }}>
+                                {label}{isCurrentMonth ? ' (이번 달)' : ''}
+                              </span>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: bal >= 0 ? (t.text || '#111') : '#ef4444' }}>
+                                {fmt(bal)}원
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </>
               )}
             </div>
           ))}
