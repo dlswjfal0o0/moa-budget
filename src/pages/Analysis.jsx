@@ -96,7 +96,8 @@ export default function Analysis() {
   const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
   const [utilityAI, setUtilityAI] = useState(null)
   const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
-  const [expandedPayment, setExpandedPayment] = useState(null)
+  const [expandedPayments, setExpandedPayments] = useState(new Set())
+  const [selectedCategory, setSelectedCategory] = useState(null)
   const [expandedUtility, setExpandedUtility] = useState(null)
 
   useEffect(() => {
@@ -255,9 +256,9 @@ export default function Analysis() {
               <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
                 style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer',
                   fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
-                  background: activeAnalysisTab === tab ? '#fff' : 'transparent',
-                  color: activeAnalysisTab === tab ? '#111' : '#888',
-                  boxShadow: activeAnalysisTab === tab ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+                  background: activeAnalysisTab === tab ? primary : 'transparent',
+                  color: activeAnalysisTab === tab ? '#fff' : '#888',
+                  boxShadow: 'none',
                   transition: 'all 0.15s' }}>
                 {tab}
               </button>
@@ -282,7 +283,6 @@ export default function Analysis() {
                     {expenseDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(expenseDiff))}원 {expenseDiff > 0 ? '증가' : '감소'}
                   </p>
                 )}
-                <p style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>지난달 {fmt(lastTotalExpense)}원</p>
               </div>
               <div style={{ flex: 1, background: '#F0FFF4', borderRadius: 12, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
@@ -292,7 +292,6 @@ export default function Analysis() {
                     {incomeDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(incomeDiff))}원 {incomeDiff > 0 ? '증가' : '감소'}
                   </p>
                 )}
-                <p style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>지난달 {fmt(lastTotalIncome)}원</p>
               </div>
             </div>
           </div>
@@ -314,7 +313,7 @@ export default function Analysis() {
                         if (v >= 1000) return `${Math.round(v / 1000)}천`
                         return `${v}`
                       }} />
-                    <Tooltip content={<CustomBarTooltip />} />
+                    <Tooltip content={<CustomBarTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
                     <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                       {dailyData.map((entry, i) => (
                         <Cell key={i} fill={entry.amount > 0 && entry.amount === maxExpense ? '#ef4444' : primary} />
@@ -340,33 +339,45 @@ export default function Analysis() {
             {categoryData.length === 0 ? (
               <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
             ) : (
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                {/* 도넛 차트 */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <PieChart width={140} height={140}>
-                    <Pie data={categoryData} cx={70} cy={70} innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={3} startAngle={90} endAngle={-270}>
-                      {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
-                    </Pie>
-                    <Tooltip content={<CustomPieTooltip />} />
-                  </PieChart>
-                  {/* 중앙 텍스트 */}
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', width: 76, pointerEvents: 'none' }}>
-                    <p style={{ fontSize: 9, color: '#aaa' }}>총 지출</p>
-                    <p style={{ fontSize: totalExpense >= 100000000 ? 9 : totalExpense >= 10000000 ? 10 : 12, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
-                      {totalExpense >= 10000 ? `${Math.round(totalExpense / 10000)}만원` : `${fmt(totalExpense)}원`}
-                    </p>
-                  </div>
-                </div>
-                {/* 2열 범례 */}
-                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 6px', overflow: 'hidden' }}>
-                  {categoryData.slice(0, 8).map((c, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: colorMap[c.name] || '#B0B0B0', flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, color: '#555', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                      <span style={{ fontSize: 11, color: '#888', fontWeight: 600, flexShrink: 0 }}>{Math.round(c.value / totalExpense * 100)}%</span>
+              <div style={{ position: 'relative' }}>
+                {categoryData.map((c, i) => {
+                  const pct = totalExpense > 0 ? Math.round(c.value / totalExpense * 100) : 0
+                  const color = colorMap[c.name] || '#B0B0B0'
+                  const isSelected = selectedCategory?.name === c.name
+                  return (
+                    <div key={i} style={{ marginBottom: 10, position: 'relative' }}>
+                      <div onClick={() => setSelectedCategory(isSelected ? null : c)}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color: '#333', fontWeight: 500 }}>{c.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 12, color: '#aaa' }}>{pct}%</span>
+                          <span style={{ fontSize: 13, color: '#111', fontWeight: 600, minWidth: 72, textAlign: 'right' }}>{fmt(c.value)}원</span>
+                        </div>
+                      </div>
+                      <div style={{ height: 6, background: `${color}20`, borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      </div>
+                      {/* 클릭 팝업 */}
+                      {isSelected && (
+                        <div style={{ position: 'absolute', right: 0, top: 28, zIndex: 200, background: '#fff', borderRadius: 12, padding: '10px 14px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', border: '1px solid #f0f0f0', minWidth: 140, pointerEvents: 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{c.name}</span>
+                          </div>
+                          <p style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{fmt(c.value)}원</p>
+                          <p style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>전체 지출의 {pct}%</p>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
+                {/* 팝업 닫기 오버레이 */}
+                {selectedCategory && (
+                  <div onClick={() => setSelectedCategory(null)} style={{ position: 'fixed', inset: 0, zIndex: 100 }} />
+                )}
               </div>
             )}
           </div>
@@ -435,7 +446,7 @@ export default function Analysis() {
                             <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 20 }}>{cut.category}</span>
                             {cut.save > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>최대 {fmt(cut.save)}원 절약</span>}
                           </div>
-                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{cut.tip}</p>
+                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
                         </div>
                       ))}
                     </div>
@@ -448,7 +459,7 @@ export default function Analysis() {
                       {aiFeedbackData.unusual.map((u, i) => (
                         <div key={i} style={{ background: '#FFF5F5', borderRadius: 10, padding: '10px 12px', marginBottom: 6, borderLeft: '3px solid #ef4444', display: 'flex', gap: 8 }}>
                           <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
-                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{u}</p>
+                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
                         </div>
                       ))}
                     </div>
@@ -517,11 +528,11 @@ export default function Analysis() {
 
               const PaymentRow = ({ groupKey, icon, label, amount, detail }) => {
                 if (amount === 0) return null
-                const isExpanded = expandedPayment === groupKey
+                const isExpanded = expandedPayments.has(groupKey)
                 const pct = grandTotal > 0 ? Math.round(amount / grandTotal * 100) : 0
                 return (
                   <div style={{ borderBottom: '1px solid #f5f5f5' }}>
-                    <div onClick={() => setExpandedPayment(isExpanded ? null : groupKey)}
+                    <div onClick={() => setExpandedPayments(prev => { const next = new Set(prev); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next })}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', cursor: 'pointer' }}>
                       <div style={{ width: 36, height: 36, borderRadius: 10, background: primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {icon}
@@ -562,18 +573,21 @@ export default function Analysis() {
       {showUtilities && activeAnalysisTab === '공과금' && (
         <div style={{ padding: '16px 16px 100px' }}>
 
-          {/* 총합 배너 */}
-          {currentMonthTotal > 0 && (
-            <div style={{ background: primary, borderRadius: 16, padding: '18px 20px', marginBottom: 16 }}>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>이번 달 공과금 합계</p>
-              <p style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{fmt(currentMonthTotal)}원</p>
-              {prevMonthTotal > 0 && (
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-                  전월 대비 {utilityTotalDiff > 0 ? '↑' : '↓'} {utilityTotalDiff > 0 ? '+' : ''}{fmt(utilityTotalDiff)}원 {utilityTotalDiff > 0 ? '증가' : '감소'}
-                </p>
-              )}
-            </div>
-          )}
+          {/* 총합 배너 - 항상 표시 */}
+          <div style={{ background: primary, borderRadius: 16, padding: '18px 20px', marginBottom: 16 }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>이번 달 공과금 합계</p>
+            <p style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: prevMonthTotal > 0 || currentMonthTotal === 0 ? 6 : 0 }}>
+              {fmt(currentMonthTotal)}원
+            </p>
+            {prevMonthTotal > 0 && (
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
+                전월 대비 {utilityTotalDiff > 0 ? '↑' : '↓'} {utilityTotalDiff > 0 ? '+' : ''}{fmt(utilityTotalDiff)}원 {utilityTotalDiff > 0 ? '증가' : '감소'}
+              </p>
+            )}
+            {currentMonthTotal === 0 && (
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>이번 달 공과금을 입력해주세요</p>
+            )}
+          </div>
 
           {/* 공과금 카드 */}
           {utilityTypes.map(type => {
