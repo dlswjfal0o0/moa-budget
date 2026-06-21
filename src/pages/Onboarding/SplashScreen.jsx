@@ -29,10 +29,6 @@ export default function SplashScreen() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 32px 0', background: BG, position: 'relative', overflow: 'hidden' }}>
-      {/* 배경 장식 */}
-      <div style={{ position: 'absolute', top: -80, right: -80, width: 240, height: 240, borderRadius: '50%', background: PRIMARY, opacity: 0.06 }} />
-      <div style={{ position: 'absolute', bottom: -60, left: -60, width: 180, height: 180, borderRadius: '50%', background: PRIMARY, opacity: 0.05 }} />
-
       {/* 앱 아이콘 */}
       <div style={{ width: 110, height: 110, marginBottom: 24 }}>
         <img
@@ -47,7 +43,7 @@ export default function SplashScreen() {
       </div>
 
       <h1 style={{ fontSize: 38, fontWeight: 700, color: TEXT, marginBottom: 8, letterSpacing: 0 }}>모아</h1>
-      <p style={{ fontSize: 15, color: TEXT2, marginBottom: 64, letterSpacing: '0.8px', lineHeight: 1.6 }}>발 달린 내 돈, 어디 가는지 궁금하다면</p>
+      <p style={{ fontSize: 15, color: TEXT2, marginBottom: 64, lineHeight: 1.6, textAlign: 'center' }}>발 달린 내 돈,<br />어디 가는지 궁금하다면</p>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
@@ -57,7 +53,7 @@ export default function SplashScreen() {
         </button>
         <button
           onClick={() => navigate('/auth', { state: { mode: 'login' } })}
-          style={{ width: '100%', padding: '16px', borderRadius: 14, background: 'transparent', color: TEXT, border: `1.5px solid ${TEXT}18`, fontSize: 16, fontWeight: 500, cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '16px', borderRadius: 14, background: '#f2f4f7', color: TEXT, border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
           로그인
         </button>
       </div>

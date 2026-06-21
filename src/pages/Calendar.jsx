@@ -56,10 +56,10 @@ export default function Calendar() {
   const handleToggleFixed = (id) => {
     const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const updated = fixedExpenses.map(f => {
-        if (f.id !== id) return f
-        const doneMonths = f.doneMonths || []
-        const isDone = doneMonths.includes(monthKey)
-        return { ...f, doneMonths: isDone ? doneMonths.filter(m => m !== monthKey) : [...doneMonths, monthKey] }
+      if (f.id !== id) return f
+      const doneMonths = f.doneMonths || []
+      const isDone = doneMonths.includes(monthKey)
+      return { ...f, doneMonths: isDone ? doneMonths.filter(m => m !== monthKey) : [...doneMonths, monthKey] }
     })
     saveFixed(updated)
   }
@@ -73,11 +73,11 @@ export default function Calendar() {
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   const isCredit = (p) => cards.some(c => c.name === p && c.cardType === 'credit')
+
   const byDate = transactions.reduce((acc, t) => {
     if (!acc[t.date]) acc[t.date] = { expense: 0, income: 0 }
     if (t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)) acc[t.date].expense += t.amount
     else if (t.type === 'income' && (!showLoan || !t.isLoan)) acc[t.date].income += t.amount
-    // cardBilling은 달력에 표시 안 함
     return acc
   }, {})
 
@@ -101,174 +101,225 @@ export default function Calendar() {
     .map(f => f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null)
     .filter(Boolean)
 
+  // 고정지출 뱃지용 총액
+  const fixedTotal = fixedExpenses.reduce((s, f) => s + f.amount, 0)
+
   const inputStyle = {
     width: '100%', padding: '11px 14px', borderRadius: 10,
     border: '1.5px solid #e8e8e8', fontSize: 14, outline: 'none',
     background: '#fafafa', color: '#111', boxSizing: 'border-box'
   }
 
+  const sortedFixed = [...fixedExpenses].sort((a, b) => {
+    const da = parseInt(a.dueDate?.split('-')[2] || '99')
+    const db_ = parseInt(b.dueDate?.split('-')[2] || '99')
+    return da - db_
+  })
+
   return (
-    <div
-      style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }}
-      className={themeData.bgClass}
-    >
-      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>‹</button>
-          <p onClick={() => setShowYMPicker(true)}
-            style={{ fontSize: 18, fontWeight: 700, color: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#bbb' }}>▾</span>
-          </p>
-          <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>›</button>
+    <div style={{
+      height: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      background: themeData.bg
+    }}>
+
+      {/* ── 상단 고정 영역 ── */}
+      <div style={{ flexShrink: 0 }}>
+
+        {/* 캘린더 — 흰 배경 */}
+        <div style={{
+          background: '#fff',
+          padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px',
+          borderBottom: '1px solid #f0f0f0'
+        }}>
+          {/* 월 네비게이션 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
+              style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>‹</button>
+            <p onClick={() => setShowYMPicker(true)}
+              style={{ fontSize: 18, fontWeight: 700, color: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#bbb' }}>▾</span>
+            </p>
+            <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
+              style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>›</button>
+          </div>
+
+          {/* 요일 헤더 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
+            {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+              <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: i === 0 ? '#ef4444' : i === 6 ? themeData.primary : '#888', padding: '2px 0' }}>{d}</div>
+            ))}
+          </div>
+
+          {/* 날짜 그리드 — 셀 높이 고정 (항상 수입/지출 자리 확보) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+            {days.map((day, i) => {
+              if (!day) return (
+                <div key={`empty-${i}`} style={{ padding: '5px 2px' }}>
+                  <p style={{ fontSize: 13, marginBottom: 2, visibility: 'hidden' }}>0</p>
+                  <p style={{ fontSize: 8, lineHeight: 1.2, visibility: 'hidden' }}>0</p>
+                  <p style={{ fontSize: 8, lineHeight: 1.2, visibility: 'hidden' }}>0</p>
+                </div>
+              )
+              const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+              const data = byDate[dateStr]
+              const isToday = dateStr === todayStr
+              const isSelected = day === selectedDate
+              const dow = (firstDay + day - 1) % 7
+              const isFixedDay = fixedDueDays.includes(day)
+              return (
+                <div key={day} onClick={() => setSelectedDate(day === selectedDate ? null : day)}
+                  style={{
+                    padding: '5px 2px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                    background: isSelected ? '#EEF2FF' : isFixedDay ? `${themeData.primary}22` : 'transparent',
+                    border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent'
+                  }}>
+                  {/* 날짜 숫자 — 항상 자리 차지 */}
+                  <p style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? themeData.primary : dow === 0 ? '#ef4444' : dow === 6 ? themeData.primary : '#111', marginBottom: 2 }}>
+                    {isToday ? '●' : day}
+                  </p>
+                  {/* 수입 — 없어도 자리 유지 */}
+                  <p style={{ fontSize: 8, color: '#22c55e', lineHeight: 1.2, visibility: data?.income > 0 ? 'visible' : 'hidden' }}>
+                    +{data?.income > 0 ? data.income.toLocaleString() : '0'}
+                  </p>
+                  {/* 지출 — 없어도 자리 유지 */}
+                  <p style={{ fontSize: 8, color: '#ef4444', lineHeight: 1.2, visibility: data?.expense > 0 ? 'visible' : 'hidden' }}>
+                    -{data?.expense > 0 ? data.expense.toLocaleString() : '0'}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8 }}>
-          {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: i === 0 ? '#ef4444' : i === 6 ? themeData.primary : '#888', padding: '4px 0' }}>{d}</div>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-          {days.map((day, i) => {
-            if (!day) return <div key={`empty-${i}`} />
-            const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-            const data = byDate[dateStr]
-            const isToday = dateStr === todayStr
-            const isSelected = day === selectedDate
-            const dow = (firstDay + day - 1) % 7
-            const isFixedDay = fixedDueDays.includes(day)
-            return (
-              <div key={day} onClick={() => setSelectedDate(day === selectedDate ? null : day)}
-                style={{ padding: '6px 2px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
-                  background: isSelected ? '#EEF2FF' : isFixedDay ? `${themeData.primary}22` : 'transparent',
-                  border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent' }}>
-                <p style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? themeData.primary : dow === 0 ? '#ef4444' : dow === 6 ? themeData.primary : '#111', marginBottom: 2 }}>
-                  {isToday ? '●' : day}
-                </p>
-                {data?.income > 0 && <p style={{ fontSize: 8, color: '#22c55e', lineHeight: 1.2 }}>+{data.income.toLocaleString()}</p>}
-                {data?.expense > 0 && <p style={{ fontSize: 8, color: '#ef4444', lineHeight: 1.2 }}>-{data.expense.toLocaleString()}</p>}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <div style={{ padding: '16px' }}>
+        {/* 선택한 날짜 내역 */}
         {selectedDate && (
-          <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 12 }}>{viewMonth + 1}월 {selectedDate}일</p>
+          <div style={{ background: themeData.card, margin: '12px 16px 0', borderRadius: 16, padding: '14px 16px' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 10 }}>{viewMonth + 1}월 {selectedDate}일</p>
             {selectedTxs.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>내역이 없어요</p>
+              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '8px 0' }}>내역이 없어요</p>
             ) : (
               selectedTxs.map(t => (
-                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f8f8f8' }}>
-                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
-                        <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                        <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
-                    </div>
-                    <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#ef4444' : (t.cardBilling || isCredit(t.payment)) ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                        {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
-                    </p>
+                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f8f8f8' }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
+                    <p style={{ fontSize: 14, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                    <p style={{ fontSize: 12, color: '#bbb' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#ef4444' : (t.cardBilling || isCredit(t.payment)) ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                    {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                  </p>
                 </div>
               ))
             )}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '16px' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>이번 주 지출</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#ef4444' }}>-{fmt(weekExpense)}원</p>
+        {/* 이번 주 / 이번 달 수입·지출 요약 */}
+        <div style={{ padding: '12px 16px 0' }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>이번 주 지출</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#ef4444' }}>-{fmt(weekExpense)}원</p>
+            </div>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>이번 주 수입</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#22c55e' }}>+{fmt(weekIncome)}원</p>
+            </div>
           </div>
-          <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '16px' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>이번 주 수입</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>+{fmt(weekIncome)}원</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>{viewMonth + 1}월 지출</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#ef4444' }}>-{fmt(totalExpense)}원</p>
+            </div>
+            <div style={{ flex: 1, background: themeData.card, borderRadius: 14, padding: '13px 14px' }}>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>{viewMonth + 1}월 수입</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#22c55e' }}>+{fmt(totalIncome)}원</p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '16px' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{viewMonth + 1}월 지출</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#ef4444' }}>-{fmt(totalExpense)}원</p>
-          </div>
-          <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '16px' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{viewMonth + 1}월 수입</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>+{fmt(totalIncome)}원</p>
-          </div>
-        </div>
+      {/* ── 고정지출 — 독립 스크롤 ── */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        minHeight: 0,
+        margin: '12px 16px 0',
+        borderRadius: '16px 16px 0 0'
+      }}>
 
-        <div style={{ background: themeData.card, borderRadius: 16, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        {/* 고정지출 헤더 — 고정 */}
+        <div style={{
+          flexShrink: 0,
+          background: themeData.card,
+          borderRadius: '16px 16px 0 0',
+          padding: '14px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid #f5f5f5'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>고정지출</p>
-            <button onClick={() => setShowAddFixed(true)}
-              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
-              + 추가
-            </button>
+            {fixedExpenses.length > 0 && (
+              <span style={{
+                fontSize: 12, color: '#666',
+                background: '#f2f4f7',
+                borderRadius: 20,
+                padding: '2px 10px',
+                fontWeight: 500
+              }}>
+                {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
+              </span>
+            )}
           </div>
+          <button onClick={() => setShowAddFixed(true)}
+            style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+            + 추가
+          </button>
+        </div>
 
+        {/* 고정지출 목록 — 독립 스크롤 */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          background: themeData.card,
+          borderRadius: '0 0 16px 16px',
+          padding: '12px 14px',
+          paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))'
+        }}>
           {fixedExpenses.length === 0 && !showAddFixed && (
-            <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>고정지출을 추가해보세요</p>
+            <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>고정지출을 추가해보세요</p>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[...fixedExpenses]
-                .sort((a, b) => {
-                    const da = parseInt(a.dueDate?.split('-')[2] || '99')
-                    const db = parseInt(b.dueDate?.split('-')[2] || '99')
-                    return da - db
-                })
-                .map(f => {
-                  const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
-                  const isDone = (f.doneMonths || []).includes(currentMonthKey)   // ← 이 줄 추가
-                  return (
-                    <div key={f.id} style={{ background: isDone ? '#fafafa' : themeData.bg || '#f8f8f8', borderRadius: 14, padding: '12px 14px', border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
-                        <button onClick={() => handleDeleteFixed(f.id)}
-                          style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
-                      </div>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', marginBottom: 4 }}>
-                        {f.title}
-                      </p>
-                      {dayNum && (
-                        <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>매월 {dayNum}일</p>
-                      )}
-                      <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444' }}>
-                        -{fmt(f.amount)}원
-                      </p>
-                    </div>
-                  )
-                })
-            }
-        </div>
-
           {showAddFixed && (
-            <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
+            <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginBottom: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <input style={inputStyle} placeholder="항목명 (예: 월세, 넷플릭스)" value={newFixed.title} onChange={e => setNewFixed(f => ({ ...f, title: e.target.value }))} />
                 <input style={inputStyle} type="number" placeholder="금액" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
                 <div>
-                    <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4, paddingLeft: 2 }}>납부일 (선택)</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <input
-                            style={{ ...inputStyle, flex: 1 }}
-                            type="number" min="1" max="31"
-                            placeholder="예: 10"
-                            value={newFixed.dueDate ? parseInt(newFixed.dueDate.split('-')[2]) : ''}
-                            onChange={e => {
-                                const day = e.target.value
-                                if (!day) { setNewFixed(f => ({ ...f, dueDate: '' })); return }
-                                const d = Math.min(31, Math.max(1, parseInt(day)))
-                                const now = new Date()
-                                const dueDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-                                setNewFixed(f => ({ ...f, dueDate }))
-                            }}
-                        />
-                        <span style={{ fontSize: 14, color: '#888', whiteSpace: 'nowrap' }}>일</span>
-                    </div>
+                  <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4, paddingLeft: 2 }}>납부일 (선택)</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      style={{ ...inputStyle, flex: 1 }}
+                      type="number" min="1" max="31"
+                      placeholder="예: 10"
+                      value={newFixed.dueDate ? parseInt(newFixed.dueDate.split('-')[2]) : ''}
+                      onChange={e => {
+                        const day = e.target.value
+                        if (!day) { setNewFixed(f => ({ ...f, dueDate: '' })); return }
+                        const d = Math.min(31, Math.max(1, parseInt(day)))
+                        const n = new Date()
+                        const dueDate = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+                        setNewFixed(f => ({ ...f, dueDate }))
+                      }}
+                    />
+                    <span style={{ fontSize: 14, color: '#888', whiteSpace: 'nowrap' }}>일</span>
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
@@ -277,14 +328,45 @@ export default function Calendar() {
               </div>
             </div>
           )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {sortedFixed.map(f => {
+              const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
+              const isDone = (f.doneMonths || []).includes(currentMonthKey)
+              return (
+                <div key={f.id} style={{
+                  background: isDone ? '#fafafa' : themeData.bg || '#f8f8f8',
+                  borderRadius: 14, padding: '12px 14px',
+                  border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}22`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                    <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
+                      style={{ width: 16, height: 16, cursor: 'pointer', accentColor: themeData.primary, marginTop: 2 }} />
+                    <button onClick={() => handleDeleteFixed(f.id)}
+                      style={{ background: 'none', border: 'none', color: '#ddd', fontSize: 14, cursor: 'pointer', padding: 0 }}>✕</button>
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', marginBottom: 4 }}>
+                    {f.title}
+                  </p>
+                  {dayNum && (
+                    <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>매월 {dayNum}일</p>
+                  )}
+                  <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444' }}>
+                    -{fmt(f.amount)}원
+                  </p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
+
       {showYMPicker && (
         <YearMonthPicker
-            viewYear={viewYear}
-            viewMonth={viewMonth}
-            onConfirm={(y, m) => { setViewYear(y); setViewMonth(m) }}
-            onClose={() => setShowYMPicker(false)}
+          viewYear={viewYear}
+          viewMonth={viewMonth}
+          onConfirm={(y, m) => { setViewYear(y); setViewMonth(m) }}
+          onClose={() => setShowYMPicker(false)}
         />
       )}
       <BottomNav />

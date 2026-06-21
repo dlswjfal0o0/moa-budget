@@ -22,40 +22,56 @@ export default function Auth() {
   const [resetSent, setResetSent] = useState(false)
   const [resetError, setResetError] = useState('')
 
+  // 추가 state
+  const [showPw, setShowPw] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [touchedEmail, setTouchedEmail] = useState(false)
+  const [touchedConfirm, setTouchedConfirm] = useState(false)
+
+  // 비밀번호 강도
+  const getStrength = (pw) => {
+    let s = 0
+    if (pw.length >= 8) s++
+    if (/[A-Z]/.test(pw)) s++
+    if (/[0-9]/.test(pw)) s++
+    if (/[^A-Za-z0-9]/.test(pw)) s++
+    return s
+  }
+  const strengthColor = ['', '#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+  const strengthLabel = ['', '약함', '보통', '강함', '매우 강함']
+  const pwStrength = getStrength(password)
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const confirmMatch = password === confirm && confirm.length > 0
+
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 12,
     border: '1.5px solid #e8e8e8', fontSize: 15, color: '#111',
-    outline: 'none', background: '#fafafa'
+    outline: 'none', background: '#fafafa', boxSizing: 'border-box'
   }
 
   const handleEmail = async () => {
-  setError('')
-  if (!email || !password) return setError('이메일과 비밀번호를 입력해주세요.')
-  if (mode === 'signup' && password !== confirm) return setError('비밀번호가 일치하지 않아요.')
-  if (password.length < 6) return setError('비밀번호는 6자 이상이어야 해요.')
+    setError('')
+    if (!email || !password) return setError('이메일과 비밀번호를 입력해주세요.')
+    if (mode === 'signup' && password !== confirm) return setError('비밀번호가 일치하지 않아요.')
+    if (password.length < 6) return setError('비밀번호는 6자 이상이어야 해요.')
 
-  setLoading(true)
-  try {
-    if (mode === 'signup') {
-      await createUserWithEmailAndPassword(auth, email, password)
-    } else {
-      await signInWithEmailAndPassword(auth, email, password)
+    setLoading(true)
+    try {
+      if (mode === 'signup') {
+        await createUserWithEmailAndPassword(auth, email, password)
+      } else {
+        await signInWithEmailAndPassword(auth, email, password)
+      }
+      localStorage.setItem('moa_logged_in', 'true')
+      navigate('/home', { replace: true })
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')
+      else if (e.code === 'auth/user-not-found') setError('등록되지 않은 이메일이에요.')
+      else if (e.code === 'auth/wrong-password') setError('비밀번호가 틀렸어요.')
+      else setError('오류가 발생했어요. 다시 시도해주세요.')
     }
-    // 이메일 로그인 성공 후
-    localStorage.setItem('moa_logged_in', 'true')
-    navigate('/home', { replace: true })
-
-    // Google 로그인 성공 후
-    localStorage.setItem('moa_logged_in', 'true')
-    navigate('/home', { replace: true })
-  } catch (e) {
-    if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')
-    else if (e.code === 'auth/user-not-found') setError('등록되지 않은 이메일이에요.')
-    else if (e.code === 'auth/wrong-password') setError('비밀번호가 틀렸어요.')
-    else setError('오류가 발생했어요. 다시 시도해주세요.')
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   const handleGoogle = async () => {
     setError('')
@@ -72,13 +88,13 @@ export default function Auth() {
   const handlePasswordReset = async () => {
     if (!resetEmail) return setResetError('이메일을 입력해주세요.')
     try {
-        await sendPasswordResetEmail(auth, resetEmail)
-        setResetSent(true)
-        setResetError('')
+      await sendPasswordResetEmail(auth, resetEmail)
+      setResetSent(true)
+      setResetError('')
     } catch (err) {
-        if (err.code === 'auth/user-not-found') setResetError('등록되지 않은 이메일이에요.')
-        else if (err.code === 'auth/invalid-email') setResetError('올바른 이메일 형식이 아니에요.')
-        else setResetError('오류가 발생했어요. 다시 시도해주세요.')
+      if (err.code === 'auth/user-not-found') setResetError('등록되지 않은 이메일이에요.')
+      else if (err.code === 'auth/invalid-email') setResetError('올바른 이메일 형식이 아니에요.')
+      else setResetError('오류가 발생했어요. 다시 시도해주세요.')
     }
   }
 
@@ -93,18 +109,116 @@ export default function Auth() {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input style={inputStyle} type="email" placeholder="이메일" value={email} onChange={e => setEmail(e.target.value)} />
-          <input style={inputStyle} type="password" placeholder="비밀번호" value={password} onChange={e => setPassword(e.target.value)} />
-          {mode === 'signup' && (
-            <input style={inputStyle} type="password" placeholder="비밀번호 확인" value={confirm} onChange={e => setConfirm(e.target.value)} />
+
+          {/* 이메일 — 실시간 유효성 표시 */}
+          <div style={{ position: 'relative' }}>
+            <input
+              style={{
+                ...inputStyle,
+                borderColor: touchedEmail && email
+                  ? emailValid ? '#10b981' : '#ef4444'
+                  : '#e8e8e8'
+              }}
+              type="email" placeholder="이메일"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onBlur={() => setTouchedEmail(true)}
+            />
+            {touchedEmail && email && (
+              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>
+                {emailValid ? '✅' : '❌'}
+              </span>
+            )}
+          </div>
+          {touchedEmail && email && !emailValid && (
+            <p style={{ fontSize: 12, color: '#ef4444', marginTop: -6 }}>올바른 이메일 형식을 입력해 주세요</p>
           )}
 
-          {mode === 'login' && (
-            <button onClick={() => { setShowReset(true); setResetEmail(email) }}
-                style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', padding: '2px 0', textAlign: 'right', width: '100%' }}>
-                비밀번호를 잊으셨나요?
-            </button>
+          {/* 비밀번호 — 로그인 시 위에 레이블 + 비밀번호 찾기 링크 */}
+          <div>
+            {mode === 'login' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>비밀번호</span>
+                <button onClick={() => { setShowReset(true); setResetEmail(email) }}
+                  style={{ background: 'none', border: 'none', color: '#3182F6', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  비밀번호를 잊으셨나요?
+                </button>
+              </div>
+            )}
+            <div style={{ position: 'relative' }}>
+              <input
+                style={{ ...inputStyle, paddingRight: 44 }}
+                type={showPw ? 'text' : 'password'}
+                placeholder="비밀번호"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+              <button type="button" onClick={() => setShowPw(!showPw)}
+                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#aaa' }}>
+                {showPw ? '🙈' : '👁️'}
+              </button>
+            </div>
+
+            {/* 비밀번호 강도 — 회원가입 시만 */}
+            {mode === 'signup' && password && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} style={{ flex: 1, height: 4, borderRadius: 99,
+                      background: i <= pwStrength ? strengthColor[pwStrength] : '#e8e8e8',
+                      transition: 'background 0.2s' }} />
+                  ))}
+                </div>
+                <p style={{ fontSize: 12, color: strengthColor[pwStrength] }}>{strengthLabel[pwStrength]}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 8px', marginTop: 6 }}>
+                  {[
+                    { label: '8자 이상', ok: password.length >= 8 },
+                    { label: '대문자 포함', ok: /[A-Z]/.test(password) },
+                    { label: '숫자 포함', ok: /[0-9]/.test(password) },
+                    { label: '특수문자 포함', ok: /[^A-Za-z0-9]/.test(password) },
+                  ].map(({ label, ok }) => (
+                    <span key={label} style={{ fontSize: 11, color: ok ? '#10b981' : '#94a3b8' }}>
+                      {ok ? '✓' : '○'} {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 비밀번호 확인 — show/hide + 일치 여부 */}
+          {mode === 'signup' && (
+            <div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  style={{
+                    ...inputStyle, paddingRight: 44,
+                    borderColor: touchedConfirm && confirm
+                      ? confirmMatch ? '#10b981' : '#ef4444'
+                      : '#e8e8e8'
+                  }}
+                  type={showConfirm ? 'text' : 'password'}
+                  placeholder="비밀번호 확인"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  onBlur={() => setTouchedConfirm(true)}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#aaa' }}>
+                  {showConfirm ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {touchedConfirm && confirm && !confirmMatch && (
+                <p style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>비밀번호가 일치하지 않습니다</p>
+              )}
+              {touchedConfirm && confirmMatch && (
+                <p style={{ fontSize: 12, color: '#10b981', marginTop: 4 }}>비밀번호가 일치합니다</p>
+              )}
+            </div>
           )}
+
         </div>
 
         {error && (
