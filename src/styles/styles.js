@@ -3,10 +3,10 @@ import { COLORS } from './theme'
 // 공통 인풋 스타일
 export const inputStyle = {
   width: '100%',
-  padding: '12px 14px',
-  borderRadius: 10,
+  padding: '11px 14px',
+  borderRadius: 16,
   border: `1.5px solid ${COLORS.border}`,
-  fontSize: 15,
+  fontSize: 14,
   outline: 'none',
   background: COLORS.bgInput,
   color: COLORS.text,

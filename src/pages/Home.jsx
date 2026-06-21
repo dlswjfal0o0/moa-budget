@@ -202,10 +202,10 @@ export default function Home() {
       <div style={{ padding: '20px 16px' }}>
         {/* 예산 관리 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>예산 관리</p>
             <button onClick={() => setShowAddBudget(true)}
-              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
+              style={{ background: themeData.primary, border: 'none', borderRadius: 9999, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
           </div>
 
           {budgets.length === 0 ? (

@@ -203,7 +203,7 @@ export default function Calendar() {
         {/* 선택한 날짜 내역 */}
         {selectedDate && (
           <div style={{ background: themeData.card, margin: '12px 16px 0', borderRadius: 16, padding: '14px 16px' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 10 }}>{viewMonth + 1}월 {selectedDate}일</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>{viewMonth + 1}월 {selectedDate}일</p>
             {selectedTxs.length === 0 ? (
               <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '8px 0' }}>내역이 없어요</p>
             ) : (
@@ -259,7 +259,7 @@ export default function Calendar() {
             borderBottom: '1px solid #f5f5f5'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>고정지출</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>고정지출</p>
               {fixedExpenses.length > 0 && (
                 <span style={{ fontSize: 12, color: '#666', background: '#f2f4f7', borderRadius: 9999, padding: '2px 10px', fontWeight: 500 }}>
                   {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
@@ -267,7 +267,7 @@ export default function Calendar() {
               )}
             </div>
             <button onClick={() => setShowAddFixed(true)}
-              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+              style={{ background: themeData.primary, border: 'none', borderRadius: 9999, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
               + 추가
             </button>
           </div>
