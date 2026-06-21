@@ -50,6 +50,7 @@ export default function MyPage() {
   const [expandedAccountHistoryId, setExpandedAccountHistoryId] = useState(null)
   const [expandedCardId, setExpandedCardId] = useState(null)
   const [showAccountNumbers, setShowAccountNumbers] = useState(false)
+  const [expandedAccountEditId, setExpandedAccountEditId] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -454,9 +455,6 @@ export default function MyPage() {
           <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
-            {totalAsset < 0 && (
-              <span style={{ fontSize: 11, background: '#fee2e2', color: '#ef4444', borderRadius: 20, padding: '3px 8px', fontWeight: 600, flexShrink: 0 }}>부채 초과</span>
-            )}
           </div>
           <p style={{ fontSize: 12, color: '#aaa' }}>
             계좌 <span style={{ color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#ef4444' : '#666' }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
@@ -466,7 +464,7 @@ export default function MyPage() {
         </div>
 
         {/* 카드 */}
-        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
@@ -569,14 +567,15 @@ export default function MyPage() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
                 <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 14, padding: 4 }}>
                     {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
                       <button key={opt.val} onClick={() => setNewCard(c => ({ ...c, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '12px', borderRadius: 10,
-                          border: `1.5px solid ${newCard.cardType === opt.val ? t.primary : '#e8e8e8'}`,
-                          background: newCard.cardType === opt.val ? t.primary + '15' : '#fff',
-                          color: newCard.cardType === opt.val ? t.primary : '#888',
-                          fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                        style={{ flex: 1, padding: '11px', borderRadius: 11, border: 'none', cursor: 'pointer', fontSize: 14,
+                          fontWeight: newCard.cardType === opt.val ? 700 : 500,
+                          background: newCard.cardType === opt.val ? t.primary : 'transparent',
+                          color: newCard.cardType === opt.val ? '#fff' : '#888',
+                          boxShadow: newCard.cardType === opt.val ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+                          transition: 'all 0.15s' }}>{opt.label}</button>
                     ))}
                   </div>
                 </div>
@@ -628,14 +627,15 @@ export default function MyPage() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
                 <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 14, padding: 4 }}>
                     {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
                       <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '12px', borderRadius: 10,
-                          border: `1.5px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
-                          background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
-                          color: editCardData.cardType === opt.val ? t.primary : '#888',
-                          fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                        style={{ flex: 1, padding: '11px', borderRadius: 11, border: 'none', cursor: 'pointer', fontSize: 14,
+                          fontWeight: editCardData.cardType === opt.val ? 700 : 500,
+                          background: editCardData.cardType === opt.val ? t.primary : 'transparent',
+                          color: editCardData.cardType === opt.val ? '#fff' : '#888',
+                          boxShadow: editCardData.cardType === opt.val ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+                          transition: 'all 0.15s' }}>{opt.label}</button>
                     ))}
                   </div>
                 </div>
@@ -679,7 +679,7 @@ export default function MyPage() {
         </div>
 
         {/* 계좌 */}
-        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -700,9 +700,9 @@ export default function MyPage() {
             </div>
           </div>
           {accounts.map(acc => (
-            <div key={acc.id}>
+            <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14, border: `1.5px solid ${t.primary}18`, overflow: 'hidden' }}>
               {editingAccountId === acc.id ? (
-                <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '12px', marginBottom: 10 }}>
+                <div style={{ padding: '14px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <input style={inputStyle} placeholder="은행/계좌 이름" value={editAccountData.name} onChange={e => setEditAccountData(d => ({ ...d, name: e.target.value }))} />
                     <input style={inputStyle} type="number" placeholder="현재 잔액" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
@@ -715,21 +715,47 @@ export default function MyPage() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: expandedAccountHistoryId === acc.id ? 'none' : '1px solid #f8f8f8' }}>
-                    <div>
-                      <p style={{ fontSize: 14, color: t.text || '#333' }}>{acc.name}</p>
-                      {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
-                      <button onClick={() => setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id)}
-                        style={{ background: '#f0f0f0', border: 'none', borderRadius: 6, padding: '3px 8px', color: '#888', fontSize: 11, cursor: 'pointer' }}>
-                        {expandedAccountHistoryId === acc.id ? '▲' : '월별 ▾'}
-                      </button>
-                      <button onClick={() => handleEditAccount(acc)} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
-                      <button onClick={() => handleDeleteAccount(acc.id)} style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                  {/* 클릭 시 월별 잔액 토글 */}
+                  <div style={{ padding: '12px 14px', cursor: 'pointer' }}
+                    onClick={() => setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#333' }}>{acc.name}</p>
+                        {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
+                        <button onClick={e => {
+                          e.stopPropagation()
+                          setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)
+                        }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedAccountEditId === acc.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  {/* 수정/삭제 펼침 행 */}
+                  {expandedAccountEditId === acc.id && (
+                    <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                      <button onClick={() => {
+                        handleEditAccount(acc)
+                        setExpandedAccountEditId(null)
+                      }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        수정
+                      </button>
+                      <div style={{ width: 1, background: '#f0f0f0' }} />
+                      <button onClick={e => { e.stopPropagation(); handleDeleteAccount(acc.id) }}
+                        style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                  {/* 월별 잔액 히스토리 */}
                   {expandedAccountHistoryId === acc.id && (() => {
                     const months = Array.from({ length: 6 }, (_, i) => {
                       const d = new Date()
@@ -740,9 +766,9 @@ export default function MyPage() {
                     const balances = months.map(m => getBalanceAtMonthEnd(acc, m.year, m.month))
                     const maxAbs = Math.max(...balances.map(b => Math.abs(b)), 1)
                     return (
-                      <div style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px', marginBottom: 8, borderBottom: '1px solid #f8f8f8' }}>
+                      <div style={{ background: '#f8f8f8', padding: '12px 14px', borderTop: '1px solid #f0f0f0' }}>
                         {/* 미니 바 차트 */}
-                        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 52, marginBottom: 2 }}>
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 52, marginBottom: 8 }}>
                           {balances.map((bal, i) => (
                             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                               <div style={{ width: '100%', borderRadius: 3, background: bal < 0 ? '#fca5a5' : (t.primary + '88'), height: `${Math.max(4, Math.abs(bal) / maxAbs * 36)}px` }} />
@@ -773,16 +799,34 @@ export default function MyPage() {
               )}
             </div>
           ))}
+          {/* 계좌 추가 bottom sheet */}
           {showAddAccount && (
-            <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input style={inputStyle} placeholder="은행/계좌 이름" value={newAccount.name} onChange={e => setNewAccount(a => ({ ...a, name: e.target.value }))} />
-                <input style={inputStyle} type="number" placeholder="잔액" value={newAccount.balance} onChange={e => setNewAccount(a => ({ ...a, balance: e.target.value }))} />
-                <input style={inputStyle} placeholder="계좌번호 (선택)" value={newAccount.number} onChange={e => setNewAccount(a => ({ ...a, number: e.target.value }))} />
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                <button onClick={() => setShowAddAccount(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 13 }}>취소</button>
-                <button onClick={handleAddAccount} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>추가</button>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+              onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}>
+              <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>계좌 추가</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>계좌 이름 <span style={{ color: '#ef4444' }}>*</span></p>
+                    <input style={{ ...inputStyle }} placeholder="예: 국민은행" value={newAccount.name} onChange={e => setNewAccount(a => ({ ...a, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>잔액</p>
+                    <input style={{ ...inputStyle }} type="number" placeholder="예: 1500000" value={newAccount.balance} onChange={e => setNewAccount(a => ({ ...a, balance: e.target.value }))} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>계좌번호 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span></p>
+                    <input style={{ ...inputStyle }} placeholder="예: 1234-56-789012" value={newAccount.number} onChange={e => setNewAccount(a => ({ ...a, number: e.target.value }))} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                  <button onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}
+                    style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', color: '#555', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+                  <button onClick={handleAddAccount}
+                    style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: t.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>추가</button>
+                </div>
               </div>
             </div>
           )}
