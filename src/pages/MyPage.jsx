@@ -127,9 +127,22 @@ export default function MyPage() {
   }
 
   const handleCashSave = () => {
-    const num = Number(cashInput)
-    setCash(num)
-    saveToFirestore({ cash: num })
+    const currentAmount = Number(cashInput)
+    let net = 0
+    try {
+        net = allTxns.reduce((s, t) => {
+            if (t.type === 'expense' && t.payment === '현금') return s - (t.amount || 0)
+            if (t.type === 'income' && t.payment === '현금') return s + (t.amount || 0)
+            if (t.type === 'transfer') {
+                if (t.payment === '현금') return s - (t.amount || 0)
+                if (t.toAccount === '현금') return s + (t.amount || 0)
+            }
+            return s
+        }, 0)
+    } catch { net = 0 }
+    const baseBalance = currentAmount - net
+    setCash(baseBalance)
+    saveToFirestore({ cash: baseBalance })
     setEditingCash(false)
   }
 
