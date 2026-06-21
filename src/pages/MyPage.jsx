@@ -45,6 +45,8 @@ export default function MyPage() {
   const [showUpdates, setShowUpdates] = useState(false)
   const [expandedVersion, setExpandedVersion] = useState(null)
   const [allTxns, setAllTxns] = useState([])
+  const [editingCardId, setEditingCardId] = useState(null)
+  const [editCardData, setEditCardData] = useState({})
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -155,7 +157,23 @@ export default function MyPage() {
     setCards(updated); saveToFirestore({ cards: updated })
   }
 
-    const handleAddAccount = () => {
+  const handleSaveCard = () => {
+    const updated = cards.map(c => c.id === editingCardId
+        ? { ...c,
+            cardType: editCardData.cardType || c.cardType,
+            name: editCardData.name,
+            cardNumber: editCardData.cardNumber,
+            expiry: editCardData.expiry,
+            linkedAccount: editCardData.linkedAccount,
+            limit: Number(editCardData.limit) || 0,
+            billingDay: editCardData.billingDay ? Number(editCardData.billingDay) : null,
+          }
+        : c)
+    setCards(updated); saveToFirestore({ cards: updated })
+    setEditingCardId(null)
+  }
+
+  const handleAddAccount = () => {
     if (!newAccount.name || !newAccount.balance) return
     const updated = [...accounts, { id: Date.now(), name: newAccount.name, balance: Number(newAccount.balance), number: newAccount.number || '' }]
     setAccounts(updated); saveToFirestore({ accounts: updated })
@@ -376,48 +394,110 @@ export default function MyPage() {
           <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
         </div>
 
-        {/* 카드 실적 */}
+        {/* 카드 */}
         <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드 실적</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
           {cards.map(card => {
             const cardUsed = getCardUsed(card)
-            const pct = Math.min((cardUsed / card.limit) * 100, 100)
-            const achieved = cardUsed >= card.limit
+            const pct = Math.min((cardUsed / (card.limit || 1)) * 100, 100)
+            const achieved = card.limit > 0 && cardUsed >= card.limit
+
+            // 수정 중인 카드
+            if (editingCardId === card.id) {
+              return (
+                <div key={card.id} style={{ marginBottom: 10, background: '#f8f8f8', borderRadius: 14, padding: '14px' }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 수정</p>
+
+                  {/* 카드 종류 */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
+                        <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
+                            style={{ flex: 1, padding: '9px', borderRadius: 10,
+                                border: `2px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
+                                background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
+                                color: editCardData.cardType === opt.val ? t.primary : '#666',
+                                fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <input style={inputStyle} placeholder="카드 이름" value={editCardData.name}
+                        onChange={e => setEditCardData(d => ({ ...d, name: e.target.value }))} />
+                    <input style={inputStyle} placeholder="카드번호 끝 4자리" maxLength={4} value={editCardData.cardNumber}
+                        onChange={e => setEditCardData(d => ({ ...d, cardNumber: e.target.value }))} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <input style={{ ...inputStyle, flex: 1 }} placeholder="유효기간 (MM/YY)" value={editCardData.expiry}
+                            onChange={e => setEditCardData(d => ({ ...d, expiry: e.target.value }))} />
+                        <select style={{ ...inputStyle, flex: 1 }} value={editCardData.linkedAccount}
+                            onChange={e => setEditCardData(d => ({ ...d, linkedAccount: e.target.value }))}>
+                            <option value="">연동 계좌 없음</option>
+                            {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                        </select>
+                    </div>
+                    <input style={inputStyle} type="number" placeholder="실적 목표 금액" value={editCardData.limit}
+                        onChange={e => setEditCardData(d => ({ ...d, limit: e.target.value }))} />
+                    <input style={inputStyle} type="number" min="1" max="31" placeholder="결제일 (예: 15)" value={editCardData.billingDay}
+                        onChange={e => setEditCardData(d => ({ ...d, billingDay: e.target.value }))} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button onClick={() => setEditingCardId(null)}
+                        style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 13 }}>취소</button>
+                    <button onClick={handleSaveCard}
+                        style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>저장</button>
+                  </div>
+                </div>
+              )
+            }
+
+            // 일반 카드 아이템
             return (
               <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14,
                 padding: '12px 14px', border: `1.5px solid ${t.primary}18`, cursor: 'pointer' }}
                 onClick={() => {
-                    setSelectedCard(card)
-                    setCardDetailTab('benefits')
-                    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
-                    setCardHistoryMonth(null)
-                    getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+                  setSelectedCard(card)
+                  setCardDetailTab('benefits')
+                  const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
+                  setCardHistoryMonth(null)
+                  getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
                 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
-                        <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 20, padding: '2px 7px', marginLeft: 4 }}>
-                          {card.cardType === 'credit' ? '신용' : '체크'}
-                        </span>
-                        {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
+                    {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={e => {
+                        e.stopPropagation()
+                        setEditingCardId(card.id)
+                        setEditCardData({
+                            cardType: card.cardType || 'debit',
+                            name: card.name,
+                            cardNumber: card.cardNumber || '',
+                            expiry: card.expiry || '',
+                            linkedAccount: card.linkedAccount || '',
+                            limit: String(card.limit || ''),
+                            billingDay: card.billingDay ? String(card.billingDay) : '',
+                        })
+                    }} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
                     <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
                         style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, color: '#888' }}>{fmt(cardUsed)}원 사용 <span style={{ color: '#ccc' }}>(이번 달)</span></span>
-                    <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit)}원</span>
+                  <span style={{ fontSize: 12, color: '#888' }}>{fmt(cardUsed)}원 사용 <span style={{ color: '#ccc' }}>(이번 달)</span></span>
+                  <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit || 0)}원</span>
                 </div>
                 <div style={{ background: '#f0f0f0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                  <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
                 </div>
                 {card.billingDay && (
-                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>결제일 매월 {card.billingDay}일</p>
+                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>결제일 매월 {card.billingDay}일</p>
                 )}
-            </div>
+              </div>
             )
           })}
           {showAddCard && (
