@@ -317,6 +317,20 @@ export default function MyPage() {
       return account.balance + net
     } catch { return account.balance }
   }
+  const getCashBalance = () => {
+    try {
+        const net = allTxns.reduce((s, t) => {
+            if (t.type === 'expense' && t.payment === '현금') return s - (t.amount || 0)
+            if (t.type === 'income' && t.payment === '현금') return s + (t.amount || 0)
+            if (t.type === 'transfer') {
+                if (t.payment === '현금') return s - (t.amount || 0)
+                if (t.toAccount === '현금') return s + (t.amount || 0)
+            }
+            return s
+        }, 0)
+        return Number(cash || 0) + net
+    } catch { return Number(cash || 0) }
+  }
   const getCardUsed = (card) => {
     try {
         const now = new Date()
@@ -334,7 +348,7 @@ export default function MyPage() {
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }
-  const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + Number(cash || 0)
+  const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + getCashBalance()
 
   const smallBtn = (onClick, label, bg, color) => (
     <button onClick={onClick} style={{ background: bg, border: 'none', borderRadius: 8, padding: '5px 12px', color, fontSize: 12, cursor: 'pointer' }}>{label}</button>
@@ -419,6 +433,9 @@ export default function MyPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
+                    <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 20, padding: '2px 7px' }}>
+                      {card.cardType === 'credit' ? '신용' : '체크'}
+                    </span>
                     {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -628,7 +645,7 @@ export default function MyPage() {
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 24, fontWeight: 700, color: t.text || '#111', marginTop: 8 }}>{fmt(cash || 0)}원</p>
+            <p style={{ fontSize: 24, fontWeight: 700, color: t.text || '#111', marginTop: 8 }}>{fmt(getCashBalance())}원</p>
           )}
         </div>
 

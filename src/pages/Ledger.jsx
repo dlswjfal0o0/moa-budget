@@ -757,11 +757,11 @@ export default function Ledger() {
                                 )}
 
                                 {/* 체크카드 섹션 */}
-                                {userCardsList.some(c => c.cardType !== 'credit') && (
+                                {userCardsList.some(c => c.cardType !== 'debit') && (
                                   <>
                                     <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>체크카드</p>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                      {userCardsList.filter(c => c.cardType !== 'credit').map(card => (
+                                      {userCardsList.filter(c => c.cardType !== 'debit').map(card => (
                                         <button key={card.id || card.name}
                                           onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
                                           style={{ padding: '8px 14px', borderRadius: 20,
