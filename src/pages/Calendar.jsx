@@ -125,14 +125,8 @@ export default function Calendar() {
       background: themeData.bg
     }}>
 
-      {/* ── 상단 고정 영역 ── */}
-      <div style={{ flexShrink: 0 }}>
-
-        {/* 캘린더 — 흰 배경 */}
-        <div style={{
-          background: '#fff',
-          padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px'
-        }}>
+      {/* ── 고정: 캘린더만 ── */}
+      <div style={{ flexShrink: 0, background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
           {/* 월 네비게이션 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
@@ -193,6 +187,9 @@ export default function Calendar() {
           </div>
         </div>
 
+      {/* ── 스크롤 영역: 날짜 내역 + 요약 + 고정지출 ── */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+
         {/* 선택한 날짜 내역 */}
         {selectedDate && (
           <div style={{ background: themeData.card, margin: '12px 16px 0', borderRadius: 16, padding: '14px 16px' }}>
@@ -238,102 +235,75 @@ export default function Calendar() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── 고정지출 — 독립 스크롤 ── */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        minHeight: 0,
-        margin: '12px 16px 0',
-        borderRadius: '16px 16px 0 0'
-      }}>
+        {/* ── 고정지출 ── */}
+        <div style={{ margin: '12px 16px 0', borderRadius: 16, overflow: 'hidden' }}>
 
-        {/* 고정지출 헤더 — 고정 */}
-        <div style={{
-          flexShrink: 0,
-          background: '#fff',
-          borderRadius: '16px 16px 0 0',
-          padding: '14px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid #f5f5f5'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>고정지출</p>
-            {fixedExpenses.length > 0 && (
-              <span style={{
-                fontSize: 12, color: '#666',
-                background: '#f2f4f7',
-                borderRadius: 20,
-                padding: '2px 10px',
-                fontWeight: 500
-              }}>
-                {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
-              </span>
+          {/* 고정지출 헤더 */}
+          <div style={{
+            background: '#fff',
+            padding: '14px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid #f5f5f5'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>고정지출</p>
+              {fixedExpenses.length > 0 && (
+                <span style={{ fontSize: 12, color: '#666', background: '#f2f4f7', borderRadius: 20, padding: '2px 10px', fontWeight: 500 }}>
+                  {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
+                </span>
+              )}
+            </div>
+            <button onClick={() => setShowAddFixed(true)}
+              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+              + 추가
+            </button>
+          </div>
+
+          {/* 고정지출 목록 */}
+          <div style={{ background: '#fff', padding: '8px 14px 14px' }}>
+            {fixedExpenses.length === 0 && (
+              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>고정지출을 추가해보세요</p>
             )}
-          </div>
-          <button onClick={() => setShowAddFixed(true)}
-            style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-            + 추가
-          </button>
-        </div>
-
-        {/* 고정지출 목록 — 독립 스크롤 */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          background: '#fff',
-          borderRadius: '0 0 16px 16px',
-          padding: '8px 14px',
-          paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))'
-        }}>
-          {fixedExpenses.length === 0 && (
-            <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>고정지출을 추가해보세요</p>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {sortedFixed.map(f => {
-              const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
-              const isDone = (f.doneMonths || []).includes(currentMonthKey)
-              return (
-                <div key={f.id} style={{
-                  background: isDone ? '#fafafa' : '#fff',
-                  borderRadius: 14,
-                  padding: '14px 16px',
-                  border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12
-                }}>
-                  {/* 체크박스 */}
-                  <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
-                    style={{ width: 20, height: 20, cursor: 'pointer', accentColor: themeData.primary, flexShrink: 0 }} />
-                  {/* 제목 + 날짜 */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {f.title}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {sortedFixed.map(f => {
+                const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
+                const isDone = (f.doneMonths || []).includes(currentMonthKey)
+                return (
+                  <div key={f.id} style={{
+                    background: isDone ? '#fafafa' : '#fff',
+                    borderRadius: 14,
+                    padding: '14px 16px',
+                    border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12
+                  }}>
+                    <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
+                      style={{ width: 20, height: 20, cursor: 'pointer', accentColor: themeData.primary, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {f.title}
+                      </p>
+                      {dayNum && (
+                        <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>매월 {dayNum}일</p>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444', flexShrink: 0 }}>
+                      -{fmt(f.amount)}원
                     </p>
-                    {dayNum && (
-                      <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>매월 {dayNum}일</p>
-                    )}
+                    <button onClick={() => handleDeleteFixed(f.id)}
+                      style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>✕</button>
                   </div>
-                  {/* 금액 */}
-                  <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444', flexShrink: 0 }}>
-                    -{fmt(f.amount)}원
-                  </p>
-                  {/* 삭제 */}
-                  <button onClick={() => handleDeleteFixed(f.id)}
-                    style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>✕</button>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
-      </div>
+
+      </div>{/* ── 스크롤 영역 끝 ── */}
 
       {/* 고정지출 추가 — 바텀시트 팝업 */}
       {showAddFixed && (

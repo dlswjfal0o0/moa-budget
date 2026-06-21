@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
-import { CATEGORY_COLORS, DEFAULT_CATEGORIES } from '../styles/theme'
+import { CATEGORY_COLORS, DEFAULT_CATEGORIES, getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -454,7 +454,7 @@ export default function Ledger() {
 
               {dateGroups[date].map(t => {
                 const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
-                const iconColor = t.type === 'transfer' ? '#888' : (CATEGORY_COLORS[t.category] || '#B0B0B0')
+                const iconColor = t.type === 'transfer' ? '#888' : getCategoryColor(t.category || '기타')
                 return (
                   <div key={t.id} style={{ position: 'relative', marginBottom: 8, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                     {swipedId === t.id && (
@@ -581,8 +581,8 @@ export default function Ledger() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                 {categories[catTab].map(cat => (
                   <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f5f5f5', borderRadius: 20, padding: '6px 10px 6px 8px' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, background: (CATEGORY_COLORS[cat] || '#B0B0B0') + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CatIcon cat={guessIconKey(cat)} size={13} color={CATEGORY_COLORS[cat] || '#888'} />
+                    <div style={{ width: 22, height: 22, borderRadius: 6, background: getCategoryColor(cat) + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <CatIcon cat={guessIconKey(cat)} size={13} color={getCategoryColor(cat)} />
                     </div>
                     <span style={{ fontSize: 13, color: '#333' }}>{cat}</span>
                     <button onClick={() => handleDeleteCategory(catTab, cat)} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1 }}>×</button>
@@ -802,36 +802,39 @@ export default function Ledger() {
                   </div>
                 )}
 
-                {/* 신용카드 대금 납부 / 체크카드 소액 신용 / 대출상환 — 토글 스위치 */}
-                {form.type === 'expense' && (
-                  <div style={{ marginTop: 12, borderTop: '1px solid #f5f5f5', paddingTop: 4 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, paddingBottom: 10, borderBottom: showCardBilling || showLoan ? '1px solid #f5f5f5' : 'none' }}>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>신용카드 대금 납부</p>
-                        <p style={{ fontSize: 11, color: '#aaa' }}>카드 실적 제외</p>
-                      </div>
-                      <Toggle on={form.creditCardBilling || false} onChange={val => setForm(f => ({ ...f, creditCardBilling: val }))} />
-                    </div>
-                    {showCardBilling && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, paddingBottom: 10, borderBottom: showLoan ? '1px solid #f5f5f5' : 'none' }}>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>체크카드 소액 신용 대금 납부</p>
-                          <p style={{ fontSize: 11, color: '#aaa' }}>지출 합계에서 제외</p>
-                        </div>
-                        <Toggle on={form.cardBilling || false} onChange={val => setForm(f => ({ ...f, cardBilling: val }))} />
-                      </div>
-                    )}
-                    {showLoan && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, paddingBottom: 4 }}>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 500, color: '#333' }}>대출 / 상환</p>
-                          <p style={{ fontSize: 11, color: '#aaa' }}>합계에서 제외</p>
-                        </div>
-                        <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val }))} />
-                      </div>
-                    )}
-                  </div>
-                )}
+              </div>
+            )}
+
+            {/* 신용카드 대금 납부 — 단독 토글 박스 */}
+            {form.type === 'expense' && (
+              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>신용카드 대금 납부</p>
+                  <p style={{ fontSize: 12, color: '#888' }}>카드 실적 제외</p>
+                </div>
+                <Toggle on={form.creditCardBilling || false} onChange={val => setForm(f => ({ ...f, creditCardBilling: val }))} />
+              </div>
+            )}
+
+            {/* 체크카드 소액 신용 대금 납부 — 단독 토글 박스 */}
+            {form.type === 'expense' && showCardBilling && (
+              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>체크카드 소액 신용 대금 납부</p>
+                  <p style={{ fontSize: 12, color: '#888' }}>지출 합계에서 제외</p>
+                </div>
+                <Toggle on={form.cardBilling || false} onChange={val => setForm(f => ({ ...f, cardBilling: val }))} />
+              </div>
+            )}
+
+            {/* 대출 / 상환 — 단독 토글 박스 */}
+            {form.type === 'expense' && showLoan && (
+              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>대출 / 상환</p>
+                  <p style={{ fontSize: 12, color: '#888' }}>합계에서 제외</p>
+                </div>
+                <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val }))} />
               </div>
             )}
 
