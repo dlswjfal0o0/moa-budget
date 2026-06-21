@@ -64,7 +64,6 @@ export default function Ledger() {
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardBilling, setShowCardBilling] = useState(false)
   const [showLoan, setShowLoan] = useState(() => localStorage.getItem('moa_showLoan') === 'true')
-  const [userCards, setUserCards] = useState([])
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
   const [showToAccountSelector, setShowToAccountSelector] = useState(false)
@@ -409,7 +408,7 @@ export default function Ledger() {
                             onTouchStart={handleTouchStart}
                             onTouchEnd={e => handleTouchEnd(e, t.id)}
                             onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
-                            style={{ background: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+                            style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
                                 background: t.creditCardBilling ? '#fff5f5' : showLoan && t.isLoan ? (t.type === 'expense' ? '#fff5f5' : '#f0fdf4') : (t.cardBilling || isCredit(t.payment)) ? '#f9f9f9' : '#fff',
                                 transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
                                 transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', borderRadius: 12 }}>
@@ -730,74 +729,71 @@ export default function Ledger() {
 
                     {/* 카드 서브 선택 */}
                     {showCardSelector && userCardsList.length > 0 && (
-                        <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '10px 12px', marginBottom: 4 }}>
-                            <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 카드로 결제했나요?</p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {/* 신용카드 섹션 */}
-                                {userCardsList.some(c => c.cardType === 'credit') && (
-                                  <>
-                                    <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>신용카드</p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: userCardsList.some(c => c.cardType !== 'credit') ? 10 : 0 }}>
-                                      {userCardsList.filter(c => c.cardType === 'credit').map(card => (
-                                        <button key={card.id || card.name}
-                                          onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
-                                          style={{ padding: '8px 14px', borderRadius: 20,
-                                            border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
-                                            cursor: 'pointer', fontSize: 13,
-                                            background: form.payment === card.name ? themeData.primary : '#fff',
-                                            color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
-                                      ))}
-                                    </div>
-                                  </>
-                                )}
-    
-                                {/* 구분선 */}
-                                {userCardsList.some(c => c.cardType === 'credit') && userCardsList.some(c => c.cardType !== 'credit') && (
-                                  <div style={{ height: 1, background: '#e0e0e0', margin: '4px 0 10px' }} />
-                                )}
+                      <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '10px 12px', marginBottom: 4 }}>
+                        <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 카드로 결제했나요?</p>
 
-                                {/* 체크카드 섹션 */}
-                                {userCardsList.some(c => c.cardType !== 'debit') && (
-                                  <>
-                                    <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>체크카드</p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                      {userCardsList.filter(c => c.cardType !== 'debit').map(card => (
-                                        <button key={card.id || card.name}
-                                          onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
-                                          style={{ padding: '8px 14px', borderRadius: 20,
-                                            border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
-                                            cursor: 'pointer', fontSize: 13,
-                                            background: form.payment === card.name ? themeData.primary : '#fff',
-                                            color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
-                                        ))}
-                                    </div>
-                                  </>
-                                )}
-
-                                {/* 카드 종류 미설정 (기존 카드 호환) */}
-                                {userCardsList.some(c => !c.cardType) && (
-                                  <>
-                                    {(userCardsList.some(c => c.cardType === 'credit') || userCardsList.some(c => c.cardType === 'debit')) && (
-                                      <div style={{ height: 1, background: '#e0e0e0', margin: '4px 0 10px' }} />
-                                    )}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                      {userCardsList.filter(c => !c.cardType).map(card => (
-                                        <button key={card.id || card.name}
-                                          onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
-                                          style={{ padding: '8px 14px', borderRadius: 20,
-                                            border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
-                                            cursor: 'pointer', fontSize: 13,
-                                            background: form.payment === card.name ? themeData.primary : '#fff',
-                                            color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
-                                      ))}
-                                    </div>
-                                  </>
-                                )}
+                        {/* 신용카드 섹션 */}
+                        {userCardsList.some(c => c.cardType === 'credit') && (
+                          <>
+                            <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>신용카드</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                              {userCardsList.filter(c => c.cardType === 'credit').map(card => (
+                                <button key={card.id || card.name}
+                                  onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                                  style={{ padding: '8px 14px', borderRadius: 20,
+                                    border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
+                                    cursor: 'pointer', fontSize: 13,
+                                    background: form.payment === card.name ? themeData.primary : '#fff',
+                                    color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                              ))}
                             </div>
-                        </div>
+                          </>
+                        )}
+    
+                        {/* 구분선 */}
+                        {userCardsList.some(c => c.cardType === 'credit') && userCardsList.some(c => c.cardType === 'debit') && (
+                          <div style={{ height: 1, background: '#e0e0e0', margin: '4px 0 10px' }} />
+                        )}
+
+                        {/* 체크카드 섹션 */}
+                        {userCardsList.some(c => c.cardType === 'debit') && (
+                          <>
+                            <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>체크카드</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                              {userCardsList.filter(c => c.cardType === 'debit').map(card => (
+                                <button key={card.id || card.name}
+                                  onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                                  style={{ padding: '8px 14px', borderRadius: 20,
+                                    border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
+                                    cursor: 'pointer', fontSize: 13,
+                                    background: form.payment === card.name ? themeData.primary : '#fff',
+                                    color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* 카드 종류 미설정 (기존 카드 호환) */}
+                        {userCardsList.some(c => !c.cardType) && (
+                          <>
+                            {(userCardsList.some(c => c.cardType === 'credit') || userCardsList.some(c => c.cardType === 'debit')) && (
+                              <div style={{ height: 1, background: '#e0e0e0', margin: '4px 0 10px' }} />
+                            )}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {userCardsList.filter(c => !c.cardType).map(card => (
+                                <button key={card.id || card.name}
+                                  onClick={() => { setForm(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                                  style={{ padding: '8px 14px', borderRadius: 20,
+                                    border: `1px solid ${form.payment === card.name ? 'transparent' : '#e8e8e8'}`,
+                                    cursor: 'pointer', fontSize: 13,
+                                    background: form.payment === card.name ? themeData.primary : '#fff',
+                                    color: form.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     )}
-                </div>
-            )}
 
                 {/* 신용카드 대금 납부 (항상 표시) */}
                 {form.type === 'expense' && (
@@ -834,6 +830,8 @@ export default function Ledger() {
                         </label>
                     </div>
                 )}
+              </div>
+            )}
 
             <div style={{ marginBottom: 18 }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>날짜 및 시간</p>
