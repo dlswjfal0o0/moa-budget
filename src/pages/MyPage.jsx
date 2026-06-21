@@ -322,7 +322,6 @@ export default function MyPage() {
     if (parts.length >= 3) return `${parts[0]} **** ${parts[parts.length - 1]}`
     return num.slice(0, 4) + ' **** ' + num.slice(-4)
   }
-  const totalCardUsed = cards.reduce((s, card) => s + getCardUsed(card), 0)
   const getAccountBalance = (account) => {
     try {
       const net = allTxns.reduce((s, t) => {
@@ -393,6 +392,7 @@ export default function MyPage() {
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }
+  const totalCardUsed = cards.reduce((s, card) => s + getCardUsed(card), 0)
   const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + getCashBalance()
 
   const smallBtn = (onClick, label, bg, color) => (
