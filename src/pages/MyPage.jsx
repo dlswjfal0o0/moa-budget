@@ -453,7 +453,7 @@ export default function MyPage() {
 
       <div style={{ padding: '16px' }}>
         {/* 총 자산 */}
-        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33` }}>
+        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
           <p style={{ fontSize: 13, color: '#888', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
@@ -565,7 +565,7 @@ export default function MyPage() {
                   <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 추가</p>
                 </div>
               </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 0' }}>
                 <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
                   <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 9999, padding: 4 }}>
@@ -625,7 +625,7 @@ export default function MyPage() {
                   <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 수정</p>
                 </div>
               </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 0' }}>
                 <div style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
                   <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 9999, padding: 4 }}>
