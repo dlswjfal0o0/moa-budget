@@ -675,7 +675,7 @@ export default function Ledger() {
             <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
               <p style={{ fontSize: 12, color: '#888', marginBottom: 8, fontWeight: 500 }}>제목</p>
               <input style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '0', fontSize: 15 }}
-                placeholder="어디에 썼나요?" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+                placeholder={form.type === 'income' ? '어디서 받았나요?' : form.type === 'transfer' ? '이체 내용을 입력하세요' : '어디에 썼나요?'} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             </div>
 
             {/* 카테고리 — 아이콘 없는 텍스트 그리드 */}
