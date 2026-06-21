@@ -376,9 +376,15 @@ export default function Ledger() {
         </div>
 
         {/* 기간 탭 */}
-        <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 12, padding: 4, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
           {['주간', '월간', '직접'].map(p => (
-            <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }} style={segBtn(period === p)}>{p}</button>
+            <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
+              style={{ padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                background: period === p ? themeData.primary : '#f0f0f0',
+                color: period === p ? '#fff' : '#888',
+                fontSize: 13, fontWeight: period === p ? 700 : 500,
+                boxShadow: period === p ? `0 2px 8px ${themeData.primary}44` : 'none',
+                transition: 'all 0.15s' }}>{p}</button>
           ))}
         </div>
 

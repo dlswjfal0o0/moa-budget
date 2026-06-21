@@ -202,7 +202,7 @@ export default function Home() {
       <div style={{ padding: '20px 16px' }}>
         {/* 예산 관리 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>예산 관리</p>
             <button onClick={() => setShowAddBudget(true)}
               style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
@@ -217,60 +217,65 @@ export default function Home() {
               const exceeded = spent > b.amount
               const color = exceeded ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
               const aiText = budgetInsights[b.id]
+              const arcLen = Math.PI * 34
               return (
                 <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 14, border: `1.5px solid ${themeData.primary}18`, overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  {/* 클릭 시 수정/삭제 토글 */}
+                  <div style={{ padding: '14px 14px 10px', cursor: 'pointer' }}
+                    onClick={() => setExpandedBudgetEditId(expandedBudgetEditId === b.id ? null : b.id)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 14, fontWeight: 700, color: themeData.text || '#111' }}>{b.label}</span>
                         {exceeded && <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444', borderRadius: 20, padding: '2px 7px', fontWeight: 600 }}>초과</span>}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate?.slice(5).replace('-','/')} ~ {b.endDate?.slice(5).replace('-','/')}</span>
-                        <button onClick={e => { e.stopPropagation(); setExpandedBudgetEditId(expandedBudgetEditId === b.id ? null : b.id) }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedBudgetEditId === b.id ? themeData.primary : '#bbb', padding: 2, lineHeight: 0 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
+                      <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate?.slice(5).replace('-','/')} ~ {b.endDate?.slice(5).replace('-','/')}</span>
+                    </div>
+                    {/* 반원 그래프 + 금액 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <svg width="84" height="46" viewBox="0 0 84 46">
+                          <path d="M 8 42 A 34 34 0 0 1 76 42" fill="none" stroke="#f0f0f0" strokeWidth="8" strokeLinecap="round"/>
+                          <path d="M 8 42 A 34 34 0 0 1 76 42" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
+                            strokeDasharray={arcLen} strokeDashoffset={arcLen * (1 - pct / 100)}
+                            style={{ transition: 'stroke-dashoffset 0.6s ease' }}/>
+                        </svg>
+                        <p style={{ position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)', fontSize: 12, fontWeight: 700, color, whiteSpace: 'nowrap' }}>
+                          {Math.round(pct)}%
+                        </p>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
+                        <p style={{ fontSize: 16, fontWeight: 700, color: themeData.text || '#111', marginBottom: 2 }}>{fmt(spent)}원</p>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: exceeded ? '#ef4444' : '#22c55e' }}>
+                          {exceeded ? `${fmt(spent - b.amount)}원 초과` : `잔여 ${fmt(b.amount - spent)}원`}
+                        </p>
                       </div>
                     </div>
-                    <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99, marginBottom: 8, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.4s ease' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: aiText ? 8 : 0 }}>
-                      <span style={{ fontSize: 12, color: '#888' }}>사용 {fmt(spent)}원</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: exceeded ? '#ef4444' : '#22c55e' }}>
-                        {exceeded ? `${fmt(spent - b.amount)}원 초과` : `잔여 ${fmt(b.amount - spent)}원`}
-                      </span>
-                    </div>
+                    {/* AI 조언 */}
                     {aiText && (() => {
                       const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
                       const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: '#888', bg: '#f8f8f8' }
                       return (
-                        <div style={{ background: sc.bg, borderRadius: 8, padding: '8px 10px', borderLeft: `2px solid ${sc.color}`, marginBottom: 8 }}>
-                          <p style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>{ai.emoji} {ai.message}</p>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: sc.bg, borderRadius: 10, padding: '10px 12px', marginTop: 10 }}>
+                          <span style={{ fontSize: 16, flexShrink: 0 }}>{ai.emoji}</span>
+                          <p style={{ fontSize: 12, color: sc.color, fontWeight: 500, lineHeight: 1.5 }}>{ai.message}</p>
                         </div>
                       )
                     })()}
-                    <button onClick={() => getAiInsight(b, spent)} disabled={loadingInsightId === b.id}
-                      style={{ width: '100%', marginTop: 4, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '6px 0', color: themeData.primary, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                    <button onClick={e => { e.stopPropagation(); getAiInsight(b, spent) }} disabled={loadingInsightId === b.id}
+                      style={{ width: '100%', marginTop: 10, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '7px 0', color: themeData.primary, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
                       {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언 보기'}
                     </button>
                   </div>
                   {expandedBudgetEditId === b.id && (
                     <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
-                      <button onClick={() => {
-                        setEditingBudgetId(b.id)
-                        setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount) })
-                        setExpandedBudgetEditId(null)
-                      }} style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <button onClick={e => { e.stopPropagation(); setEditingBudgetId(b.id); setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount) }); setExpandedBudgetEditId(null) }}
+                        style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         수정
                       </button>
                       <div style={{ width: 1, background: '#f0f0f0' }} />
-                      <button onClick={() => { saveBudgets(budgets.filter(x => x.id !== b.id)); setExpandedBudgetEditId(null) }}
+                      <button onClick={e => { e.stopPropagation(); saveBudgets(budgets.filter(x => x.id !== b.id)); setExpandedBudgetEditId(null) }}
                         style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                         삭제
@@ -286,7 +291,7 @@ export default function Home() {
         {/* 다가오는 결제 */}
         {upcomingPayments.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 14 }}>다가오는 결제</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16, paddingLeft: 4 }}>다가오는 결제</p>
             {upcomingPayments.map((f, i) => {
               const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
               const urgencyBg = f.daysLeft <= 3 ? '#fee2e2' : f.daysLeft <= 7 ? '#fef3c7' : (themeData.primary + '18')

@@ -15,6 +15,9 @@ export default function Calendar() {
   const [fixedExpenses, setFixedExpenses] = useState([])
   const [showAddFixed, setShowAddFixed] = useState(false)
   const [newFixed, setNewFixed] = useState({ title: '', amount: '', dueDate: '' })
+  const [expandedFixedId, setExpandedFixedId] = useState(null)
+  const [editingFixedId, setEditingFixedId] = useState(null)
+  const [editFixedData, setEditFixedData] = useState({ title: '', amount: '', dueDate: '' })
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -67,6 +70,13 @@ export default function Calendar() {
   const handleDeleteFixed = (id) => {
     const updated = fixedExpenses.filter(f => f.id !== id)
     saveFixed(updated)
+  }
+
+  const handleSaveFixed = () => {
+    if (!editFixedData.title || !editFixedData.amount) return
+    const updated = fixedExpenses.map(f => f.id === editingFixedId ? { ...f, title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate } : f)
+    saveFixed(updated)
+    setEditingFixedId(null)
   }
 
   const fmt = n => n.toLocaleString('ko-KR')
@@ -237,7 +247,7 @@ export default function Calendar() {
         </div>
 
         {/* ── 고정지출 ── */}
-        <div style={{ margin: '12px 16px 0', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ margin: '12px 8px 0', borderRadius: 16, overflow: 'hidden' }}>
 
           {/* 고정지출 헤더 */}
           <div style={{
@@ -272,30 +282,40 @@ export default function Calendar() {
                 const dayNum = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null
                 const isDone = (f.doneMonths || []).includes(currentMonthKey)
                 return (
-                  <div key={f.id} style={{
-                    background: isDone ? '#fafafa' : '#fff',
-                    borderRadius: 14,
-                    padding: '14px 16px',
-                    border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12
-                  }}>
-                    <input type="checkbox" checked={isDone} onChange={() => handleToggleFixed(f.id)}
-                      style={{ width: 20, height: 20, cursor: 'pointer', accentColor: themeData.primary, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {f.title}
+                  <div key={f.id} style={{ borderRadius: 14, border: isDone ? '1.5px solid #f0f0f0' : `1.5px solid ${themeData.primary}33`, overflow: 'hidden', background: isDone ? '#fafafa' : '#fff' }}>
+                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                      onClick={() => setExpandedFixedId(expandedFixedId === f.id ? null : f.id)}>
+                      <input type="checkbox" checked={isDone} onChange={e => { e.stopPropagation(); handleToggleFixed(f.id) }}
+                        style={{ width: 20, height: 20, cursor: 'pointer', accentColor: themeData.primary, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#bbb' : '#111', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.title}
+                        </p>
+                        {dayNum && <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>매월 {dayNum}일</p>}
+                      </div>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444', flexShrink: 0 }}>
+                        -{fmt(f.amount)}원
                       </p>
-                      {dayNum && (
-                        <p style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>매월 {dayNum}일</p>
-                      )}
                     </div>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#bbb' : '#ef4444', flexShrink: 0 }}>
-                      -{fmt(f.amount)}원
-                    </p>
-                    <button onClick={() => handleDeleteFixed(f.id)}
-                      style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>✕</button>
+                    {expandedFixedId === f.id && (
+                      <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                        <button onClick={() => {
+                          setEditingFixedId(f.id)
+                          const dayNum2 = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : ''
+                          setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '' })
+                          setExpandedFixedId(null)
+                        }} style={{ flex: 1, padding: '11px', border: 'none', background: isDone ? '#fafafa' : '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          수정
+                        </button>
+                        <div style={{ width: 1, background: '#f0f0f0' }} />
+                        <button onClick={() => { handleDeleteFixed(f.id); setExpandedFixedId(null) }}
+                          style={{ flex: 1, padding: '11px', border: 'none', background: isDone ? '#fafafa' : '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          삭제
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -304,6 +324,49 @@ export default function Calendar() {
         </div>
 
       </div>{/* ── 스크롤 영역 끝 ── */}
+
+      {/* 고정지출 수정 — 바텀시트 */}
+      {editingFixedId && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setEditingFixedId(null)}>
+          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>고정지출 수정</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <p style={{ fontSize: 13, color: '#888', marginBottom: 6, fontWeight: 500 }}>항목명</p>
+                <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={editFixedData.title} onChange={e => setEditFixedData(d => ({ ...d, title: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#888', marginBottom: 6, fontWeight: 500 }}>금액</p>
+                <input style={inputStyle} type="number" placeholder="0" value={editFixedData.amount} onChange={e => setEditFixedData(d => ({ ...d, amount: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#888', marginBottom: 6, fontWeight: 500 }}>납부일 (선택)</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input style={{ ...inputStyle, flex: 1 }} type="number" min="1" max="31" placeholder="매월 며칠? (예: 10)"
+                    value={editFixedData.dueDate ? parseInt(editFixedData.dueDate.split('-')[2]) : ''}
+                    onChange={e => {
+                      const day = e.target.value
+                      if (!day) { setEditFixedData(d => ({ ...d, dueDate: '' })); return }
+                      const d2 = Math.min(31, Math.max(1, parseInt(day)))
+                      const n = new Date()
+                      setEditFixedData(d => ({ ...d, dueDate: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d2).padStart(2,'0')}` }))
+                    }} />
+                  <span style={{ fontSize: 14, color: '#888', whiteSpace: 'nowrap' }}>일</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button onClick={() => setEditingFixedId(null)}
+                style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#555' }}>취소</button>
+              <button onClick={handleSaveFixed}
+                style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>저장</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 고정지출 추가 — 바텀시트 팝업 */}
       {showAddFixed && (

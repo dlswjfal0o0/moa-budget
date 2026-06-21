@@ -452,7 +452,7 @@ export default function MyPage() {
       <div style={{ padding: '16px' }}>
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-          <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>총 자산</p>
+          <p style={{ fontSize: 13, color: '#888', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
           </div>
@@ -465,7 +465,7 @@ export default function MyPage() {
 
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
@@ -680,7 +680,7 @@ export default function MyPage() {
 
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 4 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
@@ -715,9 +715,9 @@ export default function MyPage() {
                 </div>
               ) : (
                 <>
-                  {/* 클릭 시 월별 잔액 토글 */}
+                  {/* 클릭 시 수정/삭제 토글 */}
                   <div style={{ padding: '12px 14px', cursor: 'pointer' }}
-                    onClick={() => setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id)}>
+                    onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#333' }}>{acc.name}</p>
@@ -725,14 +725,9 @@ export default function MyPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
-                        <button onClick={e => {
-                          e.stopPropagation()
-                          setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)
-                        }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedAccountEditId === acc.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
+                        <button onClick={e => { e.stopPropagation(); setExpandedAccountHistoryId(expandedAccountHistoryId === acc.id ? null : acc.id) }}
+                          style={{ background: '#f0f0f0', border: 'none', borderRadius: 6, padding: '3px 7px', color: '#888', fontSize: 10, cursor: 'pointer', flexShrink: 0 }}>
+                          {expandedAccountHistoryId === acc.id ? '▲' : '월별 ▾'}
                         </button>
                       </div>
                     </div>
@@ -865,7 +860,7 @@ export default function MyPage() {
           </div>
 
           {/* 스크롤 영역 */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 10px' }}>
             {/* 테마 – 3열 그리드 */}
             <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16 }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 14 }}>테마</p>
