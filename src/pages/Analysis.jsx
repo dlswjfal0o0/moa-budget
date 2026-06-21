@@ -280,7 +280,7 @@ export default function Analysis() {
           <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 14 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: primaryLight, borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 12, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>지출</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
@@ -289,7 +289,7 @@ export default function Analysis() {
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: primaryLight, borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 12, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
