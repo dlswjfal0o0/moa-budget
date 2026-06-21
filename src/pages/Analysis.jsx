@@ -321,7 +321,7 @@ export default function Analysis() {
                     <Tooltip content={<CustomBarTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
                     <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                       {dailyData.map((entry, i) => (
-                        <Cell key={i} fill={entry.amount > 0 && entry.amount === maxExpense ? primary : (themeData.card || '#f0f0f0')} />
+                        <Cell key={i} fill={entry.amount > 0 && entry.amount === maxExpense ? primary : '#c8c8c8'} />
                       ))}
                     </Bar>
                   </BarChart>

@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { CATEGORY_COLORS, getCategoryColors } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColors, DEFAULT_CATEGORIES } from '../styles/theme'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
@@ -65,12 +65,12 @@ export default function Home() {
   })
   const [budgets, setBudgets] = useState([])
   const [showAddBudget, setShowAddBudget] = useState(false)
-  const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '' })
+  const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
   const [budgetInsights, setBudgetInsights] = useState({})
   const [loadingInsightId, setLoadingInsightId] = useState(null)
   const [expandedBudgetEditId, setExpandedBudgetEditId] = useState(null)
   const [editingBudgetId, setEditingBudgetId] = useState(null)
-  const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '' })
+  const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
   const [fixedExpenses, setFixedExpenses] = useState([])
@@ -106,7 +106,7 @@ export default function Home() {
   const handleAddBudget = () => {
     if (!newBudget.label || !newBudget.startDate || !newBudget.endDate || !newBudget.amount) return alert('모든 항목을 입력해주세요.')
     saveBudgets([...budgets, { id: Date.now(), ...newBudget, amount: Number(newBudget.amount) }])
-    setNewBudget({ label: '', startDate: '', endDate: '', amount: '' })
+    setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
     setShowAddBudget(false)
   }
 
@@ -174,7 +174,7 @@ export default function Home() {
     })
     .filter(f => f.daysLeft >= 0 && f.daysLeft <= 10)
     .sort((a, b) => a.daysLeft - b.daysLeft)
-  const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }))
+  const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
   const colorMap = getCategoryColors(categoryData.map(c => c.name))
 
   const inputStyle = {
@@ -212,7 +212,7 @@ export default function Home() {
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
           ) : (
             budgets.map(b => {
-              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
+              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate && (!(b.categories?.length) || b.categories.includes(t.category))).reduce((s, t) => s + t.amount, 0)
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount
               const color = exceeded ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
@@ -274,7 +274,7 @@ export default function Home() {
                   </div>
                   {expandedBudgetEditId === b.id && (
                     <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
-                      <button onClick={e => { e.stopPropagation(); setEditingBudgetId(b.id); setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount) }); setExpandedBudgetEditId(null) }}
+                      <button onClick={e => { e.stopPropagation(); setEditingBudgetId(b.id); setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount), categories: b.categories || [] }); setExpandedBudgetEditId(null) }}
                         style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         수정
@@ -423,9 +423,27 @@ export default function Home() {
                   <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
                 </div>
               </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {DEFAULT_CATEGORIES.expense.map(cat => {
+                    const selected = newBudget.categories.includes(cat)
+                    return (
+                      <button key={cat} onClick={() => setNewBudget(b => ({
+                        ...b,
+                        categories: selected ? b.categories.filter(c => c !== cat) : [...b.categories, cat]
+                      }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
+                        background: selected ? themeData.primary + '18' : '#fff',
+                        color: selected ? themeData.primary : '#888', fontSize: 12, fontWeight: selected ? 700 : 400, cursor: 'pointer' }}>
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              <button onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '' }) }}
+              <button onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}
                 style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', color: '#555', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
               <button onClick={handleAddBudget}
                 style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: themeData.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>추가</button>
@@ -457,6 +475,24 @@ export default function Home() {
                   <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
                   <span style={{ color: '#bbb', fontSize: 14 }}>~</span>
                   <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {DEFAULT_CATEGORIES.expense.map(cat => {
+                    const selected = (editBudgetData.categories || []).includes(cat)
+                    return (
+                      <button key={cat} onClick={() => setEditBudgetData(d => ({
+                        ...d,
+                        categories: selected ? (d.categories || []).filter(c => c !== cat) : [...(d.categories || []), cat]
+                      }))} style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
+                        background: selected ? themeData.primary + '18' : '#fff',
+                        color: selected ? themeData.primary : '#888', fontSize: 12, fontWeight: selected ? 700 : 400, cursor: 'pointer' }}>
+                        {cat}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
