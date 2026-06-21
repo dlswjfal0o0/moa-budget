@@ -68,6 +68,9 @@ export default function Home() {
   const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '' })
   const [budgetInsights, setBudgetInsights] = useState({})
   const [loadingInsightId, setLoadingInsightId] = useState(null)
+  const [expandedBudgetEditId, setExpandedBudgetEditId] = useState(null)
+  const [editingBudgetId, setEditingBudgetId] = useState(null)
+  const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '' })
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
   const [fixedExpenses, setFixedExpenses] = useState([])
@@ -105,6 +108,12 @@ export default function Home() {
     saveBudgets([...budgets, { id: Date.now(), ...newBudget, amount: Number(newBudget.amount) }])
     setNewBudget({ label: '', startDate: '', endDate: '', amount: '' })
     setShowAddBudget(false)
+  }
+
+  const handleSaveBudget = () => {
+    if (!editBudgetData.label || !editBudgetData.startDate || !editBudgetData.endDate || !editBudgetData.amount) return alert('모든 항목을 입력해주세요.')
+    saveBudgets(budgets.map(b => b.id === editingBudgetId ? { ...b, ...editBudgetData, amount: Number(editBudgetData.amount) } : b))
+    setEditingBudgetId(null)
   }
 
   const getAiInsight = async (budget, spent) => {
@@ -192,122 +201,159 @@ export default function Home() {
 
       <div style={{ padding: '20px 16px' }}>
         {/* 예산 관리 */}
-        <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>예산 관리</p>
             <button onClick={() => setShowAddBudget(true)}
-              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer' }}>+ 추가</button>
+              style={{ background: themeData.primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
           </div>
 
           {budgets.length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {budgets.map(b => {
-                    const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
-                    const aiText = budgetInsights[b.id]
-                    return (
-                        <div key={b.id} style={{ position: 'relative' }}>
-                            <button onClick={() => saveBudgets(budgets.filter(x => x.id !== b.id))}
-                                style={{ position: 'absolute', top: 6, right: 6, zIndex: 1, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 13, padding: 2 }}>✕</button>
-                            <BudgetCard budget={b} spent={spent} themeData={themeData} fmt={fmt} />
-                            <button onClick={() => getAiInsight(b, spent)} disabled={loadingInsightId === b.id}
-                                style={{ width: '100%', marginTop: 4, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '5px 0', color: themeData.primary, fontSize: 11, cursor: 'pointer' }}>
-                                {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언'}
-                            </button>
-                            {aiText && (() => {
-                                const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
-                                const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: '#888', bg: '#f8f8f8' }
-                                return (
-                                    <div style={{ background: sc.bg, borderRadius: 8, padding: '8px 10px', marginTop: 4, borderLeft: `2px solid ${sc.color}` }}>
-                                        <p style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>{ai.emoji} {ai.message}</p>
-                                    </div>
-                                )
-                            })()}
+            budgets.map(b => {
+              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate).reduce((s, t) => s + t.amount, 0)
+              const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
+              const exceeded = spent > b.amount
+              const color = exceeded ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
+              const aiText = budgetInsights[b.id]
+              return (
+                <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 14, border: `1.5px solid ${themeData.primary}18`, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: themeData.text || '#111' }}>{b.label}</span>
+                        {exceeded && <span style={{ fontSize: 10, background: '#fee2e2', color: '#ef4444', borderRadius: 20, padding: '2px 7px', fontWeight: 600 }}>초과</span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#bbb' }}>{b.startDate?.slice(5).replace('-','/')} ~ {b.endDate?.slice(5).replace('-','/')}</span>
+                        <button onClick={e => { e.stopPropagation(); setExpandedBudgetEditId(expandedBudgetEditId === b.id ? null : b.id) }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedBudgetEditId === b.id ? themeData.primary : '#bbb', padding: 2, lineHeight: 0 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99, marginBottom: 8, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.4s ease' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: aiText ? 8 : 0 }}>
+                      <span style={{ fontSize: 12, color: '#888' }}>사용 {fmt(spent)}원</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: exceeded ? '#ef4444' : '#22c55e' }}>
+                        {exceeded ? `${fmt(spent - b.amount)}원 초과` : `잔여 ${fmt(b.amount - spent)}원`}
+                      </span>
+                    </div>
+                    {aiText && (() => {
+                      const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
+                      const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: '#888', bg: '#f8f8f8' }
+                      return (
+                        <div style={{ background: sc.bg, borderRadius: 8, padding: '8px 10px', borderLeft: `2px solid ${sc.color}`, marginBottom: 8 }}>
+                          <p style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>{ai.emoji} {ai.message}</p>
                         </div>
-                    )
-                })}
-            </div>
-          )}
-
-          {/* 예산 추가 폼 */}
-          {showAddBudget && (
-            <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <input style={inputStyle} placeholder="예산 이름 (예: 식비, 전체 생활비)" value={newBudget.label} onChange={e => setNewBudget(b => ({ ...b, label: e.target.value }))} />
-                <input style={inputStyle} type="number" placeholder="금액" value={newBudget.amount} onChange={e => setNewBudget(b => ({ ...b, amount: e.target.value }))} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
-                  <span style={{ display: 'flex', alignItems: 'center', color: '#888' }}>~</span>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
+                      )
+                    })()}
+                    <button onClick={() => getAiInsight(b, spent)} disabled={loadingInsightId === b.id}
+                      style={{ width: '100%', marginTop: 4, background: 'none', border: `1px solid ${themeData.primary}33`, borderRadius: 8, padding: '6px 0', color: themeData.primary, fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
+                      {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언 보기'}
+                    </button>
+                  </div>
+                  {expandedBudgetEditId === b.id && (
+                    <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                      <button onClick={() => {
+                        setEditingBudgetId(b.id)
+                        setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount) })
+                        setExpandedBudgetEditId(null)
+                      }} style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        수정
+                      </button>
+                      <div style={{ width: 1, background: '#f0f0f0' }} />
+                      <button onClick={() => { saveBudgets(budgets.filter(x => x.id !== b.id)); setExpandedBudgetEditId(null) }}
+                        style={{ flex: 1, padding: '11px', border: 'none', background: themeData.card || '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        삭제
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                <button onClick={() => setShowAddBudget(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 13 }}>취소</button>
-                <button onClick={handleAddBudget} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>추가</button>
-              </div>
-            </div>
+              )
+            })
           )}
         </div>
 
         {/* 다가오는 결제 */}
         {upcomingPayments.length > 0 && (
-            <div style={{ background: themeData.card, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <span style={{ fontSize: 18 }}>💳</span>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>다가오는 결제</p>
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 14 }}>다가오는 결제</p>
+            {upcomingPayments.map((f, i) => {
+              const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
+              const urgencyBg = f.daysLeft <= 3 ? '#fee2e2' : f.daysLeft <= 7 ? '#fef3c7' : (themeData.primary + '18')
+              return (
+                <div key={f.id || i} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 14, border: `1.5px solid ${themeData.primary}18`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: urgencyBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={urgency} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: themeData.text || '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.title}</p>
+                    <p style={{ fontSize: 12, color: '#bbb' }}>매월 {f.dueDay}일</p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444', marginBottom: 4 }}>-{fmt(f.amount)}원</p>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 20, padding: '2px 8px' }}>
+                      {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
+                    </span>
+                  </div>
                 </div>
-                {upcomingPayments.map((f, i) => {
-                    const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
-                    return (
-                        <div key={f.id || i} style={{ background: themeData.bg || '#f8f8f8', borderRadius: 12, padding: '10px 14px',
-                            marginBottom: i < upcomingPayments.length - 1 ? 8 : 0, borderLeft: `3px solid ${urgency}` }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 3 }}>{f.title}</p>
-                                    <p style={{ fontSize: 12, color: urgency }}>
-                                        {f.daysLeft === 0 ? '🚨 오늘 결제 예정이에요!' :
-                                         f.daysLeft === 1 ? '⚠️ 내일 결제 예정이에요!' :
-                                         `📅 ${f.daysLeft}일 뒤에 결제 예정이에요`}
-                                    </p>
-                                </div>
-                                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
-                                    <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>-{fmt(f.amount)}원</p>
-                                    <p style={{ fontSize: 11, color: '#bbb' }}>매월 {f.dueDay}일</p>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                  })}
-            </div>
+              )
+            })}
+          </div>
         )}
 
         {/* 카테고리별 지출 */}
         <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>카테고리별 지출</p>
-          {Object.keys(expenseByCategory).length === 0 ? (
+          {categoryData.length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 지출 내역이 없어요</p>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <ResponsiveContainer width={150} height={150}>
-                    <PieChart>
-                        <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={3}>
-                            {categoryData.map((entry, i) => (
-                                <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />
-                            ))}
-                        </Pie>
-                        <Tooltip content={<CustomPieTooltip />} />
-                    </PieChart>
-                </ResponsiveContainer>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {categoryData.map((c, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colorMap[c.name] || '#B0B0B0', flexShrink: 0 }} />
-                            <span style={{ fontSize: 13, color: themeData.text || '#555', flex: 1 }}>{c.name}</span>
-                            <span style={{ fontSize: 12, color: '#888' }}>{Math.round(c.value / totalExpense * 100)}%</span>
-                        </div>
-                    ))}
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <PieChart width={130} height={130}>
+                  <Pie data={categoryData} cx={65} cy={65} innerRadius={38} outerRadius={60} dataKey="value" paddingAngle={3} startAngle={90} endAngle={-270}>
+                    {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
+                  </Pie>
+                  <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
+                </PieChart>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none', width: 70 }}>
+                  <p style={{ fontSize: 9, color: '#aaa', marginBottom: 1 }}>총 지출</p>
+                  <p style={{ fontSize: totalExpense >= 10000000 ? 9 : 11, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+                    {totalExpense >= 10000 ? `${Math.round(totalExpense / 10000)}만원` : `${fmt(totalExpense)}원`}
+                  </p>
                 </div>
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                {categoryData.slice(0, 7).map((c, i) => {
+                  const pct = totalExpense > 0 ? Math.round(c.value / totalExpense * 100) : 0
+                  const color = colorMap[c.name] || '#B0B0B0'
+                  return (
+                    <div key={i} style={{ marginBottom: 7 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                        </div>
+                        <span style={{ fontSize: 11, color: '#888', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
+                      </div>
+                      <div style={{ height: 5, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -316,7 +362,7 @@ export default function Home() {
         <div style={{ background: themeData.card, borderRadius: 16, padding: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>최근 내역</p>
-            <span onClick={() => navigate('/ledger')} style={{ fontSize: 13, color: themeData.primary, cursor: 'pointer' }}>전체보기</span>
+            <span onClick={() => navigate('/ledger')} style={{ fontSize: 13, color: themeData.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>전체보기 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
           {transactions.length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 내역이 없어요</p>
@@ -341,6 +387,78 @@ export default function Home() {
         </div>
       </div>
       <BottomNav />
+
+      {/* 예산 추가 bottom sheet */}
+      {showAddBudget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '' }) }}>
+          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>예산 추가</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>예산 이름 <span style={{ color: '#ef4444' }}>*</span></p>
+                <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={newBudget.label} onChange={e => setNewBudget(b => ({ ...b, label: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>금액 <span style={{ color: '#ef4444' }}>*</span></p>
+                <input style={inputStyle} type="number" placeholder="예: 300000" value={newBudget.amount} onChange={e => setNewBudget(b => ({ ...b, amount: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>기간 <span style={{ color: '#ef4444' }}>*</span></p>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
+                  <span style={{ color: '#bbb', fontSize: 14 }}>~</span>
+                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '' }) }}
+                style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', color: '#555', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+              <button onClick={handleAddBudget}
+                style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: themeData.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>추가</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 예산 수정 bottom sheet */}
+      {editingBudgetId && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setEditingBudgetId(null)}>
+          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>예산 수정</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>예산 이름</p>
+                <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={editBudgetData.label} onChange={e => setEditBudgetData(d => ({ ...d, label: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>금액</p>
+                <input style={inputStyle} type="number" placeholder="예: 300000" value={editBudgetData.amount} onChange={e => setEditBudgetData(d => ({ ...d, amount: e.target.value }))} />
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>기간</p>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
+                  <span style={{ color: '#bbb', fontSize: 14 }}>~</span>
+                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button onClick={() => setEditingBudgetId(null)}
+                style={{ flex: 1, padding: '14px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', color: '#555', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+              <button onClick={handleSaveBudget}
+                style={{ flex: 2, padding: '14px', borderRadius: 12, border: 'none', background: themeData.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
