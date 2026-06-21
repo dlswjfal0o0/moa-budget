@@ -280,7 +280,7 @@ export default function Analysis() {
           <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 14 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: '#FFF5F5', borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: '#fff', borderRadius: 12, padding: '14px', border: `1.5px solid ${primary}22` }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>지출</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
@@ -289,7 +289,7 @@ export default function Analysis() {
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: '#F0FFF4', borderRadius: 12, padding: '14px' }}>
+              <div style={{ flex: 1, background: '#fff', borderRadius: 12, padding: '14px', border: `1.5px solid ${primary}22` }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
@@ -344,45 +344,43 @@ export default function Analysis() {
             {categoryData.length === 0 ? (
               <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
             ) : (
-              <div style={{ position: 'relative' }}>
-                {categoryData.map((c, i) => {
-                  const pct = totalExpense > 0 ? Math.round(c.value / totalExpense * 100) : 0
-                  const color = colorMap[c.name] || '#B0B0B0'
-                  const isSelected = selectedCategory?.name === c.name
-                  return (
-                    <div key={i} style={{ marginBottom: 10, position: 'relative' }}>
-                      <div onClick={() => setSelectedCategory(isSelected ? null : c)}
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, cursor: 'pointer' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color: '#333', fontWeight: 500 }}>{c.name}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 12, color: '#aaa' }}>{pct}%</span>
-                          <span style={{ fontSize: 13, color: '#111', fontWeight: 600, minWidth: 72, textAlign: 'right' }}>{fmt(c.value)}원</span>
-                        </div>
-                      </div>
-                      <div style={{ height: 6, background: `${color}20`, borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
-                      </div>
-                      {/* 클릭 팝업 */}
-                      {isSelected && (
-                        <div style={{ position: 'absolute', right: 0, top: 28, zIndex: 200, background: '#fff', borderRadius: 12, padding: '10px 14px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', border: '1px solid #f0f0f0', minWidth: 140, pointerEvents: 'none' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-                            <span style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{c.name}</span>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                {/* 왼쪽: 도넛 차트 + 중앙 총지출 */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <PieChart width={130} height={130}>
+                    <Pie data={categoryData} cx={65} cy={65} innerRadius={38} outerRadius={60} dataKey="value" paddingAngle={3} startAngle={90} endAngle={-270}>
+                      {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
+                    </Pie>
+                    <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
+                  </PieChart>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none', width: 70 }}>
+                    <p style={{ fontSize: 9, color: '#aaa', marginBottom: 1 }}>총 지출</p>
+                    <p style={{ fontSize: totalExpense >= 10000000 ? 9 : 11, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+                      {totalExpense >= 10000 ? `${Math.round(totalExpense / 10000)}만원` : `${fmt(totalExpense)}원`}
+                    </p>
+                  </div>
+                </div>
+                {/* 오른쪽: 카테고리별 가로 바 */}
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  {categoryData.slice(0, 7).map((c, i) => {
+                    const pct = totalExpense > 0 ? Math.round(c.value / totalExpense * 100) : 0
+                    const color = colorMap[c.name] || '#B0B0B0'
+                    return (
+                      <div key={i} style={{ marginBottom: 7 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                           </div>
-                          <p style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{fmt(c.value)}원</p>
-                          <p style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>전체 지출의 {pct}%</p>
+                          <span style={{ fontSize: 11, color: '#888', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-                {/* 팝업 닫기 오버레이 */}
-                {selectedCategory && (
-                  <div onClick={() => setSelectedCategory(null)} style={{ position: 'fixed', inset: 0, zIndex: 100 }} />
-                )}
+                        <div style={{ height: 5, background: `${color}22`, borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -586,7 +584,7 @@ export default function Analysis() {
             </p>
             {prevMonthTotal > 0 && (
               <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-                전월 대비 {utilityTotalDiff > 0 ? '↑' : '↓'} {utilityTotalDiff > 0 ? '+' : ''}{fmt(utilityTotalDiff)}원 {utilityTotalDiff > 0 ? '증가' : '감소'}
+                전월 대비 {utilityTotalDiff > 0 ? '+' : ''}{fmt(utilityTotalDiff)}원 {utilityTotalDiff > 0 ? '증가' : '감소'}
               </p>
             )}
             {currentMonthTotal === 0 && (
@@ -618,21 +616,24 @@ export default function Analysis() {
                         {cur?.day && <p style={{ fontSize: 12, color: '#aaa' }}>매월 {cur.day}일</p>}
                       </div>
                     </div>
-                    {cur ? (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleUtility(type) }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpand ? primary : '#ccc', padding: 4, lineHeight: 0 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </button>
-                    ) : (
-                      <button onClick={() => { setNewUtility({ type, amount: '', day: '' }); setEditingUtility(null); setShowAddUtility(true) }}
-                        style={{ background: primary, border: 'none', borderRadius: 8, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
-                        + 추가
-                      </button>
-                    )}
+                    {/* 연필 아이콘: 데이터 없으면 모달, 있으면 하단 펼침 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (cur) {
+                          toggleUtility(type)
+                        } else {
+                          setNewUtility({ type, amount: '', day: '' })
+                          setEditingUtility(null)
+                          setShowAddUtility(true)
+                        }
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpand ? primary : '#bbb', padding: 4, lineHeight: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
                   </div>
 
                   {/* 금액 + 차트 */}
