@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
-import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, writeBatch } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
@@ -157,15 +157,10 @@ export default function MyPage() {
     setCards(updated); saveToFirestore({ cards: updated })
   }
 
-  const handleSaveCard = async () => {
-    const prevCard = cards.find(c => c.id === editingCardId)
-    const newCardType = editCardData.cardType || prevCard?.cardType || 'debit'
-    const cardTypeChanged = prevCard?.cardType !== newCardType
-
-    // 카드 정보 저장
+  const handleSaveCard = () => {
     const updated = cards.map(c => c.id === editingCardId
         ? { ...c,
-            cardType: newCardType,
+            cardType: editCardData.cardType || c.cardType,
             name: editCardData.name,
             cardNumber: editCardData.cardNumber,
             expiry: editCardData.expiry,
@@ -174,29 +169,7 @@ export default function MyPage() {
             billingDay: editCardData.billingDay ? Number(editCardData.billingDay) : null,
           }
         : c)
-    setCards(updated)
-    saveToFirestore({ cards: updated })
-
-    // 카드 종류가 바뀐 경우 → 관련 트랜잭션 일괄 업데이트
-    if (cardTypeChanged && user) {
-        const isCreditCard = newCardType === 'credit'
-        const q = query(
-            collection(db, 'transactions'),
-            where('uid', '==', user.uid),
-            where('payment', '==', prevCard.name)
-        )
-        const snap = await getDocs(q)
-        const batch = writeBatch(db)
-        snap.docs.forEach(d => {
-            const tx = d.data()
-            // creditCardBilling(신용카드 대금 납부)인 내역은 isCreditCard에서 제외
-            if (!tx.creditCardBilling) {
-                batch.update(doc(db, 'transactions', d.id), { isCreditCard })
-            }
-        })
-        await batch.commit()
-    }
-
+    setCards(updated); saveToFirestore({ cards: updated })
     setEditingCardId(null)
   }
 

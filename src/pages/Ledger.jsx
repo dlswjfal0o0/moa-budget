@@ -219,9 +219,7 @@ export default function Ledger() {
     if (!form.title || !form.amount) return alert('제목과 금액을 입력해주세요.')
     const monthDate = new Date(form.date)
     const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
-    const selectedCard = userCardsList.find(c => c.name === form.payment)
-    const isCreditCard = form.type === 'expense' && selectedCard?.cardType === 'credit' && !form.creditCardBilling
-    const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString(), isCreditCard }
+    const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
     if (editItem) {
       await updateDoc(doc(db, 'transactions', editItem.id), data)
     } else {
@@ -261,7 +259,8 @@ export default function Ledger() {
   }
 
   const filtered = getFiltered()
-  const totalExpense = filtered.filter(t => t.type === 'expense' && !t.cardBilling && !t.isCreditCard && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
+  const isCredit = (paymentName) => userCardsList.some(c => c.name === paymentName && c.cardType === 'credit')
+  const totalExpense = filtered.filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
@@ -376,9 +375,9 @@ export default function Ledger() {
                         </span>
                         <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                         <span style={{ fontSize: 11, whiteSpace: 'nowrap', display: 'flex', gap: 6 }}>
-                            {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !t.isCreditCard && (!showLoan || !t.isLoan)) && (
+                            {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)) && (
                                 <span style={{ color: '#ef4444' }}>
-                                    -{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !t.isCreditCard && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원
+                                    -{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원
                                 </span>
                             )}
                             {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
@@ -411,7 +410,7 @@ export default function Ledger() {
                             onTouchEnd={e => handleTouchEnd(e, t.id)}
                             onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
                             style={{ background: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                                background: t.creditCardBilling ? '#fff5f5' : showLoan && t.isLoan ? (t.type === 'expense' ? '#fff5f5' : '#f0fdf4') : (t.cardBilling || t.isCreditCard) ? '#f9f9f9' : '#fff',
+                                background: t.creditCardBilling ? '#fff5f5' : showLoan && t.isLoan ? (t.type === 'expense' ? '#fff5f5' : '#f0fdf4') : (t.cardBilling || isCredit(t.payment)) ? '#f9f9f9' : '#fff',
                                 transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
                                 transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', borderRadius: 12 }}>
                             <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0,
@@ -428,7 +427,7 @@ export default function Ledger() {
                                 </p>
                             </div>
                             <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0,
-                                color: t.type === 'transfer' ? '#888' : t.creditCardBilling ? '#ef4444' : (t.cardBilling || t.isCreditCard) ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                                color: t.type === 'transfer' ? '#888' : t.creditCardBilling ? '#ef4444' : (t.cardBilling || isCredit(t.payment)) ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
                                 {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                             </p>
                         </div>
