@@ -48,6 +48,8 @@ export default function MyPage() {
   const [editingCardId, setEditingCardId] = useState(null)
   const [editCardData, setEditCardData] = useState({})
   const [expandedAccountHistoryId, setExpandedAccountHistoryId] = useState(null)
+  const [expandedCardId, setExpandedCardId] = useState(null)
+  const [showAccountNumbers, setShowAccountNumbers] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -312,6 +314,15 @@ export default function MyPage() {
   }
 
   const fmt = n => Number(n).toLocaleString('ko-KR')
+  const maskAccountNumber = (num) => {
+    if (!num) return ''
+    const digits = num.replace(/[\s-]/g, '')
+    if (digits.length <= 4) return '****'
+    const parts = num.trim().split(/[\s-]/)
+    if (parts.length >= 3) return `${parts[0]} **** ${parts[parts.length - 1]}`
+    return num.slice(0, 4) + ' **** ' + num.slice(-4)
+  }
+  const totalCardUsed = cards.reduce((s, card) => s + getCardUsed(card), 0)
   const getAccountBalance = (account) => {
     try {
       const net = allTxns.reduce((s, t) => {
@@ -425,21 +436,33 @@ export default function MyPage() {
           </div>
 
           {/* 설정 아이콘 */}
-          <button onClick={() => setShowSettings(true)}
-            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </button>
+          {!editingNick && (
+            <button onClick={() => setShowSettings(true)}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
       <div style={{ padding: '16px' }}>
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-          <p style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>총 자산</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>총 자산</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
+            {totalAsset < 0 && (
+              <span style={{ fontSize: 11, background: '#fee2e2', color: '#ef4444', borderRadius: 20, padding: '3px 8px', fontWeight: 600, flexShrink: 0 }}>부채 초과</span>
+            )}
+          </div>
+          <p style={{ fontSize: 12, color: '#aaa' }}>
+            계좌 <span style={{ color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#ef4444' : '#666' }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
+            {' · '}카드 <span style={{ color: '#666' }}>{fmt(totalCardUsed)}원</span>
+            {' · '}현금 <span style={{ color: '#666' }}>{fmt(getCashBalance())}원</span>
+          </p>
         </div>
 
         {/* 카드 */}
@@ -456,155 +479,198 @@ export default function MyPage() {
             // 일반 카드 아이템
             return (
               <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 14,
-                padding: '12px 14px', border: `1.5px solid ${t.primary}18`, cursor: 'pointer' }}
-                onClick={() => {
-                  setSelectedCard(card)
-                  setCardDetailTab('benefits')
-                  const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
-                  setCardHistoryMonth(null)
-                  getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-                }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
-                    <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 20, padding: '2px 7px' }}>
-                      {card.cardType === 'credit' ? '신용' : '체크'}
-                    </span>
-                    {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                border: `1.5px solid ${t.primary}18`, overflow: 'hidden' }}>
+                {/* 카드 본문 – 탭하면 상세 모달 */}
+                <div style={{ padding: '12px 14px', cursor: 'pointer' }}
+                  onClick={() => {
+                    setSelectedCard(card)
+                    setCardDetailTab('benefits')
+                    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
+                    setCardHistoryMonth(null)
+                    getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+                  }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{card.name}</span>
+                      <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 20, padding: '2px 7px', fontWeight: 600 }}>
+                        {card.cardType === 'credit' ? '신용' : '체크'}
+                      </span>
+                      {achieved && <span style={{ fontSize: 10, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 7px', fontWeight: 600 }}>✓ 달성</span>}
+                    </div>
                     <button onClick={e => {
-                        e.stopPropagation()
-                        setEditingCardId(card.id)
-                        setEditCardData({
-                            cardType: card.cardType || 'debit',
-                            name: card.name,
-                            cardNumber: card.cardNumber || '',
-                            expiry: card.expiry || '',
-                            linkedAccount: card.linkedAccount || '',
-                            limit: String(card.limit || ''),
-                            billingDay: card.billingDay ? String(card.billingDay) : '',
-                        })
-                    }} style={{ background: t.primaryLight || '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 8px', color: t.primary, fontSize: 11, cursor: 'pointer' }}>수정</button>
-                    <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
-                        style={{ background: 'none', border: 'none', color: '#ccc', fontSize: 16, cursor: 'pointer' }}>✕</button>
+                      e.stopPropagation()
+                      setExpandedCardId(expandedCardId === card.id ? null : card.id)
+                    }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedCardId === card.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {(card.billingDay || card.cardNumber) && (
+                    <p style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>
+                      {card.billingDay ? `결제일 매월 ${card.billingDay}일` : ''}
+                      {card.billingDay && card.cardNumber ? ' · ' : ''}
+                      {card.cardNumber ? `**** ${card.cardNumber}` : ''}
+                    </p>
+                  )}
+                  <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
+                    {card.limit > 0 && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
+                        {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: '#888' }}>{fmt(cardUsed)}원 사용 <span style={{ color: '#ccc' }}>(이번 달)</span></span>
-                  <span style={{ fontSize: 12, color: '#888' }}>목표 {fmt(card.limit || 0)}원</span>
-                </div>
-                <div style={{ background: '#f0f0f0', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
-                </div>
-                {card.billingDay && (
-                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>결제일 매월 {card.billingDay}일</p>
+                {/* 수정/삭제 펼침 행 */}
+                {expandedCardId === card.id && (
+                  <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                    <button onClick={() => {
+                      setEditingCardId(card.id)
+                      setEditCardData({
+                        cardType: card.cardType || 'debit',
+                        name: card.name,
+                        cardNumber: card.cardNumber || '',
+                        expiry: card.expiry || '',
+                        linkedAccount: card.linkedAccount || '',
+                        limit: String(card.limit || ''),
+                        billingDay: card.billingDay ? String(card.billingDay) : '',
+                      })
+                      setExpandedCardId(null)
+                    }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      수정
+                    </button>
+                    <div style={{ width: 1, background: '#f0f0f0' }} />
+                    <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
+                      style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      삭제
+                    </button>
+                  </div>
                 )}
               </div>
             )
           })}
           {showAddCard && (
-            <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
-              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 60px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-                  <button onClick={() => setShowAddCard(false)}
-                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
+            <div style={{ position: 'fixed', inset: 0, background: t.bg || '#f5f6f8', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => setShowAddCard(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
                   <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 추가</p>
                 </div>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카드 종류</p>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-                  {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
-                    <button key={opt.val} onClick={() => setNewCard(c => ({ ...c, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '13px', borderRadius: 12,
-                            border: `2px solid ${newCard.cardType === opt.val ? t.primary : '#e8e8e8'}`,
-                            background: newCard.cardType === opt.val ? t.primary + '15' : '#fff',
-                            color: newCard.cardType === opt.val ? t.primary : '#666',
-                            fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
+                      <button key={opt.val} onClick={() => setNewCard(c => ({ ...c, cardType: opt.val }))}
+                        style={{ flex: 1, padding: '12px', borderRadius: 10,
+                          border: `1.5px solid ${newCard.cardType === opt.val ? t.primary : '#e8e8e8'}`,
+                          background: newCard.cardType === opt.val ? t.primary + '15' : '#fff',
+                          color: newCard.cardType === opt.val ? t.primary : '#888',
+                          fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
+                  {[
+                    { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
+                    { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
+                    { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
+                    { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
+                    { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
+                  ].map(({ label, req, placeholder, key, type, extra }, i, arr) => (
+                    <div key={key} style={{ marginBottom: i < arr.length - 1 ? 16 : 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{label}{req && <span style={{ color: '#ef4444' }}> *</span>}</p>
+                      <input style={{ ...inputStyle }} type={type} placeholder={placeholder}
+                        value={newCard[key]} onChange={e => setNewCard(c => ({ ...c, [key]: e.target.value }))} {...extra} />
+                    </div>
                   ))}
                 </div>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드 이름</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 신한카드" value={newCard.name} onChange={e => setNewCard(c => ({ ...c, name: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드번호 끝 4자리</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 1234" maxLength={4} value={newCard.cardNumber} onChange={e => setNewCard(c => ({ ...c, cardNumber: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>유효기간</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="MM/YY" value={newCard.expiry} onChange={e => setNewCard(c => ({ ...c, expiry: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>
-                  연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span>
-                </p>
-                <select style={{ ...inputStyle, marginBottom: 20 }} value={newCard.linkedAccount} onChange={e => setNewCard(c => ({ ...c, linkedAccount: e.target.value }))}>
-                  <option value="">연동 계좌 없음</option>
-                  {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                </select>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>실적 목표 금액</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} type="number" placeholder="예: 300000" value={newCard.limit} onChange={e => setNewCard(c => ({ ...c, limit: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>결제일</p>
-                <input style={{ ...inputStyle, marginBottom: 36 }} type="number" min="1" max="31" placeholder="예: 15" value={newCard.billingDay} onChange={e => setNewCard(c => ({ ...c, billingDay: e.target.value }))} />
-
-                <button onClick={handleAddCard} style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 24 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span></p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {[{ id: '__none', name: '연동 계좌 없음' }, ...accounts].map(a => {
+                      const sel = a.id === '__none' ? newCard.linkedAccount === '' : newCard.linkedAccount === a.name
+                      return (
+                        <button key={a.id} onClick={() => setNewCard(c => ({ ...c, linkedAccount: a.id === '__none' ? '' : a.name }))}
+                          style={{ padding: '8px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 13, border: 'none',
+                            background: sel ? t.primary + '22' : '#f0f0f0',
+                            color: sel ? t.primary : '#666', fontWeight: sel ? 600 : 400 }}>{a.name}</button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
+                <button onClick={handleAddCard} style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                   추가하기
                 </button>
               </div>
             </div>
           )}
           {editingCardId && (
-            <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
-              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 60px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-                  <button onClick={() => setEditingCardId(null)}
-                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
+            <div style={{ position: 'fixed', inset: 0, background: t.bg || '#f5f6f8', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => setEditingCardId(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
                   <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 수정</p>
                 </div>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카드 종류</p>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-                  {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
-                    <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '13px', borderRadius: 12,
-                            border: `2px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
-                            background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
-                            color: editCardData.cardType === opt.val ? t.primary : '#666',
-                            fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 0' }}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>카드 종류</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
+                      <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
+                        style={{ flex: 1, padding: '12px', borderRadius: 10,
+                          border: `1.5px solid ${editCardData.cardType === opt.val ? t.primary : '#e8e8e8'}`,
+                          background: editCardData.cardType === opt.val ? t.primary + '15' : '#fff',
+                          color: editCardData.cardType === opt.val ? t.primary : '#888',
+                          fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 12 }}>
+                  {[
+                    { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
+                    { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
+                    { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
+                    { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
+                    { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
+                  ].map(({ label, req, placeholder, key, type, extra }, i, arr) => (
+                    <div key={key} style={{ marginBottom: i < arr.length - 1 ? 16 : 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{label}{req && <span style={{ color: '#ef4444' }}> *</span>}</p>
+                      <input style={{ ...inputStyle }} type={type} placeholder={placeholder}
+                        value={editCardData[key] || ''} onChange={e => setEditCardData(d => ({ ...d, [key]: e.target.value }))} {...extra} />
+                    </div>
                   ))}
                 </div>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드 이름</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 신한카드" value={editCardData.name}
-                  onChange={e => setEditCardData(d => ({ ...d, name: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드번호 끝 4자리</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 1234" maxLength={4} value={editCardData.cardNumber}
-                  onChange={e => setEditCardData(d => ({ ...d, cardNumber: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>유효기간</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="MM/YY" value={editCardData.expiry}
-                  onChange={e => setEditCardData(d => ({ ...d, expiry: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>
-                  연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span>
-                </p>
-                <select style={{ ...inputStyle, marginBottom: 20 }} value={editCardData.linkedAccount}
-                  onChange={e => setEditCardData(d => ({ ...d, linkedAccount: e.target.value }))}>
-                  <option value="">연동 계좌 없음</option>
-                  {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                </select>
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>실적 목표 금액</p>
-                <input style={{ ...inputStyle, marginBottom: 20 }} type="number" placeholder="예: 300000" value={editCardData.limit}
-                  onChange={e => setEditCardData(d => ({ ...d, limit: e.target.value }))} />
-
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>결제일</p>
-                <input style={{ ...inputStyle, marginBottom: 36 }} type="number" min="1" max="31" placeholder="예: 15" value={editCardData.billingDay}
-                  onChange={e => setEditCardData(d => ({ ...d, billingDay: e.target.value }))} />
-
-                <button onClick={handleSaveCard}
-                  style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 24 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span></p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {[{ id: '__none', name: '연동 계좌 없음' }, ...accounts].map(a => {
+                      const sel = a.id === '__none' ? editCardData.linkedAccount === '' : editCardData.linkedAccount === a.name
+                      return (
+                        <button key={a.id} onClick={() => setEditCardData(d => ({ ...d, linkedAccount: a.id === '__none' ? '' : a.name }))}
+                          style={{ padding: '8px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 13, border: 'none',
+                            background: sel ? t.primary + '22' : '#f0f0f0',
+                            color: sel ? t.primary : '#666', fontWeight: sel ? 600 : 400 }}>{a.name}</button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
+                <button onClick={handleSaveCard} style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                   저장하기
                 </button>
               </div>
@@ -616,7 +682,22 @@ export default function MyPage() {
         <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
-            {smallBtn(() => setShowAddAccount(true), '+ 추가', t.primary, '#fff')}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: showAccountNumbers ? t.primary : '#bbb', lineHeight: 0 }}>
+                {showAccountNumbers ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                )}
+              </button>
+              {smallBtn(() => setShowAddAccount(true), '+ 추가', t.primary, '#fff')}
+            </div>
           </div>
           {accounts.map(acc => (
             <div key={acc.id}>
@@ -637,7 +718,7 @@ export default function MyPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: expandedAccountHistoryId === acc.id ? 'none' : '1px solid #f8f8f8' }}>
                     <div>
                       <p style={{ fontSize: 14, color: t.text || '#333' }}>{acc.name}</p>
-                      {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{acc.number}</p>}
+                      {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
@@ -653,23 +734,33 @@ export default function MyPage() {
                     const months = Array.from({ length: 6 }, (_, i) => {
                       const d = new Date()
                       d.setDate(1)
-                      d.setMonth(d.getMonth() - i)
-                      return { year: d.getFullYear(), month: d.getMonth() + 1 }
-                    }).reverse()
+                      d.setMonth(d.getMonth() - (5 - i))
+                      return { year: d.getFullYear(), month: d.getMonth() + 1, label: `${d.getMonth() + 1}월` }
+                    })
+                    const balances = months.map(m => getBalanceAtMonthEnd(acc, m.year, m.month))
+                    const maxAbs = Math.max(...balances.map(b => Math.abs(b)), 1)
                     return (
-                      <div style={{ background: '#f8f8f8', borderRadius: 10, padding: '10px 12px', marginBottom: 8, borderBottom: '1px solid #f8f8f8' }}>
-                        <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8, fontWeight: 600 }}>월말 잔액</p>
-                        {months.map(({ year, month }) => {
-                          const bal = getBalanceAtMonthEnd(acc, year, month)
-                          const label = `${year}.${String(month).padStart(2,'0')}`
+                      <div style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px', marginBottom: 8, borderBottom: '1px solid #f8f8f8' }}>
+                        {/* 미니 바 차트 */}
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 52, marginBottom: 2 }}>
+                          {balances.map((bal, i) => (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                              <div style={{ width: '100%', borderRadius: 3, background: bal < 0 ? '#fca5a5' : (t.primary + '88'), height: `${Math.max(4, Math.abs(bal) / maxAbs * 36)}px` }} />
+                              <span style={{ fontSize: 9, color: '#bbb' }}>{months[i].label}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {/* 최근 3개월 요약 */}
+                        {balances.slice(-3).map((bal, i) => {
+                          const m = months[months.length - 3 + i]
                           const now = new Date()
-                          const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1
+                          const isCurrent = now.getFullYear() === m.year && now.getMonth() + 1 === m.month
                           return (
-                            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #efefef' }}>
-                              <span style={{ fontSize: 12, color: isCurrentMonth ? t.primary : '#888', fontWeight: isCurrentMonth ? 600 : 400 }}>
-                                {label}{isCurrentMonth ? ' (이번 달)' : ''}
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderTop: '1px solid #efefef' }}>
+                              <span style={{ fontSize: 12, color: isCurrent ? t.primary : '#888', fontWeight: isCurrent ? 600 : 400 }}>
+                                {m.year} {m.month}월{isCurrent ? ' (이번 달)' : ''}
                               </span>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: bal >= 0 ? (t.text || '#111') : '#ef4444' }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: bal < 0 ? '#ef4444' : (t.text || '#111') }}>
                                 {fmt(bal)}원
                               </span>
                             </div>
@@ -718,112 +809,128 @@ export default function MyPage() {
 
       </div>
 
-      {/* 설정 모달 */}
+      {/* 설정 – 전체 화면 */}
       {showSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 48px', width: '100%', maxWidth: 430, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ position: 'fixed', inset: 0, background: t.bg || '#f5f6f8', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+          {/* 헤더 */}
+          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>설정</p>
-              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888' }}>✕</button>
             </div>
+          </div>
 
-            {/* 테마 선택 */}
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>테마</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 28 }}>
-              {Object.entries(THEMES).map(([key, val]) => (
-                <button key={key} onClick={() => handleThemeChange(key)}
-                  style={{ padding: '14px 10px', borderRadius: 14, cursor: 'pointer', textAlign: 'center',
-                    border: themeName === key ? `2px solid ${val.primary}` : '2px solid #f0f0f0',
-                    background: themeName === key ? val.primary + '18' : '#fafafa' }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: val.primary, margin: '0 auto 6px' }} />
-                  <p style={{ fontSize: 12, fontWeight: 600, color: themeName === key ? val.primary : '#333', marginBottom: 2 }}>{val.name}</p>
-                  <p style={{ fontSize: 10, color: '#999', lineHeight: 1.3 }}>{val.desc}</p>
-                </button>
-              ))}
+          {/* 스크롤 영역 */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+            {/* 테마 – 3열 그리드 */}
+            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 14 }}>테마</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {Object.entries(THEMES).map(([key, val]) => (
+                  <button key={key} onClick={() => handleThemeChange(key)}
+                    style={{ padding: '12px 8px', borderRadius: 14, cursor: 'pointer', textAlign: 'center',
+                      border: themeName === key ? `2px solid ${val.primary}` : '2px solid #f0f0f0',
+                      background: themeName === key ? val.primary + '18' : '#fafafa' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: val.primary, margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {themeName === key && (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: themeName === key ? val.primary : '#555' }}>{val.name}</p>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 데이터 내보내기 */}
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 12 }}>데이터 내보내기</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={exportToExcel} disabled={exporting}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 2 }}>엑셀로 내보내기</p>
-                  <p style={{ fontSize: 12, color: '#888' }}>전체 내역을 .xlsx 파일로 저장</p>
-                </div>
-              </button>
-
-              <button onClick={exportToPDF} disabled={exporting}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-                  </svg>
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 2 }}>PDF로 내보내기</p>
-                  <p style={{ fontSize: 12, color: '#888' }}>전체 내역을 .pdf 파일로 저장</p>
-                </div>
-              </button>
-            </div>
-
-            {exporting && <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 16 }}>내보내는 중...</p>}
-
-            {/* 이용 방법 / 업데이트 / 피드백 */}
-            <div style={{ marginTop: 20 }}>
-                <div style={{ height: 1, background: '#f0f0f0', marginBottom: 4 }} />
-
-                <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
-                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#333' }}>이용 방법</span>
-                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
-                </button>
-
-                <div style={{ height: 1, background: '#f0f0f0' }} />
-
-                <button onClick={() => setShowUpdates(true)}
-                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#333' }}>업데이트 내용</span>
-                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
-                </button>
-
-                <div style={{ height: 1, background: '#f0f0f0' }} />
-
-                <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
-                    style={{ width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#333' }}>피드백</span>
-                    <span style={{ fontSize: 14, color: '#bbb' }}>›</span>
-                </button>
-
-                <div style={{ height: 1, background: '#f0f0f0', marginBottom: 16 }} />
-            </div>
-
-            {/* 로그아웃 */}
-            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 20, paddingTop: 20 }}>
-                <button
-                    onClick={() => signOut(auth).then(() => { 
-                        localStorage.removeItem('moa_logged_in')
-                        setShowSettings(false); 
-                        navigate('/', { replace: true }) 
-                    })}
-                    style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1.5px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
+            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 14 }}>데이터 내보내기</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button onClick={exportToExcel} disabled={exporting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, border: '1.5px solid #f0f0f0', background: '#fafafa', cursor: 'pointer' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                     </svg>
-                    로그아웃
+                  </div>
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 2 }}>엑셀로 내보내기</p>
+                    <p style={{ fontSize: 12, color: '#888' }}>전체 내역을 .xlsx 파일로 저장</p>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+                <button onClick={exportToPDF} disabled={exporting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, border: '1.5px solid #f0f0f0', background: '#fafafa', cursor: 'pointer' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                  </div>
+                  <div style={{ textAlign: 'left', flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 2 }}>PDF로 내보내기</p>
+                    <p style={{ fontSize: 12, color: '#888' }}>전체 내역을 .pdf 파일로 저장</p>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+              {exporting && <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 12 }}>내보내는 중...</p>}
             </div>
+
+            {/* 메뉴 */}
+            <div style={{ background: '#fff', borderRadius: 16, marginBottom: 16, overflow: 'hidden' }}>
+              <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
+                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: t.primaryLight || '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                </div>
+                <span style={{ flex: 1, fontSize: 14, color: '#333', textAlign: 'left' }}>이용 방법</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div style={{ height: 1, background: '#f5f5f5', margin: '0 16px' }} />
+              <button onClick={() => setShowUpdates(true)}
+                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </div>
+                <span style={{ flex: 1, fontSize: 14, color: '#333', textAlign: 'left' }}>업데이트 내용</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div style={{ height: 1, background: '#f5f5f5', margin: '0 16px' }} />
+              <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
+                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                </div>
+                <span style={{ flex: 1, fontSize: 14, color: '#333', textAlign: 'left' }}>피드백</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          {/* 로그아웃 – 하단 고정 */}
+          <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: t.bg || '#f5f6f8', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
+            <button onClick={() => signOut(auth).then(() => {
+              localStorage.removeItem('moa_logged_in')
+              setShowSettings(false)
+              navigate('/', { replace: true })
+            })} style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1.5px solid #fee2e2', background: 'transparent', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              로그아웃
+            </button>
           </div>
         </div>
       )}
