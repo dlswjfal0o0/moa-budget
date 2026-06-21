@@ -39,7 +39,7 @@ export default function MyPage() {
   const [editAccountData, setEditAccountData] = useState({})
   const [showAddCard, setShowAddCard] = useState(false)
   const [showAddAccount, setShowAddAccount] = useState(false)
-  const [newCard, setNewCard] = useState({ name: '', limit: '', used: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
+  const [newCard, setNewCard] = useState({ cardType: 'debit', name: '', limit: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
   const [newAccount, setNewAccount] = useState({ name: '', balance: '', number: '' })
   const [exporting, setExporting] = useState(false)
   const [showUpdates, setShowUpdates] = useState(false)
@@ -132,10 +132,13 @@ export default function MyPage() {
   }
 
   const handleAddCard = () => {
-    if (!newCard.name || !newCard.limit) return
+    if (!newCard.name) return
     const updated = [...cards, {
-        id: Date.now(), name: newCard.name,
-        limit: Number(newCard.limit), used: Number(newCard.used) || 0,
+        id: Date.now(),
+        cardType: newCard.cardType || 'debit',
+        name: newCard.name,
+        limit: Number(newCard.limit) || 0,
+        used: 0,
         cardNumber: newCard.cardNumber || '',
         expiry: newCard.expiry || '',
         linkedAccount: newCard.linkedAccount || '',
@@ -143,9 +146,9 @@ export default function MyPage() {
         benefits: [],
     }]
     setCards(updated); saveToFirestore({ cards: updated })
-    setNewCard({ name: '', limit: '', used: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
+    setNewCard({ cardType: 'debit', name: '', limit: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
     setShowAddCard(false)
-  }  
+  }
 
   const handleDeleteCard = (id) => {
     const updated = cards.filter(c => c.id !== id)
@@ -309,7 +312,7 @@ export default function MyPage() {
             }
         }
         return allTxns
-            .filter(t => t.payment === card.name && t.type === 'expense' && (t.month || t.date?.slice(0, 7)) === currentMonth)
+            .filter(t => t.payment === card.name && t.type === 'expense' && !t.creditCardBilling && (t.month || t.date?.slice(0, 7)) === currentMonth)
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }
@@ -396,6 +399,9 @@ export default function MyPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: t.primary }}>{card.name}</span>
+                        <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 20, padding: '2px 7px', marginLeft: 4 }}>
+                          {card.cardType === 'credit' ? '신용' : '체크'}
+                        </span>
                         {achieved && <span style={{ fontSize: 11, background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 8px' }}>실적 달성 ✓</span>}
                     </div>
                     <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
@@ -415,30 +421,55 @@ export default function MyPage() {
             )
           })}
           {showAddCard && (
-            <div style={{ background: '#f8f8f8', borderRadius: 12, padding: '14px', marginTop: 8 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <input style={inputStyle} placeholder="카드 이름 (예: 신한카드)" value={newCard.name} onChange={e => setNewCard(c => ({ ...c, name: e.target.value }))} />
-                    <input style={inputStyle} placeholder="카드번호 끝 4자리 (예: 1234)" value={newCard.cardNumber} onChange={e => setNewCard(c => ({ ...c, cardNumber: e.target.value }))} />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <input style={{ ...inputStyle, flex: 1 }} placeholder="유효기간 (MM/YY)" value={newCard.expiry} onChange={e => setNewCard(c => ({ ...c, expiry: e.target.value }))} />
-                        <select style={{ ...inputStyle, flex: 1 }} value={newCard.linkedAccount} onChange={e => setNewCard(c => ({ ...c, linkedAccount: e.target.value }))}>
-                            <option value="">연동 계좌 없음</option>
-                            {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                        </select>
-                    </div>
-                    <input style={inputStyle} type="number" placeholder="실적 목표 금액" value={newCard.limit} onChange={e => setNewCard(c => ({ ...c, limit: e.target.value }))} />
+            <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
+              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 60px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                  <button onClick={() => setShowAddCard(false)}
+                    style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#333', padding: 0, lineHeight: 1 }}>‹</button>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>카드 추가</p>
+                </div>
 
-                    <input style={inputStyle} type="number" min="1" max="31"
-                        placeholder="결제일 (예: 매월 15일 → 15)"
-                        value={newCard.billingDay}
-                        onChange={e => setNewCard(c => ({ ...c, billingDay: e.target.value }))} />
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>카드 종류</p>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+                  {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
+                    <button key={opt.val} onClick={() => setNewCard(c => ({ ...c, cardType: opt.val }))}
+                        style={{ flex: 1, padding: '13px', borderRadius: 12,
+                            border: `2px solid ${newCard.cardType === opt.val ? t.primary : '#e8e8e8'}`,
+                            background: newCard.cardType === opt.val ? t.primary + '15' : '#fff',
+                            color: newCard.cardType === opt.val ? t.primary : '#666',
+                            fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{opt.label}</button>
+                  ))}
                 </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button onClick={() => setShowAddCard(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #e8e8e8', background: '#fff', cursor: 'pointer', fontSize: 13 }}>취소</button>
-                    <button onClick={handleAddCard} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>추가</button>
-                </div>
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드 이름</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 신한카드" value={newCard.name} onChange={e => setNewCard(c => ({ ...c, name: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카드번호 끝 4자리</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="예: 1234" maxLength={4} value={newCard.cardNumber} onChange={e => setNewCard(c => ({ ...c, cardNumber: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>유효기간</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} placeholder="MM/YY" value={newCard.expiry} onChange={e => setNewCard(c => ({ ...c, expiry: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>
+                  연동 계좌 <span style={{ fontSize: 12, color: '#bbb', fontWeight: 400 }}>(선택)</span>
+                </p>
+                <select style={{ ...inputStyle, marginBottom: 20 }} value={newCard.linkedAccount} onChange={e => setNewCard(c => ({ ...c, linkedAccount: e.target.value }))}>
+                  <option value="">연동 계좌 없음</option>
+                  {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                </select>
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>실적 목표 금액</p>
+                <input style={{ ...inputStyle, marginBottom: 20 }} type="number" placeholder="예: 300000" value={newCard.limit} onChange={e => setNewCard(c => ({ ...c, limit: e.target.value }))} />
+
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>결제일</p>
+                <input style={{ ...inputStyle, marginBottom: 36 }} type="number" min="1" max="31" placeholder="예: 15" value={newCard.billingDay} onChange={e => setNewCard(c => ({ ...c, billingDay: e.target.value }))} />
+
+                <button onClick={handleAddCard} style={{ width: '100%', padding: '16px', borderRadius: 14, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                  추가하기
+                </button>
+              </div>
             </div>
-        )}
+          )}
         </div>
 
         {/* 계좌 */}

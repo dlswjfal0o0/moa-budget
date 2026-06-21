@@ -192,7 +192,7 @@ export default function Analysis() {
 
   const fmt = n => n.toLocaleString('ko-KR')
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
-  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan))
+  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling && !t.isCreditCard && (!showLoan || !t.isLoan))
   const incomes = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
