@@ -277,10 +277,10 @@ export default function Analysis() {
         <div style={{ padding: '16px' }}>
 
           {/* 지난 달 대비 */}
-          <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 14 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: '#fff', borderRadius: 12, padding: '14px', border: `1.5px solid ${primary}22` }}>
+              <div style={{ flex: 1, background: primaryLight, borderRadius: 12, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>지출</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
@@ -289,7 +289,7 @@ export default function Analysis() {
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: '#fff', borderRadius: 12, padding: '14px', border: `1.5px solid ${primary}22` }}>
+              <div style={{ flex: 1, background: primaryLight, borderRadius: 12, padding: '14px' }}>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
@@ -618,16 +618,7 @@ export default function Analysis() {
                     </div>
                     {/* 연필 아이콘: 데이터 없으면 모달, 있으면 하단 펼침 */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (cur) {
-                          toggleUtility(type)
-                        } else {
-                          setNewUtility({ type, amount: '', day: '' })
-                          setEditingUtility(null)
-                          setShowAddUtility(true)
-                        }
-                      }}
+                      onClick={(e) => { e.stopPropagation(); toggleUtility(type) }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpand ? primary : '#bbb', padding: 4, lineHeight: 0 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -662,21 +653,37 @@ export default function Analysis() {
                 </div>
 
                 {/* 수정/삭제 펼침 – 카드색과 동일 배경 */}
-                {cur && isExpand && (
+                {isExpand && (
                   <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
-                    <button onClick={() => {
-                      setNewUtility({ type, amount: cur.amount, day: cur.day || '' })
-                      setEditingUtility(cur.id)
-                      setShowAddUtility(true)
-                      toggleUtility(type)
-                    }} style={{ flex: 1, padding: '13px', border: 'none', background: cardBg, color: '#555', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-                      ✏ 수정
-                    </button>
-                    <div style={{ width: 1, background: '#f0f0f0' }} />
-                    <button onClick={() => { saveUtilities(utilities.filter(u => u.id !== cur.id)); toggleUtility(type) }}
-                      style={{ flex: 1, padding: '13px', border: 'none', background: cardBg, color: '#ef4444', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
-                      🗑 삭제
-                    </button>
+                    {cur ? (
+                      <>
+                        <button onClick={() => {
+                          setNewUtility({ type, amount: cur.amount, day: cur.day || '' })
+                          setEditingUtility(cur.id)
+                          setShowAddUtility(true)
+                          toggleUtility(type)
+                        }} style={{ flex: 1, padding: '11px', border: 'none', background: cardBg, color: '#555', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          수정
+                        </button>
+                        <div style={{ width: 1, background: '#f0f0f0' }} />
+                        <button onClick={() => { saveUtilities(utilities.filter(u => u.id !== cur.id)); toggleUtility(type) }}
+                          style={{ flex: 1, padding: '11px', border: 'none', background: cardBg, color: '#ef4444', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          삭제
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => {
+                        setNewUtility({ type, amount: '', day: '' })
+                        setEditingUtility(null)
+                        setShowAddUtility(true)
+                        toggleUtility(type)
+                      }} style={{ flex: 1, padding: '11px', border: 'none', background: cardBg, color: primary, fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        추가
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
