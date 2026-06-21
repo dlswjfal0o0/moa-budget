@@ -53,7 +53,7 @@ const CatIcon = ({ cat, size = 18, color = '#888' }) => {
     case '금융': return <svg {...p}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
     case '구독': return <svg {...p}><path d="M21.5 2h-19A1.5 1.5 0 0 0 1 3.5v17A1.5 1.5 0 0 0 2.5 22h19a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 21.5 2z"/><path d="M8 10h8"/><path d="M8 14h4"/></svg>
     case '선물': return <svg {...p}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-    case '취미': return <svg {...p}><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+    case '취미': return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     case '유흥': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
     case '헤어': return <svg {...p}><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg>
     case 'transfer': return <svg {...p}><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -63,6 +63,14 @@ const CatIcon = ({ cat, size = 18, color = '#888' }) => {
 
 // 키워드 → 아이콘 키 자동 매핑
 const guessIconKey = (name) => {
+  // 정확한 카테고리명 우선 매핑
+  const exact = {
+    '환불': '환전', '환급': '환전', '반품': '환전', '캐시백': '환전', '리워드': '환전',
+    '중고거래': '쇼핑', '중고': '쇼핑',
+    '결제대금': '금융', '체크할인': '금융', '1/n': '금융', 'n빵': '금융', '더치페이': '금융',
+  }
+  if (exact[name]) return exact[name]
+
   const map = [
     [['식', '밥', '먹', '카페', '커피', '음식', '외식', '분식', '식당', '레스토랑'], '식비'],
     [['교통', '버스', '지하철', '택시', '주유', '기름', '기차', 'KTX', '고속'], '교통'],
@@ -84,6 +92,9 @@ const guessIconKey = (name) => {
     [['취미', '낚시', '독서', '음악', '사진', '그림', '게임', '캠핑', '골프'], '취미'],
     [['유흥', '술', '나이트', '클럽', '바', '호프', '노래방'], '유흥'],
     [['헤어', '미용', '미용실', '네일', '피부', '왁싱'], '헤어'],
+    [['환불', '환급', '반품', '캐시백', '리워드', '포인트환급'], '환전'],
+    [['중고거래', '중고', '당근', '번개장터', '재판매'], '쇼핑'],
+    [['결제대금', '체크할인', '1/n', 'n빵', '더치', '정산', '소액신용'], '금융'],
   ]
   for (const [keywords, iconKey] of map) {
     if (keywords.some(k => name.includes(k))) return iconKey
@@ -443,9 +454,13 @@ export default function Ledger() {
                 </span>
                 <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                 <span style={{ fontSize: 11, whiteSpace: 'nowrap', display: 'flex', gap: 6 }}>
-                  {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#ef4444' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                  {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)) && (
+                    <span style={{ color: '#ef4444' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
+                  {(() => {
+                    const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && (t.cardBilling || isCredit(t.payment) || t.creditCardBilling)).reduce((s, t) => s + t.amount, 0)
+                    return grayAmt > 0 ? <span style={{ color: '#bbb' }}>-{grayAmt.toLocaleString()}원</span> : null
+                  })()}
                   {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
                     <span style={{ color: '#22c55e' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
