@@ -453,7 +453,7 @@ export default function MyPage() {
 
       <div style={{ padding: '16px' }}>
         {/* 총 자산 */}
-        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+        <div style={{ background: t.card, borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33` }}>
           <p style={{ fontSize: 13, color: '#888', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#111' }}>{fmt(totalAsset)}원</p>
@@ -467,7 +467,7 @@ export default function MyPage() {
 
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
@@ -478,8 +478,7 @@ export default function MyPage() {
 
             // 일반 카드 아이템
             return (
-              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 16,
-                border: `1.5px solid ${t.primary}18`, overflow: 'hidden' }}>
+              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 16, overflow: 'hidden' }}>
                 {/* 카드 본문 – 탭하면 상세 모달 */}
                 <div style={{ padding: '12px 14px', cursor: 'pointer' }}
                   onClick={() => {
@@ -682,7 +681,7 @@ export default function MyPage() {
 
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingLeft: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
@@ -702,7 +701,7 @@ export default function MyPage() {
             </div>
           </div>
           {accounts.map(acc => (
-            <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 16, border: `1.5px solid ${t.primary}18`, overflow: 'hidden' }}>
+            <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 16, overflow: 'hidden' }}>
               {editingAccountId === acc.id ? (
                 <div style={{ padding: '14px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -176,6 +176,8 @@ export default function Home() {
     .sort((a, b) => a.daysLeft - b.daysLeft)
   const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
   const colorMap = getCategoryColors(categoryData.map(c => c.name))
+  // 기본 카테고리 + 가계부에서 실제 사용된 카테고리 합산
+  const allExpenseCategories = [...new Set([...DEFAULT_CATEGORIES.expense, ...expenses.map(t => t.category).filter(Boolean)])]
 
   const inputStyle = {
     width: '100%', padding: '11px 14px', borderRadius: 16,
@@ -212,14 +214,15 @@ export default function Home() {
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
           ) : (
             budgets.map(b => {
-              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate && (!(b.categories?.length) || b.categories.includes(t.category))).reduce((s, t) => s + t.amount, 0)
+              const bCats = Array.isArray(b.categories) ? b.categories : []
+              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount
               const color = exceeded ? '#ef4444' : pct >= 80 ? '#f59e0b' : themeData.primary
               const aiText = budgetInsights[b.id]
               const arcLen = Math.PI * 34
               return (
-                <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, border: `1.5px solid ${themeData.primary}18`, overflow: 'hidden' }}>
+                <div key={b.id} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, overflow: 'hidden' }}>
                   {/* 클릭 시 수정/삭제 토글 */}
                   <div style={{ padding: '14px 14px 10px', cursor: 'pointer' }}
                     onClick={() => setExpandedBudgetEditId(expandedBudgetEditId === b.id ? null : b.id)}>
@@ -301,7 +304,7 @@ export default function Home() {
               const urgency = f.daysLeft <= 3 ? '#ef4444' : f.daysLeft <= 7 ? '#f59e0b' : themeData.primary
               const urgencyBg = f.daysLeft <= 3 ? '#fee2e2' : f.daysLeft <= 7 ? '#fef3c7' : (themeData.primary + '18')
               return (
-                <div key={f.id || i} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, border: `1.5px solid ${themeData.primary}18`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div key={f.id || i} style={{ marginBottom: 10, background: themeData.card || '#fff', borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: urgencyBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={urgency} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
@@ -426,12 +429,12 @@ export default function Home() {
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {DEFAULT_CATEGORIES.expense.map(cat => {
-                    const selected = newBudget.categories.includes(cat)
+                  {allExpenseCategories.map(cat => {
+                    const selected = (newBudget.categories || []).includes(cat)
                     return (
                       <button key={cat} onClick={() => setNewBudget(b => ({
                         ...b,
-                        categories: selected ? b.categories.filter(c => c !== cat) : [...b.categories, cat]
+                        categories: selected ? (b.categories || []).filter(c => c !== cat) : [...(b.categories || []), cat]
                       }))} style={{ padding: '6px 14px', borderRadius: 9999, border: `1.5px solid ${selected ? themeData.primary : '#e8e8e8'}`,
                         background: selected ? themeData.primary + '18' : '#fff',
                         color: selected ? themeData.primary : '#888', fontSize: 12, fontWeight: selected ? 700 : 400, cursor: 'pointer' }}>
@@ -480,7 +483,7 @@ export default function Home() {
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {DEFAULT_CATEGORIES.expense.map(cat => {
+                  {allExpenseCategories.map(cat => {
                     const selected = (editBudgetData.categories || []).includes(cat)
                     return (
                       <button key={cat} onClick={() => setEditBudgetData(d => ({
