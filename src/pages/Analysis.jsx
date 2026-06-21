@@ -346,7 +346,7 @@ export default function Analysis() {
             ) : (
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 {/* 왼쪽: 도넛 차트 + 중앙 총지출 */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'relative', flexShrink: 0, width: 130, height: 130 }}>
                   <PieChart width={130} height={130}>
                     <Pie data={categoryData} cx={65} cy={65} innerRadius={38} outerRadius={60} dataKey="value" paddingAngle={3} startAngle={90} endAngle={-270}>
                       {categoryData.map((entry, i) => <Cell key={i} fill={colorMap[entry.name] || '#B0B0B0'} />)}
