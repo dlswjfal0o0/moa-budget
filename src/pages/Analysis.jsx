@@ -98,7 +98,12 @@ export default function Analysis() {
   const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
   const [expandedPayments, setExpandedPayments] = useState(new Set())
   const [selectedCategory, setSelectedCategory] = useState(null)
-  const [expandedUtility, setExpandedUtility] = useState(null)
+  const [expandedUtilities, setExpandedUtilities] = useState(new Set())
+  const toggleUtility = (type) => setExpandedUtilities(prev => {
+    const next = new Set(prev)
+    next.has(type) ? next.delete(type) : next.add(type)
+    return next
+  })
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -596,10 +601,11 @@ export default function Analysis() {
             const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
             const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
             const diff = cur && prev ? cur.amount - prev.amount : null
-            const isExpand = expandedUtility === type
+            const isExpand = expandedUtilities.has(type)
+            const cardBg = themeData?.card || '#fff'
 
             return (
-              <div key={type} style={{ background: themeData?.card || '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
+              <div key={type} style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
                 <div style={{ padding: 16 }}>
                   {/* 카드 헤더 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -613,7 +619,8 @@ export default function Analysis() {
                       </div>
                     </div>
                     {cur ? (
-                      <button onClick={() => setExpandedUtility(isExpand ? null : type)}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleUtility(type) }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpand ? primary : '#ccc', padding: 4, lineHeight: 0 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -653,18 +660,22 @@ export default function Analysis() {
                   )}
                 </div>
 
-                {/* 수정/삭제 펼침 */}
+                {/* 수정/삭제 펼침 – 카드색과 동일 배경 */}
                 {cur && isExpand && (
                   <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
                     <button onClick={() => {
                       setNewUtility({ type, amount: cur.amount, day: cur.day || '' })
                       setEditingUtility(cur.id)
                       setShowAddUtility(true)
-                      setExpandedUtility(null)
-                    }} style={{ flex: 1, padding: '13px', border: 'none', background: '#fafafa', color: '#555', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>수정</button>
+                      toggleUtility(type)
+                    }} style={{ flex: 1, padding: '13px', border: 'none', background: cardBg, color: '#555', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
+                      ✏ 수정
+                    </button>
                     <div style={{ width: 1, background: '#f0f0f0' }} />
-                    <button onClick={() => { saveUtilities(utilities.filter(u => u.id !== cur.id)); setExpandedUtility(null) }}
-                      style={{ flex: 1, padding: '13px', border: 'none', background: '#fafafa', color: '#ef4444', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>삭제</button>
+                    <button onClick={() => { saveUtilities(utilities.filter(u => u.id !== cur.id)); toggleUtility(type) }}
+                      style={{ flex: 1, padding: '13px', border: 'none', background: cardBg, color: '#ef4444', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
+                      🗑 삭제
+                    </button>
                   </div>
                 )}
               </div>
