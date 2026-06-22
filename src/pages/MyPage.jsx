@@ -451,7 +451,7 @@ export default function MyPage() {
         </div>
       </div>
 
-      <div style={{ padding: '16px 20px' }}>
+      <div style={{ padding: '16px 24px' }}>
 
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -478,7 +478,7 @@ export default function MyPage() {
 
             // 일반 카드 아이템
             return (
-              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden' }}>
+              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                 {/* 카드 본문 – 탭하면 상세 모달 */}
                 <div style={{ padding: '12px 14px', cursor: 'pointer' }}
                   onClick={() => {
@@ -701,7 +701,7 @@ export default function MyPage() {
             </div>
           </div>
           {accounts.map(acc => (
-            <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden' }}>
+            <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               {/* 클릭 시 내역/수정/삭제 토글 */}
               <div style={{ padding: '12px 14px', cursor: 'pointer' }}
                 onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
@@ -808,7 +808,7 @@ export default function MyPage() {
         </div>
 
         {/* 현금 */}
-        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
             {!editingCash && smallBtn(() => { setEditingCash(true); setCashInput(String(cash || '')) }, '수정', t.primary, '#fff')}

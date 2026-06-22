@@ -277,10 +277,10 @@ export default function Analysis() {
         <div style={{ padding: '16px 20px' }}>
 
           {/* 지난 달 대비 */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                 <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>지출</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#FF5A5F' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
@@ -289,7 +289,7 @@ export default function Analysis() {
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px' }}>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                 <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>수입</p>
                 <p style={{ fontSize: 17, fontWeight: 700, color: '#2ECC71' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
@@ -302,7 +302,7 @@ export default function Analysis() {
           </div>
 
           {/* 일별 지출 */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>일별 지출</p>
             {dailyData.every(d => d.amount === 0) ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
@@ -339,7 +339,7 @@ export default function Analysis() {
           </div>
 
           {/* 카테고리별 지출 – 도넛 + 2열 그리드 */}
-          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>카테고리별 지출</p>
             {categoryData.length === 0 ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
@@ -386,7 +386,7 @@ export default function Analysis() {
           </div>
 
           {/* AI 소비 분석 */}
-          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>AI 소비 분석</p>
               <button onClick={getAiFeedback} disabled={loadingAi}
@@ -493,7 +493,7 @@ export default function Analysis() {
           </div>
 
           {/* 결제수단별 지출 – 아코디언 */}
-          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>결제수단별 지출</p>
             {expenses.length === 0 ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
@@ -603,7 +603,7 @@ export default function Analysis() {
             const cardBg = themeData?.card || '#fff'
 
             return (
-              <div key={type} style={{ background: cardBg, borderRadius: 20, overflow: 'hidden', marginBottom: 12 }}>
+              <div key={type} style={{ background: cardBg, borderRadius: 20, overflow: 'hidden', marginBottom: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                 <div style={{ padding: 16 }}>
                   {/* 카드 헤더 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
