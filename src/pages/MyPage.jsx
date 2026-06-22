@@ -21,6 +21,14 @@ const SToggle = ({ on, onChange, primary }) => (
   </div>
 )
 
+// 설정 화면용 아이콘 (Apple Settings 스타일)
+const SIcon = ({ bg, children }) => (
+  <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    {children}
+  </div>
+)
+const SI = (props) => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props} />
+
 export default function MyPage() {
   const navigate = useNavigate()
   const fileRef = useRef()
@@ -1032,14 +1040,14 @@ export default function MyPage() {
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '20px 4px 8px', letterSpacing: 0.3 }}>기능</p>
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
                     {[
-                      { label: '홈', desc: '표시 옵션', icon: '🏠', page: 'home' },
-                      { label: '가계부', desc: '주 시작 요일, 정렬 순서, 표시 옵션', icon: '📒', page: 'ledger' },
-                      { label: '분석', desc: '탭 구성 옵션', icon: '📊', page: 'analysis' },
-                      { label: 'MY', desc: '기능 관리', icon: '👤', page: 'my' },
+                      { label: '홈', desc: '표시 옵션', page: 'home', bg: '#3B82F6', icon: <SI><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></SI> },
+                      { label: '가계부', desc: '주 시작 요일, 정렬 순서, 표시 옵션', page: 'ledger', bg: '#22C55E', icon: <SI><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></SI> },
+                      { label: '분석', desc: '탭 구성 옵션', page: 'analysis', bg: '#8B5CF6', icon: <SI><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></SI> },
+                      { label: 'MY', desc: '기능 관리', page: 'my', bg: '#F97316', icon: <SI><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SI> },
                     ].map((item, i, arr) => (
                       <button key={item.page} onClick={() => setSettingsPage(item.page)}
                         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
-                        <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>{item.icon}</span>
+                        <SIcon bg={item.bg}>{item.icon}</SIcon>
                         <div style={{ flex: 1, textAlign: 'left' }}>
                           <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>{item.label}</p>
                           <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>{item.desc}</p>
@@ -1051,7 +1059,7 @@ export default function MyPage() {
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
                     <button onClick={() => setSettingsPage('categories')}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🏷️</span>
+                      <SIcon bg="#14B8A6"><SI><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>카테고리 관리</p>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>지출 · 수입 카테고리 편집</p>
@@ -1065,7 +1073,7 @@ export default function MyPage() {
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
                     <button onClick={() => setSettingsPage('theme')}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🎨</span>
+                      <SIcon bg="#EC4899"><SI><circle cx="13.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/><circle cx="17.5" cy="10.5" r="1.5" fill="#fff" stroke="none"/><circle cx="8.5" cy="7.5" r="1.5" fill="#fff" stroke="none"/><circle cx="6.5" cy="12.5" r="1.5" fill="#fff" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke="#fff" fill="none"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>테마</p>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 색상 테마 변경</p>
@@ -1079,7 +1087,7 @@ export default function MyPage() {
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
                     <button onClick={() => setSettingsPage('export')}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>📤</span>
+                      <SIcon bg="#6B7280"><SI><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>데이터 내보내기</p>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>엑셀 · PDF 파일로 저장</p>
@@ -1093,20 +1101,20 @@ export default function MyPage() {
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
                     <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>📖</span>
+                      <SIcon bg="#3B82F6"><SI><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>이용 방법</p>
                       {settingsChevron}
                     </button>
                     <button onClick={() => setSettingsPage('updates')}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🔔</span>
+                      <SIcon bg="#F97316"><SI><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>업데이트 내용</p>
                       <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v1.5.0</span>
                       {settingsChevron}
                     </button>
                     <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>💬</span>
+                      <SIcon bg="#22C55E"><SI><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>피드백 보내기</p>
                       {settingsChevron}
                     </button>
@@ -1117,12 +1125,12 @@ export default function MyPage() {
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 32 }}>
                     <button onClick={() => signOut(auth).then(() => { localStorage.removeItem('moa_logged_in'); setSettingsPage(null); navigate('/', { replace: true }) })}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🚪</span>
+                      <SIcon bg="#6B7280"><SI><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>로그아웃</p>
                     </button>
                     <button onClick={() => { setDeleteChecked(false); setSettingsPage('delete-account') }}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>⚠️</span>
+                      <SIcon bg="#EF4444"><SI><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#FF3B30', textAlign: 'left' }}>계정 탈퇴</p>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </button>

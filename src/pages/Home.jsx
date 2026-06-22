@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
 
 function CustomPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -69,6 +70,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { themeData } = useTheme()
   const { cards } = useCards()
+  const { categories } = useSettings()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState(() => {
     try {
@@ -222,7 +224,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
   const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
   const colorMap = getCategoryColors(categoryData.map(c => c.name))
   // 기본 카테고리 + 가계부에서 실제 사용된 카테고리 합산
-  const allExpenseCategories = [...new Set([...DEFAULT_CATEGORIES.expense, ...expenses.map(t => t.category).filter(Boolean)])]
+  const allExpenseCategories = [...new Set([...(categories?.expense || DEFAULT_CATEGORIES.expense), ...expenses.map(t => t.category).filter(Boolean)])]
 
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 12,
