@@ -24,6 +24,8 @@ export default function Calendar() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES.expense)
   const [userAccounts, setUserAccounts] = useState([])
   const [userCards, setUserCards] = useState([])
+  const [showCardSelector, setShowCardSelector] = useState(false)
+  const [showAccountSelector, setShowAccountSelector] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
@@ -134,6 +136,7 @@ export default function Calendar() {
   }
 
   const fmt = n => n.toLocaleString('ko-KR')
+  const accNames = userAccounts.map(a => a.bankName).filter(Boolean)
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   const isCredit = (p) => cards.some(c => c.name === p && c.cardType === 'credit')
@@ -372,84 +375,173 @@ export default function Calendar() {
 
       </div>{/* ── 스크롤 영역 끝 ── */}
 
+      {/* ── 결제수단 드롭다운 helper (edit/add 공용) ── */}
       {/* 고정지출 수정 — 바텀시트 */}
       {editingFixedId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setEditingFixedId(null)}>
-          <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
+          onClick={() => { setEditingFixedId(null); setShowCardSelector(false); setShowAccountSelector(false) }}>
+          <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '90dvh', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>고정지출 수정</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
-                <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={editFixedData.title} onChange={e => setEditFixedData(d => ({ ...d, title: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
-                <input style={inputStyle} type="number" placeholder="0" value={editFixedData.amount} onChange={e => setEditFixedData(d => ({ ...d, amount: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input style={{ ...inputStyle, flex: 1 }} type="number" min="1" max="31" placeholder="매월 며칠? (예: 10)"
-                    value={editFixedData.dueDate ? parseInt(editFixedData.dueDate.split('-')[2]) : ''}
-                    onChange={e => {
-                      const day = e.target.value
-                      if (!day) { setEditFixedData(d => ({ ...d, dueDate: '' })); return }
-                      const d2 = Math.min(31, Math.max(1, parseInt(day)))
-                      const n = new Date()
-                      setEditFixedData(d => ({ ...d, dueDate: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d2).padStart(2,'0')}` }))
-                    }} />
-                  <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
+            {/* 고정 헤더 */}
+            <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 18px' }} />
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>고정지출 수정</p>
+            </div>
+            {/* 스크롤 영역 */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0 24px 8px', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
+                  <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={editFixedData.title} onChange={e => setEditFixedData(d => ({ ...d, title: e.target.value }))} />
                 </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                  {categories.map(cat => (
-                    <button key={cat} onClick={() => setEditFixedData(d => ({ ...d, category: cat }))}
-                      style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: editFixedData.category === cat ? themeData.primary : '#F2F4F6',
-                        color: editFixedData.category === cat ? '#fff' : '#191F28',
-                        fontWeight: editFixedData.category === cat ? 700 : 500, textAlign: 'center' }}>
-                      {cat}
-                    </button>
-                  ))}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
+                  <input style={inputStyle} type="number" placeholder="0" value={editFixedData.amount} onChange={e => setEditFixedData(d => ({ ...d, amount: e.target.value }))} />
                 </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {['현금', ...userCards.map(c => c.name), ...userAccounts.map(a => a.bankName)].filter(Boolean).map(p => (
-                    <button key={p} onClick={() => setEditFixedData(d => ({ ...d, payment: p }))}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input style={{ ...inputStyle, flex: 1 }} type="number" min="1" max="31" placeholder="매월 며칠? (예: 10)"
+                      value={editFixedData.dueDate ? parseInt(editFixedData.dueDate.split('-')[2]) : ''}
+                      onChange={e => {
+                        const day = e.target.value
+                        if (!day) { setEditFixedData(d => ({ ...d, dueDate: '' })); return }
+                        const d2 = Math.min(31, Math.max(1, parseInt(day)))
+                        const n = new Date()
+                        setEditFixedData(d => ({ ...d, dueDate: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d2).padStart(2,'0')}` }))
+                      }} />
+                    <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                    {categories.map(cat => (
+                      <button key={cat} onClick={() => setEditFixedData(d => ({ ...d, category: cat }))}
+                        style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: editFixedData.category === cat ? themeData.primary : '#F2F4F6',
+                          color: editFixedData.category === cat ? '#fff' : '#191F28',
+                          fontWeight: editFixedData.category === cat ? 700 : 500, textAlign: 'center' }}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* 결제수단 — 가계부와 동일 */}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                    <button onClick={() => { setEditFixedData(d => ({ ...d, payment: '현금' })); setShowCardSelector(false); setShowAccountSelector(false) }}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: editFixedData.payment === p ? themeData.primary : '#F2F4F6',
-                        color: editFixedData.payment === p ? '#fff' : '#8B95A1', fontWeight: 500 }}>
-                      {p}
-                    </button>
-                  ))}
+                        background: editFixedData.payment === '현금' ? themeData.primary : '#F2F4F6',
+                        color: editFixedData.payment === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
+                    {accNames.length > 0 ? (
+                      <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: accNames.includes(editFixedData.payment) ? themeData.primary : '#F2F4F6',
+                          color: accNames.includes(editFixedData.payment) ? '#fff' : '#8B95A1' }}>
+                        {accNames.includes(editFixedData.payment) ? `이체 (${editFixedData.payment})` : '이체 ▾'}
+                      </button>
+                    ) : (
+                      <button onClick={() => { setEditFixedData(d => ({ ...d, payment: '계좌이체' })); setShowCardSelector(false); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: editFixedData.payment === '계좌이체' ? themeData.primary : '#F2F4F6',
+                          color: editFixedData.payment === '계좌이체' ? '#fff' : '#8B95A1' }}>계좌이체</button>
+                    )}
+                    {userCards.length > 0 ? (
+                      <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: userCards.some(c => c.name === editFixedData.payment) ? themeData.primary : '#F2F4F6',
+                          color: userCards.some(c => c.name === editFixedData.payment) ? '#fff' : '#8B95A1' }}>
+                        {userCards.some(c => c.name === editFixedData.payment) ? `카드 (${editFixedData.payment})` : '카드 ▾'}
+                      </button>
+                    ) : (
+                      <button onClick={() => { setEditFixedData(d => ({ ...d, payment: '카드' })); setShowCardSelector(false); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: editFixedData.payment === '카드' ? themeData.primary : '#F2F4F6',
+                          color: editFixedData.payment === '카드' ? '#fff' : '#8B95A1' }}>카드</button>
+                    )}
+                  </div>
+                  {showAccountSelector && accNames.length > 0 && (
+                    <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
+                      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 계좌에서 이체했나요?</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {accNames.map(acc => (
+                          <button key={acc} onClick={() => { setEditFixedData(d => ({ ...d, payment: acc })); setShowAccountSelector(false) }}
+                            style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${editFixedData.payment === acc ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                              background: editFixedData.payment === acc ? themeData.primary : '#fff',
+                              color: editFixedData.payment === acc ? '#fff' : '#555' }}>{acc}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {showCardSelector && userCards.length > 0 && (
+                    <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
+                      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 카드로 결제했나요?</p>
+                      {userCards.some(c => c.cardType === 'credit') && (
+                        <>
+                          <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>신용카드</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                            {userCards.filter(c => c.cardType === 'credit').map(card => (
+                              <button key={card.id || card.name} onClick={() => { setEditFixedData(d => ({ ...d, payment: card.name })); setShowCardSelector(false) }}
+                                style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${editFixedData.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                  background: editFixedData.payment === card.name ? themeData.primary : '#fff',
+                                  color: editFixedData.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {userCards.some(c => c.cardType === 'debit') && (
+                        <>
+                          {userCards.some(c => c.cardType === 'credit') && <div style={{ height: 1, background: '#E0E0E0', margin: '4px 0 10px' }} />}
+                          <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>체크카드</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                            {userCards.filter(c => c.cardType === 'debit').map(card => (
+                              <button key={card.id || card.name} onClick={() => { setEditFixedData(d => ({ ...d, payment: card.name })); setShowCardSelector(false) }}
+                                style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${editFixedData.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                  background: editFixedData.payment === card.name ? themeData.primary : '#fff',
+                                  color: editFixedData.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {userCards.filter(c => !c.cardType).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {userCards.filter(c => !c.cardType).map(card => (
+                            <button key={card.id || card.name} onClick={() => { setEditFixedData(d => ({ ...d, payment: card.name })); setShowCardSelector(false) }}
+                              style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${editFixedData.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                background: editFixedData.payment === card.name ? themeData.primary : '#fff',
+                                color: editFixedData.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* 가계부 자동 등록 */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #F2F4F6' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
+                    <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+                  </div>
+                  <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))}
+                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                      background: editFixedData.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
+                      position: 'relative', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: 3, left: editFixedData.autoRegister ? 21 : 3, width: 20, height: 20,
+                      borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                  </button>
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 0', borderTop: '1px solid #F2F4F6', marginTop: 4 }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
-                <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+            {/* 고정 푸터 */}
+            <div style={{ padding: '12px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', flexShrink: 0, borderTop: '1px solid #F2F4F6' }}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => { setEditingFixedId(null); setShowCardSelector(false); setShowAccountSelector(false) }}
+                  style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>취소</button>
+                <button onClick={handleSaveFixed}
+                  style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>저장</button>
               </div>
-              <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))}
-                style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                  background: editFixedData.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
-                  position: 'relative', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: 3, left: editFixedData.autoRegister ? 21 : 3, width: 20, height: 20,
-                  borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <button onClick={() => setEditingFixedId(null)}
-                style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>취소</button>
-              <button onClick={handleSaveFixed}
-                style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>저장</button>
             </div>
           </div>
         </div>
@@ -457,95 +549,170 @@ export default function Calendar() {
 
       {/* 고정지출 추가 — 바텀시트 팝업 */}
       {showAddFixed && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED) }}>
-          <div
-            style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED); setShowCardSelector(false); setShowAccountSelector(false) }}>
+          <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '90dvh', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>고정지출 추가</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
-                <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={newFixed.title} onChange={e => setNewFixed(f => ({ ...f, title: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
-                <input style={inputStyle} type="number" placeholder="0" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    style={{ ...inputStyle, flex: 1 }}
-                    type="number" min="1" max="31"
-                    placeholder="매월 며칠? (예: 10)"
-                    value={newFixed.dueDate ? parseInt(newFixed.dueDate.split('-')[2]) : ''}
-                    onChange={e => {
-                      const day = e.target.value
-                      if (!day) { setNewFixed(f => ({ ...f, dueDate: '' })); return }
-                      const d = Math.min(31, Math.max(1, parseInt(day)))
-                      const n = new Date()
-                      const dueDate = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-                      setNewFixed(f => ({ ...f, dueDate }))
-                    }}
-                  />
-                  <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
+            {/* 고정 헤더 */}
+            <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 18px' }} />
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>고정지출 추가</p>
+            </div>
+            {/* 스크롤 영역 */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0 24px 8px', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
+                  <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={newFixed.title} onChange={e => setNewFixed(f => ({ ...f, title: e.target.value }))} />
                 </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                  {categories.map(cat => (
-                    <button key={cat} onClick={() => setNewFixed(f => ({ ...f, category: cat }))}
-                      style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: newFixed.category === cat ? themeData.primary : '#F2F4F6',
-                        color: newFixed.category === cat ? '#fff' : '#191F28',
-                        fontWeight: newFixed.category === cat ? 700 : 500, textAlign: 'center' }}>
-                      {cat}
-                    </button>
-                  ))}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
+                  <input style={inputStyle} type="number" placeholder="0" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
                 </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {['현금', ...userCards.map(c => c.name), ...userAccounts.map(a => a.bankName)].filter(Boolean).map(p => (
-                    <button key={p} onClick={() => setNewFixed(f => ({ ...f, payment: p }))}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input style={{ ...inputStyle, flex: 1 }} type="number" min="1" max="31" placeholder="매월 며칠? (예: 10)"
+                      value={newFixed.dueDate ? parseInt(newFixed.dueDate.split('-')[2]) : ''}
+                      onChange={e => {
+                        const day = e.target.value
+                        if (!day) { setNewFixed(f => ({ ...f, dueDate: '' })); return }
+                        const d = Math.min(31, Math.max(1, parseInt(day)))
+                        const n = new Date()
+                        setNewFixed(f => ({ ...f, dueDate: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` }))
+                      }} />
+                    <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                    {categories.map(cat => (
+                      <button key={cat} onClick={() => setNewFixed(f => ({ ...f, category: cat }))}
+                        style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: newFixed.category === cat ? themeData.primary : '#F2F4F6',
+                          color: newFixed.category === cat ? '#fff' : '#191F28',
+                          fontWeight: newFixed.category === cat ? 700 : 500, textAlign: 'center' }}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* 결제수단 — 가계부와 동일 */}
+                <div>
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                    <button onClick={() => { setNewFixed(f => ({ ...f, payment: '현금' })); setShowCardSelector(false); setShowAccountSelector(false) }}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: newFixed.payment === p ? themeData.primary : '#F2F4F6',
-                        color: newFixed.payment === p ? '#fff' : '#8B95A1', fontWeight: 500 }}>
-                      {p}
-                    </button>
-                  ))}
+                        background: newFixed.payment === '현금' ? themeData.primary : '#F2F4F6',
+                        color: newFixed.payment === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
+                    {accNames.length > 0 ? (
+                      <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: accNames.includes(newFixed.payment) ? themeData.primary : '#F2F4F6',
+                          color: accNames.includes(newFixed.payment) ? '#fff' : '#8B95A1' }}>
+                        {accNames.includes(newFixed.payment) ? `이체 (${newFixed.payment})` : '이체 ▾'}
+                      </button>
+                    ) : (
+                      <button onClick={() => { setNewFixed(f => ({ ...f, payment: '계좌이체' })); setShowCardSelector(false); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: newFixed.payment === '계좌이체' ? themeData.primary : '#F2F4F6',
+                          color: newFixed.payment === '계좌이체' ? '#fff' : '#8B95A1' }}>계좌이체</button>
+                    )}
+                    {userCards.length > 0 ? (
+                      <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: userCards.some(c => c.name === newFixed.payment) ? themeData.primary : '#F2F4F6',
+                          color: userCards.some(c => c.name === newFixed.payment) ? '#fff' : '#8B95A1' }}>
+                        {userCards.some(c => c.name === newFixed.payment) ? `카드 (${newFixed.payment})` : '카드 ▾'}
+                      </button>
+                    ) : (
+                      <button onClick={() => { setNewFixed(f => ({ ...f, payment: '카드' })); setShowCardSelector(false); setShowAccountSelector(false) }}
+                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                          background: newFixed.payment === '카드' ? themeData.primary : '#F2F4F6',
+                          color: newFixed.payment === '카드' ? '#fff' : '#8B95A1' }}>카드</button>
+                    )}
+                  </div>
+                  {showAccountSelector && accNames.length > 0 && (
+                    <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
+                      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 계좌에서 이체했나요?</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {accNames.map(acc => (
+                          <button key={acc} onClick={() => { setNewFixed(f => ({ ...f, payment: acc })); setShowAccountSelector(false) }}
+                            style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${newFixed.payment === acc ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                              background: newFixed.payment === acc ? themeData.primary : '#fff',
+                              color: newFixed.payment === acc ? '#fff' : '#555' }}>{acc}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {showCardSelector && userCards.length > 0 && (
+                    <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
+                      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>어떤 카드로 결제했나요?</p>
+                      {userCards.some(c => c.cardType === 'credit') && (
+                        <>
+                          <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>신용카드</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                            {userCards.filter(c => c.cardType === 'credit').map(card => (
+                              <button key={card.id || card.name} onClick={() => { setNewFixed(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                                style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${newFixed.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                  background: newFixed.payment === card.name ? themeData.primary : '#fff',
+                                  color: newFixed.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {userCards.some(c => c.cardType === 'debit') && (
+                        <>
+                          {userCards.some(c => c.cardType === 'credit') && <div style={{ height: 1, background: '#E0E0E0', margin: '4px 0 10px' }} />}
+                          <p style={{ fontSize: 10, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>체크카드</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                            {userCards.filter(c => c.cardType === 'debit').map(card => (
+                              <button key={card.id || card.name} onClick={() => { setNewFixed(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                                style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${newFixed.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                  background: newFixed.payment === card.name ? themeData.primary : '#fff',
+                                  color: newFixed.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {userCards.filter(c => !c.cardType).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {userCards.filter(c => !c.cardType).map(card => (
+                            <button key={card.id || card.name} onClick={() => { setNewFixed(f => ({ ...f, payment: card.name })); setShowCardSelector(false) }}
+                              style={{ padding: '8px 14px', borderRadius: 9999, border: `1px solid ${newFixed.payment === card.name ? 'transparent' : '#E8E8E8'}`, cursor: 'pointer', fontSize: 13,
+                                background: newFixed.payment === card.name ? themeData.primary : '#fff',
+                                color: newFixed.payment === card.name ? '#fff' : '#555' }}>{card.name}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* 가계부 자동 등록 */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #F2F4F6' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
+                    <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+                  </div>
+                  <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))}
+                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                      background: newFixed.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
+                      position: 'relative', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: 3, left: newFixed.autoRegister ? 21 : 3, width: 20, height: 20,
+                      borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                  </button>
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 0', borderTop: '1px solid #F2F4F6', marginTop: 4 }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
-                <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+            {/* 고정 푸터 */}
+            <div style={{ padding: '12px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', flexShrink: 0, borderTop: '1px solid #F2F4F6' }}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED); setShowCardSelector(false); setShowAccountSelector(false) }}
+                  style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>취소</button>
+                <button onClick={handleAddFixed}
+                  style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>추가</button>
               </div>
-              <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))}
-                style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                  background: newFixed.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
-                  position: 'relative', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: 3, left: newFixed.autoRegister ? 21 : 3, width: 20, height: 20,
-                  borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <button
-                onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED) }}
-                style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>
-                취소
-              </button>
-              <button
-                onClick={handleAddFixed}
-                style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 700 }}>
-                추가
-              </button>
             </div>
           </div>
         </div>
