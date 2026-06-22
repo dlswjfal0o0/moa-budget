@@ -435,32 +435,18 @@ export default function Calendar() {
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: editFixedData.payment === '현금' ? themeData.primary : '#F2F4F6',
                         color: editFixedData.payment === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
-                    {accNames.length > 0 ? (
-                      <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: accNames.includes(editFixedData.payment) ? themeData.primary : '#F2F4F6',
-                          color: accNames.includes(editFixedData.payment) ? '#fff' : '#8B95A1' }}>
-                        {accNames.includes(editFixedData.payment) ? `이체 (${editFixedData.payment})` : '이체 ▾'}
-                      </button>
-                    ) : (
-                      <button onClick={() => { setEditFixedData(d => ({ ...d, payment: '계좌이체' })); setShowCardSelector(false); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: editFixedData.payment === '계좌이체' ? themeData.primary : '#F2F4F6',
-                          color: editFixedData.payment === '계좌이체' ? '#fff' : '#8B95A1' }}>계좌이체</button>
-                    )}
-                    {userCards.length > 0 ? (
-                      <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: userCards.some(c => c.name === editFixedData.payment) ? themeData.primary : '#F2F4F6',
-                          color: userCards.some(c => c.name === editFixedData.payment) ? '#fff' : '#8B95A1' }}>
-                        {userCards.some(c => c.name === editFixedData.payment) ? `카드 (${editFixedData.payment})` : '카드 ▾'}
-                      </button>
-                    ) : (
-                      <button onClick={() => { setEditFixedData(d => ({ ...d, payment: '카드' })); setShowCardSelector(false); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: editFixedData.payment === '카드' ? themeData.primary : '#F2F4F6',
-                          color: editFixedData.payment === '카드' ? '#fff' : '#8B95A1' }}>카드</button>
-                    )}
+                    <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: accNames.includes(editFixedData.payment) ? themeData.primary : '#F2F4F6',
+                        color: accNames.includes(editFixedData.payment) ? '#fff' : '#8B95A1' }}>
+                      {accNames.includes(editFixedData.payment) ? `이체 (${editFixedData.payment})` : '이체 ▾'}
+                    </button>
+                    <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: userCards.some(c => c.name === editFixedData.payment) ? themeData.primary : '#F2F4F6',
+                        color: userCards.some(c => c.name === editFixedData.payment) ? '#fff' : '#8B95A1' }}>
+                      {userCards.some(c => c.name === editFixedData.payment) ? `카드 (${editFixedData.payment})` : '카드 ▾'}
+                    </button>
                   </div>
                   {showAccountSelector && accNames.length > 0 && (
                     <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
@@ -606,32 +592,18 @@ export default function Calendar() {
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: newFixed.payment === '현금' ? themeData.primary : '#F2F4F6',
                         color: newFixed.payment === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
-                    {accNames.length > 0 ? (
-                      <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: accNames.includes(newFixed.payment) ? themeData.primary : '#F2F4F6',
-                          color: accNames.includes(newFixed.payment) ? '#fff' : '#8B95A1' }}>
-                        {accNames.includes(newFixed.payment) ? `이체 (${newFixed.payment})` : '이체 ▾'}
-                      </button>
-                    ) : (
-                      <button onClick={() => { setNewFixed(f => ({ ...f, payment: '계좌이체' })); setShowCardSelector(false); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: newFixed.payment === '계좌이체' ? themeData.primary : '#F2F4F6',
-                          color: newFixed.payment === '계좌이체' ? '#fff' : '#8B95A1' }}>계좌이체</button>
-                    )}
-                    {userCards.length > 0 ? (
-                      <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: userCards.some(c => c.name === newFixed.payment) ? themeData.primary : '#F2F4F6',
-                          color: userCards.some(c => c.name === newFixed.payment) ? '#fff' : '#8B95A1' }}>
-                        {userCards.some(c => c.name === newFixed.payment) ? `카드 (${newFixed.payment})` : '카드 ▾'}
-                      </button>
-                    ) : (
-                      <button onClick={() => { setNewFixed(f => ({ ...f, payment: '카드' })); setShowCardSelector(false); setShowAccountSelector(false) }}
-                        style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                          background: newFixed.payment === '카드' ? themeData.primary : '#F2F4F6',
-                          color: newFixed.payment === '카드' ? '#fff' : '#8B95A1' }}>카드</button>
-                    )}
+                    <button onClick={() => { setShowAccountSelector(s => !s); setShowCardSelector(false) }}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: accNames.includes(newFixed.payment) ? themeData.primary : '#F2F4F6',
+                        color: accNames.includes(newFixed.payment) ? '#fff' : '#8B95A1' }}>
+                      {accNames.includes(newFixed.payment) ? `이체 (${newFixed.payment})` : '이체 ▾'}
+                    </button>
+                    <button onClick={() => { setShowCardSelector(s => !s); setShowAccountSelector(false) }}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: userCards.some(c => c.name === newFixed.payment) ? themeData.primary : '#F2F4F6',
+                        color: userCards.some(c => c.name === newFixed.payment) ? '#fff' : '#8B95A1' }}>
+                      {userCards.some(c => c.name === newFixed.payment) ? `카드 (${newFixed.payment})` : '카드 ▾'}
+                    </button>
                   </div>
                   {showAccountSelector && accNames.length > 0 && (
                     <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '10px 12px', marginBottom: 4 }}>
