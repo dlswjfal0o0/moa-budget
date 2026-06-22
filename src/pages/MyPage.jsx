@@ -399,7 +399,7 @@ export default function MyPage() {
   const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + getCashBalance()
 
   const smallBtn = (onClick, label, bg, color) => (
-    <button onClick={onClick} style={{ background: bg, border: 'none', borderRadius: 9999, padding: '5px 12px', color, fontSize: 12, cursor: 'pointer' }}>{label}</button>
+    <button onClick={onClick} style={{ background: bg, border: 'none', borderRadius: 12, padding: '7px 16px', color, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
   )
 
   return (
@@ -454,7 +454,7 @@ export default function MyPage() {
       <div style={{ padding: '16px' }}>
 
         {/* 총 자산 */}
-        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33` }}>
+        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(totalAsset)}원</p>
@@ -468,7 +468,7 @@ export default function MyPage() {
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>카드</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
           {cards.map(card => {
@@ -682,7 +682,7 @@ export default function MyPage() {
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#111' }}>계좌</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: showAccountNumbers ? t.primary : '#bbb', lineHeight: 0 }}>
@@ -810,8 +810,8 @@ export default function MyPage() {
         {/* 현금 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: t.text || '#191F28' }}>현금</p>
-            {!editingCash && smallBtn(() => { setEditingCash(true); setCashInput(String(cash || '')) }, '수정', t.primaryLight || '#EEF2FF', t.primary)}
+            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
+            {!editingCash && smallBtn(() => { setEditingCash(true); setCashInput(String(cash || '')) }, '수정', t.primary, '#fff')}
           </div>
           {editingCash ? (
             <div style={{ marginTop: 12 }}>

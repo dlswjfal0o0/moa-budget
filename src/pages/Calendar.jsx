@@ -262,7 +262,7 @@ export default function Calendar() {
               )}
             </div>
             <button onClick={() => setShowAddFixed(true)}
-              style={{ background: themeData.primary, border: 'none', borderRadius: 9999, padding: '5px 12px', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+              style={{ background: themeData.primary, border: 'none', borderRadius: 12, padding: '7px 16px', color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
               + 추가
             </button>
           </div>
