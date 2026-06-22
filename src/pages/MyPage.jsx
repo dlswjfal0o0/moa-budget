@@ -456,13 +456,19 @@ export default function MyPage() {
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(totalAsset)}원</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}>{fmt(totalAsset)}원</p>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.primary, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: '#8B95A1' }}>계좌</span>
+              <span style={{ fontSize: 12, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ECC71', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: '#8B95A1' }}>현금</span>
+              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}>{fmt(getCashBalance())}원</span>
+            </div>
           </div>
-          <p style={{ fontSize: 12, color: '#8B95A1' }}>
-            계좌 <span style={{ color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1' }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
-            {' · '}현금 <span style={{ color: '#8B95A1' }}>{fmt(getCashBalance())}원</span>
-          </p>
         </div>
 
         {/* 카드 */}
@@ -682,7 +688,13 @@ export default function MyPage() {
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>계좌</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="22" x2="21" y2="22"/><rect x="3" y="10" width="4" height="12"/><rect x="10" y="10" width="4" height="12"/><rect x="17" y="10" width="4" height="12"/><path d="M12 2L2 10h20z"/>
+              </svg>
+              <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>계좌</p>
+              {accounts.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{accounts.length}개</span>}
+            </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: showAccountNumbers ? t.primary : '#bbb', lineHeight: 0 }}>
@@ -703,14 +715,20 @@ export default function MyPage() {
           {accounts.map(acc => (
             <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               {/* 클릭 시 내역/수정/삭제 토글 */}
-              <div style={{ padding: '12px 14px', cursor: 'pointer' }}
+              <div style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
                 onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28' }}>{acc.name}</p>
-                    {acc.number && <p style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
+                <div style={{ width: 36, height: 36, borderRadius: 12, background: `${t.primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="22" x2="21" y2="22"/><rect x="3" y="10" width="4" height="12"/><rect x="10" y="10" width="4" height="12"/><rect x="17" y="10" width="4" height="12"/><path d="M12 2L2 10h20z"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28' }}>{acc.name}</p>
+                  {acc.number && <p style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </div>
               {/* 내역/수정/삭제 펼침 행 */}
@@ -743,6 +761,16 @@ export default function MyPage() {
               )}
             </div>
           ))}
+          {/* 계좌 합계 */}
+          {accounts.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px 0', marginTop: 4, borderTop: '1px solid #F2F4F6' }}>
+              <span style={{ fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>계좌 합계</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>
+                {fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원
+              </span>
+            </div>
+          )}
+
           {/* 계좌 수정 bottom sheet */}
           {editingAccountId && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
@@ -808,21 +836,27 @@ export default function MyPage() {
         </div>
 
         {/* 현금 */}
-        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
+        <div style={{ background: '#F7FCF9', border: '1px solid #D8F0E0', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+              <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
+            </div>
             {!editingCash && smallBtn(() => { setEditingCash(true); setCashInput(String(cash || '')) }, '수정', t.primary, '#fff')}
           </div>
+          <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 10 }}>직접 보유한 현금 자산</p>
           {editingCash ? (
-            <div style={{ marginTop: 12 }}>
-              <input type="number" value={cashInput} onChange={e => setCashInput(e.target.value)} style={inputStyle} placeholder="현금 잔액 입력" autoFocus />
+            <div>
+              <input type="number" value={cashInput} onChange={e => setCashInput(e.target.value)} style={{ ...inputStyle, background: '#fff' }} placeholder="현금 잔액 입력" autoFocus />
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={() => setEditingCash(false)} style={{ flex: 1, padding: '10px', borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 13, color: '#8B95A1' }}>취소</button>
                 <button onClick={handleCashSave} style={{ flex: 1, padding: '10px', borderRadius: 16, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>저장</button>
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 24, fontWeight: 700, color: t.text || '#111', marginTop: 8 }}>{fmt(getCashBalance())}원</p>
+            <p style={{ fontSize: 36, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(getCashBalance())}원</p>
           )}
         </div>
 
