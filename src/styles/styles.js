@@ -3,10 +3,10 @@ import { COLORS } from './theme'
 // 공통 인풋 스타일
 export const inputStyle = {
   width: '100%',
-  padding: '11px 14px',
-  borderRadius: 16,
+  padding: '14px 16px',
+  borderRadius: 12,
   border: `1.5px solid ${COLORS.border}`,
-  fontSize: 14,
+  fontSize: 15,
   outline: 'none',
   background: COLORS.bgInput,
   color: COLORS.text,
@@ -23,36 +23,40 @@ export const pageWrapper = {
 // 헤더
 export const headerStyle = {
   background: COLORS.bgCard,
-  padding: '48px 20px 16px',
+  padding: '48px 24px 16px',
   borderBottom: `1px solid ${COLORS.borderLight}`,
 }
 
-// 카드
+// 카드 — radius 20px, padding 20px (Toss 기준)
 export const cardStyle = {
   background: COLORS.bgCard,
-  borderRadius: 16,
-  padding: '16px',
+  borderRadius: 20,
+  padding: '20px',
   marginBottom: 16,
+  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
 }
 
-// 메인 버튼 (전체 너비)
+// 메인 버튼 (전체 너비) — height 56px, radius 16px
 export const primaryBtnStyle = {
   width: '100%',
-  padding: '15px',
-  borderRadius: 14,
+  height: 56,
+  padding: '0 20px',
+  borderRadius: 16,
   background: COLORS.primary,
   color: '#fff',
   border: 'none',
   fontSize: 16,
-  fontWeight: 600,
+  fontWeight: 700,
   cursor: 'pointer',
+  letterSpacing: '-0.2px',
 }
 
 // 아웃라인 버튼
 export const outlineBtnStyle = {
   width: '100%',
-  padding: '15px',
-  borderRadius: 14,
+  height: 56,
+  padding: '0 20px',
+  borderRadius: 16,
   background: COLORS.bgCard,
   color: COLORS.text,
   border: `1.5px solid ${COLORS.border}`,
@@ -63,24 +67,25 @@ export const outlineBtnStyle = {
 
 // 필 버튼 (탭, 카테고리 선택 등)
 export const pillBtn = (active, color = COLORS.primary) => ({
-  padding: '6px 14px',
-  borderRadius: 9999,
+  padding: '7px 16px',
+  borderRadius: 12,
   border: 'none',
   cursor: 'pointer',
   background: active ? color : COLORS.bgSurface,
   color: active ? '#fff' : COLORS.textSecondary,
   fontSize: 13,
-  fontWeight: 500,
+  fontWeight: active ? 600 : 500,
 })
 
-// 소형 배지 버튼 (수정, 설정 등)
+// 소형 배지 버튼 (수정, 설정 등) — radius 최소 12px
 export const badgeBtnStyle = (color = COLORS.primary) => ({
-  background: color + '1A',
+  background: color + '15',
   border: 'none',
-  borderRadius: 8,
-  padding: '5px 12px',
+  borderRadius: 12,
+  padding: '6px 14px',
   color: color,
-  fontSize: 12,
+  fontSize: 13,
+  fontWeight: 600,
   cursor: 'pointer',
 })
 
@@ -91,12 +96,12 @@ export const divider = {
   margin: '0',
 }
 
-// 합계 요약 카드 (지출/수입)
+// 합계 요약 카드 (지출/수입) — radius 20px
 export const summaryCard = (color) => ({
   flex: 1,
-  background: color + '18',
-  borderRadius: 12,
-  padding: '12px',
+  background: color + '12',
+  borderRadius: 20,
+  padding: '16px',
 })
 
 // 네비게이션 배너 (주간/월간 이동)
@@ -105,34 +110,34 @@ export const navBanner = {
   alignItems: 'center',
   justifyContent: 'space-between',
   background: COLORS.bgPage,
-  borderRadius: 10,
-  padding: '8px 12px',
-  marginBottom: 10,
+  borderRadius: 16,
+  padding: '10px 16px',
+  marginBottom: 12,
 }
 
 export const navBannerBtn = {
   background: 'none',
   border: 'none',
-  fontSize: 18,
+  fontSize: 20,
   cursor: 'pointer',
   color: COLORS.textSecondary,
   padding: '0 8px',
 }
 
 export const navBannerText = {
-  fontSize: 14,
-  fontWeight: 500,
+  fontSize: 15,
+  fontWeight: 600,
   color: COLORS.text,
 }
 
-// 모달 바텀시트
+// 모달 바텀시트 — radius 28px (Apple 기준)
 export const bottomSheet = {
   background: COLORS.bgCard,
-  borderRadius: '20px 20px 0 0',
-  padding: '24px 20px 40px',
+  borderRadius: '28px 28px 0 0',
+  padding: '28px 24px 40px',
   width: '100%',
   maxWidth: 430,
-  maxHeight: '85vh',
+  maxHeight: '88vh',
   overflowY: 'auto',
 }
 
@@ -140,7 +145,7 @@ export const bottomSheet = {
 export const overlay = {
   position: 'fixed',
   inset: 0,
-  background: 'rgba(0,0,0,0.4)',
+  background: 'rgba(0,0,0,0.45)',
   zIndex: 300,
   display: 'flex',
   alignItems: 'flex-end',
@@ -151,7 +156,7 @@ export const overlay = {
 export const fullscreenForm = {
   position: 'fixed',
   inset: 0,
-  background: COLORS.bgCard,
+  background: COLORS.bgPage,
   zIndex: 200,
   overflowY: 'auto',
 }
@@ -160,7 +165,7 @@ export const fullscreenForm = {
 export const fullscreenHeader = {
   display: 'flex',
   alignItems: 'center',
-  padding: '48px 20px 16px',
+  padding: '48px 24px 16px',
   borderBottom: `1px solid ${COLORS.borderLight}`,
   background: COLORS.bgCard,
   position: 'sticky',
@@ -170,10 +175,10 @@ export const fullscreenHeader = {
 
 // 토글 스위치 트랙
 export const toggleTrack = (on) => ({
-  width: 44,
-  height: 26,
-  borderRadius: 13,
-  background: on ? COLORS.primary : '#ddd',
+  width: 48,
+  height: 28,
+  borderRadius: 14,
+  background: on ? COLORS.primary : '#D1D5DB',
   position: 'relative',
   cursor: 'pointer',
   transition: 'background 0.2s',
@@ -182,29 +187,33 @@ export const toggleTrack = (on) => ({
 
 // 토글 스위치 썸
 export const toggleThumb = (on) => ({
-  width: 20,
-  height: 20,
+  width: 22,
+  height: 22,
   borderRadius: '50%',
   background: '#fff',
   position: 'absolute',
   top: 3,
-  left: on ? 21 : 3,
+  left: on ? 23 : 3,
   transition: 'left 0.2s',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
 })
 
-// FAB (플로팅 추가 버튼)
+// FAB (플로팅 추가 버튼) — radius 24px (floating element)
 export const fabStyle = {
   position: 'fixed',
   bottom: 90,
-  right: 'calc(50% - 215px + 16px)',
-  width: 52,
-  height: 52,
-  borderRadius: '50%',
+  right: 'calc(50% - 215px + 20px)',
+  width: 56,
+  height: 56,
+  borderRadius: 24,
   background: COLORS.primary,
   border: 'none',
   color: '#fff',
   fontSize: 28,
   cursor: 'pointer',
-  boxShadow: '0 4px 12px rgba(79,70,229,0.4)',
+  boxShadow: '0 4px 20px rgba(49,130,246,0.35)',
   zIndex: 50,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 }

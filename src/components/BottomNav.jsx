@@ -28,17 +28,21 @@ export default function BottomNav() {
     <div style={{
       position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 430, background: '#fff',
-      borderTop: '1px solid #f0f0f0', display: 'flex', zIndex: 100,
-      paddingBottom: 'env(safe-area-inset-bottom)'
+      boxShadow: '0 -1px 0 #F2F4F6, 0 -8px 24px rgba(0,0,0,0.04)',
+      display: 'flex', zIndex: 100,
+      paddingBottom: 'env(safe-area-inset-bottom)',
     }}>
       {tabs.map(tab => {
         const active = location.pathname === tab.path
-        const color = active ? themeData.primary : '#aaa'
+        const color = active ? themeData.primary : '#C9CDD4'
         return (
           <button key={tab.path} onClick={() => navigate(tab.path)}
-            style={{ flex: 1, padding: '10px 0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
+            {active && (
+              <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 28, height: 3, borderRadius: '0 0 4px 4px', background: themeData.primary }} />
+            )}
             <Icon name={tab.icon} color={color} />
-            <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, color }}>{tab.label}</span>
+            <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px' }}>{tab.label}</span>
           </button>
         )
       })}

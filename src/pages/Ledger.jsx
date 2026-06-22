@@ -350,23 +350,22 @@ export default function Ledger() {
 
   // ── 세그먼트 버튼 공통 스타일 ──
   const segBtn = (active) => ({
-    flex: 1, padding: '11px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+    flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer',
     fontSize: 14, fontWeight: active ? 700 : 500,
     background: active ? themeData.primary : 'transparent',
-    color: active ? '#fff' : '#888',
-    boxShadow: active ? `0 2px 8px ${themeData.primary}44` : 'none',
-    transition: 'all 0.15s',
+    color: active ? '#fff' : '#8B95A1',
+    transition: 'all 0.2s',
   })
 
   return (
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeData.bgClass}>
 
       {/* ── 헤더 ── */}
-      <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 0', borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0', borderBottom: '1px solid #F2F4F6' }}>
 
         {/* 제목 + 설정 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <p style={{ fontSize: 20, fontWeight: 700, color: '#111' }}>가계부</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
           <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#888' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -376,33 +375,32 @@ export default function Ledger() {
         </div>
 
         {/* 기간 탭 */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           {['주간', '월간', '직접'].map(p => (
             <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
-              style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                background: period === p ? themeData.primary : '#f0f0f0',
-                color: period === p ? '#fff' : '#888',
-                fontSize: 13, fontWeight: period === p ? 700 : 500,
-                boxShadow: period === p ? `0 2px 8px ${themeData.primary}44` : 'none',
-                transition: 'all 0.15s' }}>{p}</button>
+              style={{ padding: '8px 18px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: period === p ? themeData.primary : '#F2F4F6',
+                color: period === p ? '#fff' : '#8B95A1',
+                fontSize: 14, fontWeight: period === p ? 700 : 500,
+                transition: 'all 0.2s' }}>{p}</button>
           ))}
         </div>
 
         {/* 날짜 네비게이션 */}
         {period === '주간' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', marginBottom: 12 }}>
-            <button onClick={() => setWeekOffset(o => o-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '0 8px' }}>‹</button>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{formatWeekLabel()}</p>
-            <button onClick={() => setWeekOffset(o => o+1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '0 8px' }}>›</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
+            <button onClick={() => setWeekOffset(o => o-1)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatWeekLabel()}</p>
+            <button onClick={() => setWeekOffset(o => o+1)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
           </div>
         )}
         {period === '월간' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', marginBottom: 12 }}>
-            <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '0 8px' }}>‹</button>
-            <p onClick={() => setShowYMPicker(true)} style={{ fontSize: 14, fontWeight: 600, color: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 12, color: '#bbb' }}>▾</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
+            <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+            <p onClick={() => setShowYMPicker(true)} style={{ fontSize: 16, fontWeight: 700, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#8B95A1' }}>▾</span>
             </p>
-            <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '0 8px' }}>›</button>
+            <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
           </div>
         )}
         {period === '직접' && (
@@ -415,60 +413,61 @@ export default function Ledger() {
           </div>
         )}
 
-        {/* 지출 / 수입 요약 — 날짜 바 바로 아래 */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, background: '#fff8f8', borderRadius: 16, padding: '13px 16px', border: '1px solid #fee2e2' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>지출</p>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>-{fmt(totalExpense)}원</p>
+        {/* 지출 / 수입 요약 */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div style={{ flex: 1, background: '#FFF1F1', borderRadius: 20, padding: '14px 16px' }}>
+            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>지출</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
           </div>
-          <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 16, padding: '13px 16px', border: '1px solid #bbf7d0' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 3 }}>수입</p>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>+{fmt(totalIncome)}원</p>
+          <div style={{ flex: 1, background: '#F0FDF4', borderRadius: 20, padding: '14px 16px' }}>
+            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>수입</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
           </div>
         </div>
 
         {/* 필터 탭 + 정렬 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             {['전체', '소비', '수입', '이체'].map(t => (
               <button key={t} onClick={() => setTab(t)}
-                style={{ padding: '6px 13px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                  background: tab === t ? '#111' : 'transparent',
-                  color: tab === t ? '#fff' : '#888', fontSize: 13, fontWeight: tab === t ? 600 : 400 }}>
+                style={{ padding: '7px 14px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  background: tab === t ? '#191F28' : 'transparent',
+                  color: tab === t ? '#fff' : '#8B95A1', fontSize: 14, fontWeight: tab === t ? 700 : 500,
+                  transition: 'all 0.15s' }}>
                 {t}
               </button>
             ))}
           </div>
           <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
-            style={{ background: 'none', border: 'none', color: '#999', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}>
+            style={{ background: 'none', border: 'none', color: '#8B95A1', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 2 }}>
             {sortOrder === 'desc' ? '↓ 최신순' : '↑ 오래된순'}
           </button>
         </div>
       </div>
 
       {/* ── 내역 리스트 ── */}
-      <div style={{ padding: '12px 16px' }}>
+      <div style={{ padding: '8px 24px' }}>
         {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 14 }}>내역이 없어요</div>
+          <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
         ) : (
           sortedDates.map(date => (
             <div key={date}>
               {/* 날짜 구분선 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 8px' }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#aaa', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 10px' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', whiteSpace: 'nowrap' }}>
                   {date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
                 </span>
-                <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
-                <span style={{ fontSize: 11, whiteSpace: 'nowrap', display: 'flex', gap: 6 }}>
+                <div style={{ flex: 1, height: 1, background: '#F2F4F6' }} />
+                <span style={{ fontSize: 12, whiteSpace: 'nowrap', display: 'flex', gap: 8, fontWeight: 600 }}>
                   {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#ef4444' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                    <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
                   {(() => {
                     const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && (t.cardBilling || isCredit(t.payment) || t.creditCardBilling)).reduce((s, t) => s + t.amount, 0)
-                    return grayAmt > 0 ? <span style={{ color: '#bbb' }}>-{grayAmt.toLocaleString()}원</span> : null
+                    return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}>-{grayAmt.toLocaleString()}원</span> : null
                   })()}
                   {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#22c55e' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                    <span style={{ color: '#2ECC71' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
                 </span>
               </div>
@@ -477,7 +476,7 @@ export default function Ledger() {
                 const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
                 const iconColor = t.type === 'transfer' ? '#888' : getCategoryColor(t.category || '기타')
                 return (
-                  <div key={t.id} style={{ position: 'relative', marginBottom: 8, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div key={t.id} style={{ position: 'relative', marginBottom: 10, borderRadius: 20, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                     {swipedId === t.id && (
                       <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                         onClick={() => handleDelete(t.id)}>
@@ -491,42 +490,42 @@ export default function Ledger() {
                       onTouchStart={handleTouchStart}
                       onTouchEnd={e => handleTouchEnd(e, t.id)}
                       onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
-                      style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                        background: t.creditCardBilling ? '#fff5f5' : showLoan && t.isLoan ? (t.type === 'expense' ? '#fff5f5' : '#f0fdf4') : (t.cardBilling || isCredit(t.payment)) ? '#f9f9f9' : '#fff',
+                      style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.cardBilling || isCredit(t.payment)) ? '#FAFAFA' : '#fff',
                         transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
-                        transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer' }}>
+                        transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
                       {/* 카테고리 아이콘 */}
-                      <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                        background: iconColor + '18',
+                      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+                        background: iconColor + '15',
                         display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <CatIcon cat={iconKey} size={18} color={iconColor} />
+                        <CatIcon cat={iconKey} size={20} color={iconColor} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                        <p style={{ fontSize: 11, color: '#bbb' }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                        <p style={{ fontSize: 13, color: '#8B95A1' }}>
                           {t.type === 'transfer'
                             ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
                             : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
                         </p>
                       </div>
-                      <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0,
-                        color: t.type === 'transfer' ? '#888' : t.creditCardBilling ? '#ef4444' : (t.cardBilling || isCredit(t.payment)) ? '#bbb' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#ef4444' : '#22c55e' }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
+                        color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.cardBilling || isCredit(t.payment)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
                         {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                       </p>
                     </div>
 
-                    {/* 수정/삭제 — 항목과 동일한 흰 배경 */}
+                    {/* 수정/삭제 */}
                     {selectedId === t.id && (
-                      <div style={{ display: 'flex', borderTop: '1px solid #f5f5f5' }}>
+                      <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => handleEdit(t)}
-                          style={{ flex: 1, padding: '11px', border: 'none', background: '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           수정
                         </button>
-                        <div style={{ width: 1, background: '#f5f5f5' }} />
+                        <div style={{ width: 1, background: '#F2F4F6' }} />
                         <button onClick={() => handleDelete(t.id)}
-                          style={{ flex: 1, padding: '11px', border: 'none', background: '#fff', color: '#ef4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                           삭제
                         </button>
                       </div>
@@ -541,22 +540,22 @@ export default function Ledger() {
 
       {/* ── FAB ── */}
       <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false }); setShowForm(true) }}
-        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: '16px', width: 52, height: 52, borderRadius: '50%', background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 12px ${themeData.primary}66` }}>+</button>
+        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 'calc(50% - 215px + 20px)', width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
 
       {/* ── 설정 — 전체화면 ── */}
       {showSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f5f6f8', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
           {/* 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0', position: 'sticky', top: 0, zIndex: 10 }}>
-            <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#333' }}><BackIcon /></button>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>가계부 설정</p>
+          <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
+            <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>가계부 설정</p>
           </div>
 
-          <div style={{ padding: '20px 16px 60px' }}>
+          <div style={{ padding: '24px 24px 60px' }}>
 
             {/* 주 시작 요일 */}
             <SectionLabel>주 시작 요일</SectionLabel>
-            <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 9999, padding: 4, marginBottom: 20 }}>
+            <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 24 }}>
               {[{ label: '월요일부터', val: 1 }, { label: '일요일부터', val: 0 }].map(opt => (
                 <button key={opt.val} onClick={() => setWeekStartDay(opt.val)} style={segBtn(weekStartDay === opt.val)}>{opt.label}</button>
               ))}
@@ -564,14 +563,14 @@ export default function Ledger() {
 
             {/* 정렬 순서 */}
             <SectionLabel>정렬 순서</SectionLabel>
-            <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 9999, padding: 4, marginBottom: 20 }}>
+            <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 24 }}>
               {[{ label: '↓ 최신순', val: 'desc' }, { label: '↑ 오래된순', val: 'asc' }].map(opt => (
                 <button key={opt.val} onClick={() => setSortOrder(opt.val)} style={segBtn(sortOrder === opt.val)}>{opt.label}</button>
               ))}
             </div>
 
             {/* 토글 그룹 */}
-            <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}>
               {[
                 { label: '잔여 예산 이월', desc: '남은 예산을 다음 달로 이월', on: rolloverBudget, onChange: handleToggleRollover },
                 { label: '체크카드 소액 신용 대금 표시', desc: '회색 표시, 지출 합계에서 제외', on: showCardBilling, onChange: async (val) => { setShowCardBilling(val); if (user) await setDoc(doc(db, 'users', user.uid), { showCardBilling: val }, { merge: true }) } },
@@ -590,7 +589,7 @@ export default function Ledger() {
 
             {/* 카테고리 관리 */}
             <SectionLabel>카테고리 관리</SectionLabel>
-            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 20, padding: '20px', marginBottom: 24 }}>
               <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 9999, padding: 3, marginBottom: 14 }}>
                 {[{ label: '지출', val: 'expense' }, { label: '수입', val: 'income' }].map(opt => (
                   <button key={opt.val} onClick={() => setCatTab(opt.val)}
@@ -623,16 +622,16 @@ export default function Ledger() {
 
       {/* ── 내역 추가/수정 폼 ── */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f5f6f8', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
           {/* 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0', position: 'sticky', top: 0, zIndex: 10 }}>
-            <button onClick={() => { setShowForm(false); setEditItem(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#333' }}><BackIcon /></button>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
+          <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
+            <button onClick={() => { setShowForm(false); setEditItem(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
           </div>
 
-          <div style={{ padding: '16px 16px 80px' }}>
+          <div style={{ padding: '20px 24px 80px' }}>
             {/* 지출/수입/이체 탭 */}
-            <div style={{ display: 'flex', background: '#e8e8e8', borderRadius: 9999, padding: 4, marginBottom: 20 }}>
+            <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 20 }}>
               {[
                 { type: 'expense', label: '지출' },
                 { type: 'income', label: '수입' },
@@ -640,31 +639,30 @@ export default function Ledger() {
               ].map(({ type, label }) => (
                 <button key={type}
                   onClick={() => setForm(f => ({ ...f, type, category: type === 'expense' ? categories.expense[0] : type === 'income' ? categories.income[0] : '이체', cardBilling: false, toAccount: '' }))}
-                  style={{ flex: 1, padding: '11px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: form.type === type ? 700 : 500,
-                    background: form.type === type ? (type === 'expense' ? '#ef4444' : type === 'income' ? '#22c55e' : themeData.primary) : 'transparent',
-                    color: form.type === type ? '#fff' : '#888',
-                    boxShadow: form.type === type ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-                    transition: 'all 0.15s' }}>
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: form.type === type ? 700 : 500,
+                    background: form.type === type ? (type === 'expense' ? '#FF5A5F' : type === 'income' ? '#2ECC71' : themeData.primary) : 'transparent',
+                    color: form.type === type ? '#fff' : '#8B95A1',
+                    transition: 'all 0.2s' }}>
                   {label}
                 </button>
               ))}
             </div>
 
             {/* 금액 */}
-            <div style={{ background: '#fff', borderRadius: 16, padding: '16px 20px', marginBottom: 16 }}>
-              <p style={{ fontSize: 12, color: '#888', marginBottom: 10, fontWeight: 500 }}>금액</p>
+            <div style={{ background: '#fff', borderRadius: 20, padding: '20px 24px', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>금액</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                   placeholder="0"
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: 34, fontWeight: 700,
-                    color: form.type === 'expense' ? '#ef4444' : form.type === 'income' ? '#22c55e' : '#111',
-                    background: 'transparent' }} />
-                <span style={{ fontSize: 20, fontWeight: 600, color: '#888' }}>원</span>
+                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: 38, fontWeight: 700,
+                    color: form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : '#191F28',
+                    background: 'transparent', letterSpacing: '-1px' }} />
+                <span style={{ fontSize: 22, fontWeight: 600, color: '#8B95A1' }}>원</span>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 {[1000, 5000, 10000, 50000].map(amt => (
                   <button key={amt} onClick={() => setForm(f => ({ ...f, amount: String(Number(f.amount || 0) + amt) }))}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: 20, border: 'none', background: '#f0f0f0', color: '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     +{amt.toLocaleString()}
                   </button>
                 ))}
@@ -672,23 +670,24 @@ export default function Ledger() {
             </div>
 
             {/* 제목 */}
-            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
-              <p style={{ fontSize: 12, color: '#888', marginBottom: 8, fontWeight: 500 }}>제목</p>
-              <input style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '0', fontSize: 15 }}
+            <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>제목</p>
+              <input style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '0', fontSize: 16 }}
                 placeholder={form.type === 'income' ? '어디서 받았나요?' : form.type === 'transfer' ? '이체 내용을 입력하세요' : '어디에 썼나요?'} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             </div>
 
-            {/* 카테고리 — 아이콘 없는 텍스트 그리드 */}
+            {/* 카테고리 */}
             {form.type !== 'transfer' && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
-                <p style={{ fontSize: 12, color: '#888', marginBottom: 12, fontWeight: 500 }}>카테고리</p>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 14, fontWeight: 600 }}>카테고리</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {categories[form.type === 'expense' ? 'expense' : 'income'].map(cat => (
                     <button key={cat} onClick={() => setForm(f => ({ ...f, category: cat }))}
-                      style={{ padding: '11px 4px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: form.category === cat ? themeData.primary : '#f5f5f5',
-                        color: form.category === cat ? '#fff' : '#555',
-                        fontWeight: form.category === cat ? 600 : 400, textAlign: 'center' }}>
+                      style={{ padding: '12px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: form.category === cat ? themeData.primary : '#F2F4F6',
+                        color: form.category === cat ? '#fff' : '#191F28',
+                        fontWeight: form.category === cat ? 700 : 500, textAlign: 'center',
+                        transition: 'all 0.15s' }}>
                       {cat}
                     </button>
                   ))}
@@ -698,9 +697,9 @@ export default function Ledger() {
 
             {/* 이체 정보 */}
             {form.type === 'transfer' && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
-                <p style={{ fontSize: 12, color: '#888', marginBottom: 8, fontWeight: 500 }}>이체 정보</p>
-                <p style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>출금 계좌</p>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>이체 정보</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8 }}>출금 계좌</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                   {userAccountsList.length > 0 ? userAccountsList.map(a => (
                     <button key={a} onClick={() => setForm(f => ({ ...f, payment: a }))}
@@ -727,10 +726,10 @@ export default function Ledger() {
               </div>
             )}
 
-            {/* 결제수단 (현재 디자인 유지) */}
+            {/* 결제수단 */}
             {form.type !== 'transfer' && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
-                <p style={{ fontSize: 12, color: '#888', marginBottom: 10, fontWeight: 500 }}>결제수단</p>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>결제수단</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
                   {userPayments.map(p => (
                     <button key={p} onClick={() => { setForm(f => ({ ...f, payment: p })); setShowCardSelector(false); setShowAccountSelector(false) }}
@@ -828,50 +827,50 @@ export default function Ledger() {
 
             {/* 신용카드 대금 납부 — 단독 토글 박스 */}
             {form.type === 'expense' && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>신용카드 대금 납부</p>
-                  <p style={{ fontSize: 12, color: '#888' }}>카드 실적 제외</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>신용카드 대금 납부</p>
+                  <p style={{ fontSize: 13, color: '#8B95A1' }}>카드 실적 제외</p>
                 </div>
                 <Toggle on={form.creditCardBilling || false} onChange={val => setForm(f => ({ ...f, creditCardBilling: val }))} />
               </div>
             )}
 
-            {/* 체크카드 소액 신용 대금 납부 — 단독 토글 박스 */}
+            {/* 체크카드 소액 신용 대금 납부 */}
             {form.type === 'expense' && showCardBilling && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>체크카드 소액 신용 대금 납부</p>
-                  <p style={{ fontSize: 12, color: '#888' }}>지출 합계에서 제외</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>체크카드 소액 신용 대금 납부</p>
+                  <p style={{ fontSize: 13, color: '#8B95A1' }}>지출 합계에서 제외</p>
                 </div>
                 <Toggle on={form.cardBilling || false} onChange={val => setForm(f => ({ ...f, cardBilling: val }))} />
               </div>
             )}
 
-            {/* 대출 / 상환 — 단독 토글 박스 */}
+            {/* 대출 / 상환 */}
             {form.type === 'expense' && showLoan && (
-              <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 2 }}>대출 / 상환</p>
-                  <p style={{ fontSize: 12, color: '#888' }}>합계에서 제외</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>대출 / 상환</p>
+                  <p style={{ fontSize: 13, color: '#8B95A1' }}>합계에서 제외</p>
                 </div>
                 <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val }))} />
               </div>
             )}
 
-            {/* 날짜 및 시간 — Pill 버튼 */}
-            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
-              <p style={{ fontSize: 12, color: '#888', marginBottom: 10, fontWeight: 500 }}>날짜 및 시간</p>
+            {/* 날짜 및 시간 */}
+            <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+              <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>날짜 및 시간</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ flex: 1, position: 'relative' }}>
-                  <div style={{ padding: '13px 0', borderRadius: 16, background: '#f5f5f5', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#111' }}>
+                  <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {form.date ? form.date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$1. $2. $3.') : '날짜'}
                   </div>
                   <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
                 <div style={{ flex: 1, position: 'relative' }}>
-                  <div style={{ padding: '13px 0', borderRadius: 16, background: '#f5f5f5', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#111' }}>
+                  <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {formatTime(form.time)}
                   </div>
                   <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
@@ -881,17 +880,17 @@ export default function Ledger() {
             </div>
 
             {/* 메모 */}
-            <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 20 }}>
-              <p style={{ fontSize: 12, color: '#888', marginBottom: 8, fontWeight: 500 }}>메모 (선택)</p>
+            <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 24 }}>
+              <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>메모 (선택)</p>
               <textarea value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))}
                 placeholder="메모를 입력하세요"
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#111', background: 'transparent', resize: 'none', height: 72, lineHeight: 1.6, boxSizing: 'border-box' }} />
+                style={{ width: '100%', border: 'none', outline: 'none', fontSize: 15, color: '#191F28', background: 'transparent', resize: 'none', height: 80, lineHeight: 1.6, boxSizing: 'border-box' }} />
             </div>
 
             <button onClick={handleSubmit}
-              style={{ width: '100%', padding: '16px', borderRadius: 16,
-                background: form.type === 'expense' ? '#ef4444' : form.type === 'income' ? '#22c55e' : themeData.primary,
-                color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ width: '100%', height: 56, borderRadius: 16,
+                background: form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : themeData.primary,
+                color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.2px' }}>
               {editItem ? '수정 완료' : '추가하기'}
             </button>
           </div>

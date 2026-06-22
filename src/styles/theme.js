@@ -1,21 +1,21 @@
-// 색상 팔레트
+// 색상 팔레트 — Toss + Apple 디자인 시스템
 export const COLORS = {
-  primary: '#4F46E5',
-  primaryLight: '#EEF2FF',
-  danger: '#ef4444',
-  dangerLight: '#FFF0F0',
-  success: '#22c55e',
-  successLight: '#F0FFF4',
-  warning: '#f59e0b',
-  text: '#111111',
-  textSecondary: '#888888',
-  textMuted: '#bbbbbb',
-  bgPage: '#f8f8f8',
-  bgCard: '#ffffff',
-  bgInput: '#fafafa',
-  bgSurface: '#f0f0f0',
-  border: '#e8e8e8',
-  borderLight: '#f0f0f0',
+  primary: '#3182F6',       // Toss Blue
+  primaryLight: '#E8F3FF',
+  danger: '#FF5A5F',        // Expense Red
+  dangerLight: '#FFF1F1',
+  success: '#2ECC71',       // Income Green
+  successLight: '#F0FDF4',
+  warning: '#F59E0B',
+  text: '#191F28',          // Text Primary
+  textSecondary: '#8B95A1', // Text Secondary
+  textMuted: '#C9CDD4',
+  bgPage: '#F7F8FA',        // App Background
+  bgCard: '#FFFFFF',
+  bgInput: '#F7F8FA',
+  bgSurface: '#F2F4F6',
+  border: '#E5E8EB',
+  borderLight: '#F2F4F6',
 }
 
 export const THEMES = {
