@@ -47,9 +47,8 @@ export default function Calendar() {
         // Load cards
         if (data.cards?.length > 0) setUserCards(data.cards)
 
-        // Load accounts
-        const accSnap = await getDocs(collection(db, 'users', u.uid, 'accounts'))
-        setUserAccounts(accSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+        // Load accounts (same source as MyPage: data.accounts array with `name` field)
+        if (data.accounts?.length > 0) setUserAccounts(data.accounts)
 
         // Auto-register fixed expenses for the current real month
         const fixedList = data.fixedExpenses || []
@@ -136,7 +135,7 @@ export default function Calendar() {
   }
 
   const fmt = n => n.toLocaleString('ko-KR')
-  const accNames = userAccounts.map(a => a.bankName).filter(Boolean)
+  const accNames = userAccounts.map(a => a.name).filter(Boolean)
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   const isCredit = (p) => cards.some(c => c.name === p && c.cardType === 'credit')
