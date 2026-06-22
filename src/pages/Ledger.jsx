@@ -501,7 +501,12 @@ export default function Ledger() {
                         <CatIcon cat={iconKey} size={20} color={iconColor} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                          {t.isAutoRegistered && (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
+                          )}
+                        </div>
                         <p style={{ fontSize: 12, color: '#8B95A1' }}>
                           {t.type === 'transfer'
                             ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`

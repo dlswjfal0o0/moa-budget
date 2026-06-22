@@ -329,7 +329,7 @@ export default function Analysis() {
                 {maxExpense > 0 && (() => {
                   const maxDay = dailyData.find(d => d.amount === maxExpense)
                   return (
-                    <p style={{ fontSize: 12, color: '#888', textAlign: 'center', marginTop: 6 }}>
+                    <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', marginTop: 6 }}>
                       최고 지출일: <span style={{ color: primary, fontWeight: 700 }}>{maxDay?.day}일</span> (-{fmt(maxExpense)}원)
                     </p>
                   )
@@ -398,7 +398,7 @@ export default function Analysis() {
             {loadingAi && (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🤔</div>
-                <p style={{ fontSize: 14, color: '#888' }}>AI가 소비 패턴을 분석하고 있어요...</p>
+                <p style={{ fontSize: 14, color: '#8B95A1' }}>AI가 소비 패턴을 분석하고 있어요...</p>
                 <p style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>잠시만 기다려주세요</p>
               </div>
             )}
@@ -434,7 +434,7 @@ export default function Analysis() {
                         {levelColors.map((color, i) => (
                           <div key={i} style={{ width: 15, height: 15, borderRadius: '50%', background: i < filledCount ? color : '#e5e7eb', transition: 'background 0.3s' }} />
                         ))}
-                        <span style={{ fontSize: 11, color: '#888', marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
+                        <span style={{ fontSize: 11, color: '#8B95A1', marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
                       </div>
                     </div>
                   </div>
@@ -442,7 +442,7 @@ export default function Analysis() {
                   {/* 절감 포인트 */}
                   {aiFeedbackData.cuts?.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>💡 절감 포인트</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>💡 절감 포인트</p>
                       {aiFeedbackData.cuts.map((cut, i) => (
                         <div key={i} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
@@ -458,7 +458,7 @@ export default function Analysis() {
                   {/* 이상 지출 */}
                   {aiFeedbackData.unusual?.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>🚨 이상 지출 감지</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>🚨 이상 지출 감지</p>
                       {aiFeedbackData.unusual.map((u, i) => (
                         <div key={i} style={{ background: '#FFF5F5', borderRadius: 8, padding: '10px 12px', marginBottom: 6, borderLeft: '3px solid #ef4444', display: 'flex', gap: 8 }}>
                           <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
@@ -471,7 +471,7 @@ export default function Analysis() {
                   {/* 절감 목표 */}
                   {aiFeedbackData.saving_goal > 0 && (
                     <div style={{ background: '#F0FFF4', borderRadius: 16, padding: '12px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: '#333' }}>🎯 이번 달 절감 목표</span>
+                      <span style={{ fontSize: 13, color: '#191F28' }}>🎯 이번 달 절감 목표</span>
                       <span style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>{fmt(aiFeedbackData.saving_goal)}원</span>
                     </div>
                   )}
@@ -487,7 +487,7 @@ export default function Analysis() {
             })()}
             {aiFeedbackRaw && (
               <div style={{ background: primaryLight, borderRadius: 16, padding: '14px', borderLeft: `3px solid ${primary}` }}>
-                <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7 }}>{aiFeedbackRaw}</p>
+                <p style={{ fontSize: 14, color: '#191F28', lineHeight: 1.7 }}>{aiFeedbackRaw}</p>
               </div>
             )}
           </div>
@@ -703,7 +703,7 @@ export default function Analysis() {
             {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
             {loadingUtilityAI && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <p style={{ fontSize: 14, color: '#888' }}>공과금 패턴을 분석하고 있어요...</p>
+                <p style={{ fontSize: 14, color: '#8B95A1' }}>공과금 패턴을 분석하고 있어요...</p>
               </div>
             )}
             {utilityAI && (

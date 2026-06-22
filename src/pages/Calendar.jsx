@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
+import { DEFAULT_CATEGORIES } from '../styles/theme'
 
 export default function Calendar() {
   const { themeData, themeName } = useTheme()
@@ -15,10 +16,14 @@ export default function Calendar() {
   const [transactions, setTransactions] = useState([])
   const [fixedExpenses, setFixedExpenses] = useState([])
   const [showAddFixed, setShowAddFixed] = useState(false)
-  const [newFixed, setNewFixed] = useState({ title: '', amount: '', dueDate: '' })
+  const EMPTY_FIXED = { title: '', amount: '', dueDate: '', category: '기타', payment: '현금', autoRegister: true }
+  const [newFixed, setNewFixed] = useState(EMPTY_FIXED)
   const [expandedFixedId, setExpandedFixedId] = useState(null)
   const [editingFixedId, setEditingFixedId] = useState(null)
-  const [editFixedData, setEditFixedData] = useState({ title: '', amount: '', dueDate: '' })
+  const [editFixedData, setEditFixedData] = useState(EMPTY_FIXED)
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES.expense)
+  const [userAccounts, setUserAccounts] = useState([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -31,7 +36,43 @@ export default function Calendar() {
       else {
         setUser(u)
         const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists() && snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
+        const data = snap.exists() ? snap.data() : {}
+
+        // Load categories
+        if (data.categories?.expense?.length > 0) setCategories(data.categories.expense)
+
+        // Load accounts
+        const accSnap = await getDocs(collection(db, 'users', u.uid, 'accounts'))
+        setUserAccounts(accSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+
+        // Auto-register fixed expenses for the current real month
+        const fixedList = data.fixedExpenses || []
+        const nowDate = new Date()
+        const todayDay = nowDate.getDate()
+        const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
+        const promises = []
+        const processed = fixedList.map(f => {
+          if (!f.autoRegister || !f.dueDate) return f
+          const dueDay = parseInt(f.dueDate.split('-')[2])
+          if (isNaN(dueDay) || todayDay < dueDay) return f
+          const registeredMonths = f.autoRegisteredMonths || []
+          if (registeredMonths.includes(nowMonthKey)) return f
+          const dueDateStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
+          promises.push(addDoc(collection(db, 'transactions'), {
+            uid: u.uid, month: nowMonthKey, type: 'expense',
+            title: f.title, amount: f.amount,
+            category: f.category || '기타', payment: f.payment || '현금',
+            date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
+            isAutoRegistered: true, createdAt: new Date().toISOString()
+          }))
+          return { ...f, autoRegisteredMonths: [...registeredMonths, nowMonthKey] }
+        })
+        if (promises.length > 0) {
+          await Promise.all(promises)
+          await setDoc(doc(db, 'users', u.uid), { fixedExpenses: processed }, { merge: true })
+          setRefreshTrigger(t => t + 1)
+        }
+        setFixedExpenses(processed)
       }
     })
     return unsub
@@ -42,7 +83,7 @@ export default function Calendar() {
     const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr))
     getDocs(q).then(snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-  }, [user, viewYear, viewMonth])
+  }, [user, viewYear, viewMonth, refreshTrigger])
 
   const saveFixed = async (updated) => {
     setFixedExpenses(updated)
@@ -51,9 +92,13 @@ export default function Calendar() {
 
   const handleAddFixed = () => {
     if (!newFixed.title || !newFixed.amount) return
-    const updated = [...fixedExpenses, { id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate, doneMonths: [] }]
+    const updated = [...fixedExpenses, {
+      id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate,
+      category: newFixed.category || '기타', payment: newFixed.payment || '현금',
+      autoRegister: newFixed.autoRegister, doneMonths: [], autoRegisteredMonths: []
+    }]
     saveFixed(updated)
-    setNewFixed({ title: '', amount: '', dueDate: '' })
+    setNewFixed(EMPTY_FIXED)
     setShowAddFixed(false)
   }
 
@@ -75,7 +120,11 @@ export default function Calendar() {
 
   const handleSaveFixed = () => {
     if (!editFixedData.title || !editFixedData.amount) return
-    const updated = fixedExpenses.map(f => f.id === editingFixedId ? { ...f, title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate } : f)
+    const updated = fixedExpenses.map(f => f.id === editingFixedId ? {
+      ...f, title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate,
+      category: editFixedData.category || '기타', payment: editFixedData.payment || '현금',
+      autoRegister: editFixedData.autoRegister
+    } : f)
     saveFixed(updated)
     setEditingFixedId(null)
   }
@@ -296,8 +345,7 @@ export default function Calendar() {
                       <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => {
                           setEditingFixedId(f.id)
-                          const dayNum2 = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : ''
-                          setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '' })
+                          setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '', category: f.category || '기타', payment: f.payment || '현금', autoRegister: f.autoRegister !== false })
                           setExpandedFixedId(null)
                         }} style={{ flex: 1, padding: '14px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -330,15 +378,15 @@ export default function Calendar() {
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>고정지출 수정</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>항목명</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
                 <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={editFixedData.title} onChange={e => setEditFixedData(d => ({ ...d, title: e.target.value }))} />
               </div>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>금액</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
                 <input style={inputStyle} type="number" placeholder="0" value={editFixedData.amount} onChange={e => setEditFixedData(d => ({ ...d, amount: e.target.value }))} />
               </div>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>납부일 (선택)</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input style={{ ...inputStyle, flex: 1 }} type="number" min="1" max="31" placeholder="매월 며칠? (예: 10)"
                     value={editFixedData.dueDate ? parseInt(editFixedData.dueDate.split('-')[2]) : ''}
@@ -352,8 +400,48 @@ export default function Calendar() {
                   <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
                 </div>
               </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  {categories.map(cat => (
+                    <button key={cat} onClick={() => setEditFixedData(d => ({ ...d, category: cat }))}
+                      style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: editFixedData.category === cat ? themeData.primary : '#F2F4F6',
+                        color: editFixedData.category === cat ? '#fff' : '#191F28',
+                        fontWeight: editFixedData.category === cat ? 700 : 500, textAlign: 'center' }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {['현금', ...userAccounts.map(a => a.bankName)].map(p => (
+                    <button key={p} onClick={() => setEditFixedData(d => ({ ...d, payment: p }))}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: editFixedData.payment === p ? themeData.primary : '#F2F4F6',
+                        color: editFixedData.payment === p ? '#fff' : '#8B95A1', fontWeight: 500 }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 0', borderTop: '1px solid #F2F4F6', marginTop: 4 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
+                <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+              </div>
+              <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))}
+                style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                  background: editFixedData.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
+                  position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: 3, left: editFixedData.autoRegister ? 21 : 3, width: 20, height: 20,
+                  borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button onClick={() => setEditingFixedId(null)}
                 style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>취소</button>
               <button onClick={handleSaveFixed}
@@ -367,7 +455,7 @@ export default function Calendar() {
       {showAddFixed && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => { setShowAddFixed(false); setNewFixed({ title: '', amount: '', dueDate: '' }) }}>
+          onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED) }}>
           <div
             style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
             onClick={e => e.stopPropagation()}>
@@ -375,15 +463,15 @@ export default function Calendar() {
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>고정지출 추가</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>항목명</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>항목명</p>
                 <input style={inputStyle} placeholder="예: 월세, 넷플릭스" value={newFixed.title} onChange={e => setNewFixed(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>금액</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
                 <input style={inputStyle} type="number" placeholder="0" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
               </div>
               <div>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 500 }}>납부일 (선택)</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input
                     style={{ ...inputStyle, flex: 1 }}
@@ -402,10 +490,50 @@ export default function Calendar() {
                   <span style={{ fontSize: 14, color: '#8B95A1', whiteSpace: 'nowrap' }}>일</span>
                 </div>
               </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>카테고리</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                  {categories.map(cat => (
+                    <button key={cat} onClick={() => setNewFixed(f => ({ ...f, category: cat }))}
+                      style={{ padding: '10px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: newFixed.category === cat ? themeData.primary : '#F2F4F6',
+                        color: newFixed.category === cat ? '#fff' : '#191F28',
+                        fontWeight: newFixed.category === cat ? 700 : 500, textAlign: 'center' }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {['현금', ...userAccounts.map(a => a.bankName)].map(p => (
+                    <button key={p} onClick={() => setNewFixed(f => ({ ...f, payment: p }))}
+                      style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                        background: newFixed.payment === p ? themeData.primary : '#F2F4F6',
+                        color: newFixed.payment === p ? '#fff' : '#8B95A1', fontWeight: 500 }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 0', borderTop: '1px solid #F2F4F6', marginTop: 4 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
+                <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
+              </div>
+              <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))}
+                style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                  background: newFixed.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
+                  position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: 3, left: newFixed.autoRegister ? 21 : 3, width: 20, height: 20,
+                  borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button
-                onClick={() => { setShowAddFixed(false); setNewFixed({ title: '', amount: '', dueDate: '' }) }}
+                onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED) }}
                 style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#8B95A1' }}>
                 취소
               </button>
