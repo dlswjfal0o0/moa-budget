@@ -30,7 +30,7 @@ export default function SplashScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 32px 0', background: BG, position: 'relative', overflow: 'hidden' }}>
       {/* 앱 아이콘 */}
-      <div style={{ width: 110, height: 110, marginBottom: 24 }}>
+      <div style={{ width: 110, height: 110, marginBottom: 24, borderRadius: 24, overflow: 'hidden' }}>
         <img
           src="/moa_icon.png"
           alt="모아"

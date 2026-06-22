@@ -4,9 +4,12 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithCredential,
+  OAuthProvider,
   sendPasswordResetEmail
 } from 'firebase/auth'
 import { auth, googleProvider } from '../../firebase/config'
+import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -85,6 +88,26 @@ export default function Auth() {
     setLoading(false)
   }
 
+  const handleApple = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const result = await SignInWithApple.authorize({
+        clientId: 'com.moa.budget',
+        redirectURI: 'https://moa-budget.firebaseapp.com/__/auth/handler',
+        scopes: 'email name',
+      })
+      const { identityToken } = result.response
+      const provider = new OAuthProvider('apple.com')
+      const credential = provider.credential({ idToken: identityToken })
+      await signInWithCredential(auth, credential)
+      navigate('/home', { replace: true })
+    } catch (e) {
+      setError('Apple 로그인에 실패했어요.')
+    }
+    setLoading(false)
+  }
+
   const handlePasswordReset = async () => {
     if (!resetEmail) return setResetError('이메일을 입력해주세요.')
     try {
@@ -125,8 +148,19 @@ export default function Auth() {
               onBlur={() => setTouchedEmail(true)}
             />
             {touchedEmail && email && (
-              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>
-                {emailValid ? '✅' : '❌'}
+              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                {emailValid ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="6" fill="#10b981"/>
+                    <polyline points="5 12 10 17 19 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="6" fill="#ef4444"/>
+                    <line x1="7" y1="7" x2="17" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
+                    <line x1="17" y1="7" x2="7" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
+                )}
               </span>
             )}
           </div>
@@ -155,8 +189,18 @@ export default function Auth() {
               />
               <button type="button" onClick={() => setShowPw(!showPw)}
                 style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#aaa' }}>
-                {showPw ? '🙈' : '👁️'}
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
+                {showPw ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -178,8 +222,18 @@ export default function Auth() {
                     { label: '숫자 포함', ok: /[0-9]/.test(password) },
                     { label: '특수문자 포함', ok: /[^A-Za-z0-9]/.test(password) },
                   ].map(({ label, ok }) => (
-                    <span key={label} style={{ fontSize: 11, color: ok ? '#10b981' : '#94a3b8' }}>
-                      {ok ? '✓' : '○'} {label}
+                    <span key={label} style={{ fontSize: 11, color: ok ? '#10b981' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {ok ? (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" fill="#10b981"/>
+                          <polyline points="7 12 10.5 15.5 17 9" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="#94a3b8" strokeWidth="2" fill="none"/>
+                        </svg>
+                      )}
+                      {label}
                     </span>
                   ))}
                 </div>
@@ -206,8 +260,18 @@ export default function Auth() {
                 />
                 <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                   style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#aaa' }}>
-                  {showConfirm ? '🙈' : '👁️'}
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
+                  {showConfirm ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </button>
               </div>
               {touchedConfirm && confirm && !confirmMatch && (
@@ -259,6 +323,22 @@ export default function Auth() {
             <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/>
           </svg>
           Google로 계속
+        </button>
+
+        <button
+          onClick={handleApple}
+          disabled={loading}
+          style={{
+            width: '100%', padding: '13px', borderRadius: 12, marginTop: 10,
+            border: '1.5px solid #e8e8e8', background: '#fff',
+            fontSize: 14, color: '#333', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+          }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M12.97 9.36c-.02-2.01 1.64-2.98 1.71-3.02-.93-1.36-2.38-1.55-2.9-1.57-1.24-.13-2.42.73-3.05.73-.63 0-1.6-.71-2.63-.69-1.35.02-2.6.79-3.3 2-.14.24-1.3 2.28-.04 5.65.43 1.24.99 2.63 1.74 2.62.72-.01 1-.46 1.88-.46.87 0 1.12.46 1.89.44.76-.01 1.23-1.23 1.7-2.48.54-1.43.76-2.82.74-2.22z" fill="#000"/>
+            <path d="M11.27 4.26c.64-.78 1.07-1.86.95-2.94-.92.04-2.03.61-2.69 1.38-.59.68-1.1 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.26z" fill="#000"/>
+          </svg>
+          Apple로 계속
         </button>
       </div>
 

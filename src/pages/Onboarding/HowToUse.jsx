@@ -540,62 +540,105 @@ function LedgerSettingsMockup() {
 }
 
 function MySettingsMockup() {
+  const chevron = <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+  const MIcon = ({children, bg}) => (
+    <div style={{ width:16, height:16, borderRadius:6, background:bg||PRIMARY, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{children}</div>
+  )
+  const Row = ({children, border}) => (
+    <div style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 7px', borderBottom:border?'1px solid #F2F4F6':'none' }}>{children}</div>
+  )
+  const SLabel = ({children}) => (
+    <p style={{ fontSize:5.5, fontWeight:600, color:'#8B95A1', padding:'6px 4px 3px', letterSpacing:0.3 }}>{children}</p>
+  )
+  const Card = ({children, mb}) => (
+    <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', marginBottom:mb||4, boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>{children}</div>
+  )
   return (
-    <div style={{ flex:1, background:'#f5f6f8', overflow:'hidden', display:'flex', flexDirection:'column' }}>
-      {/* 헤더 */}
-      <div style={{ background:PRIMARY, padding:'7px 10px', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-        <span style={{ fontSize:7, color:'rgba(255,255,255,0.8)' }}>‹</span>
-        <span style={{ fontSize:9, fontWeight:700, color:'white' }}>설정</span>
+    <div style={{ flex:1, background:'#F7F8FA', overflow:'hidden', display:'flex', flexDirection:'column' }}>
+      {/* 헤더 — 흰 배경 + 다크 텍스트 */}
+      <div style={{ background:'#fff', padding:'7px 10px', display:'flex', alignItems:'center', gap:5, flexShrink:0, borderBottom:'1px solid #F2F4F6' }}>
+        <span style={{ fontSize:12, color:'#191F28', lineHeight:1 }}>‹</span>
+        <span style={{ fontSize:9, fontWeight:700, color:'#191F28' }}>설정</span>
       </div>
-      <div style={{ flex:1, overflow:'hidden', padding:'5px 5px 0' }}>
-        {/* 테마 – 3열 그리드 */}
-        <div style={{ background:'white', borderRadius:16, padding:'7px 8px', marginBottom:4 }}>
-          <p style={{ fontSize:7, fontWeight:600, color:'#333', marginBottom:6 }}>테마</p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4 }}>
-            {[{n:'기본',c:'#3182F6',sel:true},{n:'오션',c:'#3A8BC7'},{n:'핑크',c:'#C05070'},{n:'퍼플',c:'#7050B0'},{n:'그린',c:'#6E9E2E'},{n:'빈티지',c:'#C88A82'}].map(t=>(
-              <div key={t.n} style={{ background:t.sel?'#EEF2FF':'#f8f8f8', borderRadius:12, padding:'5px 4px', border:t.sel?`1.5px solid ${PRIMARY}`:'1.5px solid transparent', textAlign:'center' }}>
-                <div style={{ width:16, height:16, borderRadius:'50%', background:t.c, margin:'0 auto 3px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  {t.sel && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                </div>
-                <span style={{ fontSize:5.5, fontWeight:600, color:t.sel?PRIMARY:'#555' }}>{t.n}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* 데이터 내보내기 */}
-        <div style={{ background:'white', borderRadius:16, padding:'7px 8px', marginBottom:4 }}>
-          <p style={{ fontSize:7, fontWeight:600, color:'#333', marginBottom:6 }}>데이터 내보내기</p>
-          {[{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,label:'엑셀로 내보내기',desc:'전체 내역을 .xlsx 파일로',bg:'#E8F5E9'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,label:'PDF로 내보내기',desc:'전체 내역을 .pdf 파일로',bg:'#FEE2E2'}].map(item=>(
-            <div key={item.label} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 0', borderBottom:'1px solid #f8f8f8' }}>
-              <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</div>
+      <div style={{ flex:1, overflow:'hidden', padding:'0 5px' }}>
+        {/* 기능 */}
+        <SLabel>기능</SLabel>
+        <Card>
+          {[
+            { label:'홈', desc:'표시 옵션', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+            { label:'가계부', desc:'주 시작 요일, 정렬 순서', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
+            { label:'분석', desc:'탭 구성 옵션', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+            { label:'MY', desc:'기능 관리', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+          ].map((item, i, arr) => (
+            <Row key={item.label} border={i < arr.length-1}>
+              <MIcon><>{item.icon}</></MIcon>
               <div style={{ flex:1 }}>
-                <p style={{ fontSize:7, fontWeight:600, color:'#111' }}>{item.label}</p>
-                <p style={{ fontSize:5, color:'#888' }}>{item.desc}</p>
+                <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>{item.label}</p>
+                <p style={{ fontSize:4.5, color:'#8B95A1' }}>{item.desc}</p>
               </div>
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
+              {chevron}
+            </Row>
           ))}
-        </div>
-        {/* 메뉴 */}
-        <div style={{ background:'white', borderRadius:16, overflow:'hidden' }}>
-          {[{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,label:'이용 방법',bg:'#EEF2FF'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,label:'업데이트 내용',bg:'#FFF7ED'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,label:'피드백',bg:'#F0FDF4'}].map((item,i)=>(
-            <div key={item.label}>
-              <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 8px' }}>
-                <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</div>
-                <span style={{ flex:1, fontSize:7, color:'#333' }}>{item.label}</span>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-              {i < 2 && <div style={{ height:0.5, background:'#f5f5f5', margin:'0 10px' }}/>}
+        </Card>
+        <Card>
+          <Row>
+            <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></MIcon>
+            <div style={{ flex:1 }}>
+              <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>카테고리 관리</p>
+              <p style={{ fontSize:4.5, color:'#8B95A1' }}>지출 · 수입 카테고리 편집</p>
             </div>
+            {chevron}
+          </Row>
+        </Card>
+        {/* 디스플레이 */}
+        <SLabel>디스플레이</SLabel>
+        <Card>
+          <Row>
+            <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="13.5" cy="6.5" r="1.3" fill="#fff" stroke="none"/><circle cx="17.5" cy="10.5" r="1.3" fill="#fff" stroke="none"/><circle cx="8.5" cy="7.5" r="1.3" fill="#fff" stroke="none"/><circle cx="6.5" cy="12.5" r="1.3" fill="#fff" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125A1.64 1.64 0 0 1 14.441 18h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke="#fff" fill="none"/></svg></MIcon>
+            <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>테마</p>
+            {chevron}
+          </Row>
+        </Card>
+        {/* 데이터 */}
+        <SLabel>데이터</SLabel>
+        <Card>
+          <Row>
+            <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></MIcon>
+            <div style={{ flex:1 }}>
+              <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>데이터 내보내기</p>
+              <p style={{ fontSize:4.5, color:'#8B95A1' }}>엑셀 · PDF 파일로 저장</p>
+            </div>
+            {chevron}
+          </Row>
+        </Card>
+        {/* 앱 정보 */}
+        <SLabel>앱 정보</SLabel>
+        <Card>
+          {[
+            { label:'이용 방법', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
+            { label:'업데이트 내용', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
+            { label:'피드백 보내기', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+          ].map((item, i, arr) => (
+            <Row key={item.label} border={i < arr.length-1}>
+              <MIcon>{item.icon}</MIcon>
+              <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>{item.label}</p>
+              {chevron}
+            </Row>
           ))}
-        </div>
-      </div>
-      {/* 로그아웃 – 하단 고정 */}
-      <div style={{ padding:'6px 8px 8px', background:'#f5f6f8', borderTop:'1px solid #f0f0f0', flexShrink:0 }}>
-        <div style={{ padding:'8px', borderRadius:16, border:'1px solid #FFE4E4', background:'white', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          <span style={{ fontSize:7, color:'#ef4444', fontWeight:600 }}>로그아웃</span>
-        </div>
+        </Card>
+        {/* 계정 */}
+        <SLabel>계정</SLabel>
+        <Card>
+          <Row border>
+            <MIcon bg="#6B7280"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></MIcon>
+            <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>로그아웃</p>
+          </Row>
+          <Row>
+            <MIcon bg="#EF4444"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></MIcon>
+            <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#FF3B30' }}>계정 탈퇴</p>
+            <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </Row>
+        </Card>
       </div>
     </div>
   )
@@ -610,7 +653,7 @@ const SLIDES = [
     Mockup:CalendarMockup, SettingsMockup:null },
   { id:'ledger', tab:'가계부', title:'가계부', desc:'내역 관리의 모든 것',
     features:['주간 · 월간 · 직접 기간 정렬','전체 · 소비 · 수입 · 이체 필터','카드 · 계좌 · 현금 결제수단 분류','⚙️ 카테고리 · 이월 · 공과금 탭 설정'],
-    Mockup:LedgerMockup, SettingsMockup:LedgerSettingsMockup },
+    Mockup:LedgerMockup, SettingsMockup:null },
   { id:'analysis', tab:'분석', title:'분석', desc:'AI가 소비와 공과금을 분석해요',
     features:['지난 달 대비 수입 · 지출 비교','일별 · 카테고리 · 결제수단별 분석','AI 소비 점수 & 절감 팁 제안','공과금 탭: 전기 · 수도 · 가스 전월 비교'],
     Mockup:AnalysisMockup, SettingsMockup:AnalysisUtilityMockup,
