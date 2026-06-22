@@ -10,9 +10,10 @@ import {
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
-import { CATEGORY_COLORS, DEFAULT_CATEGORIES, getCategoryColor } from '../styles/theme'
+import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -129,6 +130,7 @@ const SectionLabel = ({ children }) => (
 export default function Ledger() {
   const { themeData, themeName, showUtilities, setShowUtilities } = useTheme()
   const { cards: userCardsList } = useCards()
+  const { weekStartDay, sortOrder, setSortOrder, showCardBilling, rolloverBudget, showLoan, categories } = useSettings()
   const navigate = useNavigate()
   const now = new Date()
   const [user, setUser] = useState(null)
@@ -140,23 +142,14 @@ export default function Ledger() {
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [swipedId, setSwipedId] = useState(null)
-  const [weekStartDay, setWeekStartDay] = useState(1)
   const [weekOffset, setWeekOffset] = useState(0)
-  const [sortOrder, setSortOrder] = useState('desc')
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
-  const [rolloverBudget, setRolloverBudget] = useState(false)
-  const [catTab, setCatTab] = useState('expense')
-  const [newCatName, setNewCatName] = useState('')
   const [userPayments, setUserPayments] = useState(['현금'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false })
   const touchStartX = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
-  const [showCardBilling, setShowCardBilling] = useState(false)
-  const [showLoan, setShowLoan] = useState(() => localStorage.getItem('moa_showLoan') === 'true')
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
   const [userAccountsList, setUserAccountsList] = useState([])
@@ -166,17 +159,6 @@ export default function Ledger() {
       if (!u) navigate('/auth', { replace: true })
       else {
         setUser(u)
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists()) {
-          const data = snap.data()
-          if (data.categories) setCategories({ ...DEFAULT_CATEGORIES, ...data.categories })
-          if (data.rolloverBudget !== undefined) setRolloverBudget(data.rolloverBudget)
-          if (data.showCardBilling !== undefined) setShowCardBilling(data.showCardBilling)
-          if (data.showLoan !== undefined) {
-            setShowLoan(data.showLoan)
-            localStorage.setItem('moa_showLoan', String(data.showLoan))
-          }
-        }
       }
     })
     return unsub
@@ -199,30 +181,6 @@ export default function Ledger() {
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), orderBy('date', 'desc'))
     const snap = await getDocs(q)
     setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  }
-
-  const saveUserData = async (updates) => {
-    if (!user) return
-    await setDoc(doc(db, 'users', user.uid), updates, { merge: true })
-  }
-
-  const handleAddCategory = () => {
-    if (!newCatName.trim()) return
-    const updated = { ...categories, [catTab]: [...categories[catTab], newCatName.trim()] }
-    setCategories(updated)
-    saveUserData({ categories: updated })
-    setNewCatName('')
-  }
-
-  const handleDeleteCategory = (type, cat) => {
-    const updated = { ...categories, [type]: categories[type].filter(c => c !== cat) }
-    setCategories(updated)
-    saveUserData({ categories: updated })
-  }
-
-  const handleToggleRollover = (val) => {
-    setRolloverBudget(val)
-    saveUserData({ rolloverBudget: val })
   }
 
   const getWeekRange = () => {
@@ -372,15 +330,9 @@ export default function Ledger() {
       {/* ── 헤더 ── */}
       <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0', borderBottom: '1px solid #F2F4F6' }}>
 
-        {/* 제목 + 설정 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        {/* 제목 */}
+        <div style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
-          <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#888' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </button>
         </div>
 
         {/* 기간 탭 */}
@@ -555,84 +507,6 @@ export default function Ledger() {
       {/* ── FAB ── */}
       <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false }); setShowForm(true) }}
         style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-
-      {/* ── 설정 — 전체화면 ── */}
-      {showSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
-          {/* 헤더 */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
-            <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>가계부 설정</p>
-          </div>
-
-          <div style={{ padding: '24px 24px 60px' }}>
-
-            {/* 주 시작 요일 */}
-            <SectionLabel>주 시작 요일</SectionLabel>
-            <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 24 }}>
-              {[{ label: '월요일부터', val: 1 }, { label: '일요일부터', val: 0 }].map(opt => (
-                <button key={opt.val} onClick={() => setWeekStartDay(opt.val)} style={segBtn(weekStartDay === opt.val)}>{opt.label}</button>
-              ))}
-            </div>
-
-            {/* 정렬 순서 */}
-            <SectionLabel>정렬 순서</SectionLabel>
-            <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 24 }}>
-              {[{ label: '↓ 최신순', val: 'desc' }, { label: '↑ 오래된순', val: 'asc' }].map(opt => (
-                <button key={opt.val} onClick={() => setSortOrder(opt.val)} style={segBtn(sortOrder === opt.val)}>{opt.label}</button>
-              ))}
-            </div>
-
-            {/* 토글 그룹 */}
-            <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 24 }}>
-              {[
-                { label: '잔여 예산 이월', desc: '남은 예산을 다음 달로 이월', on: rolloverBudget, onChange: handleToggleRollover },
-                { label: '체크카드 소액 신용 대금 표시', desc: '회색 표시, 지출 합계에서 제외', on: showCardBilling, onChange: async (val) => { setShowCardBilling(val); if (user) await setDoc(doc(db, 'users', user.uid), { showCardBilling: val }, { merge: true }) } },
-                { label: '대출 / 상환 표시', desc: '지출·수입 합계에서 제외, 연한 색으로 표시', on: showLoan, onChange: async (val) => { setShowLoan(val); localStorage.setItem('moa_showLoan', String(val)); if (user) await setDoc(doc(db, 'users', user.uid), { showLoan: val }, { merge: true }) } },
-                { label: '분석 공과금 탭', desc: '분석 화면에 공과금 탭을 추가해요', on: showUtilities, onChange: async (val) => { setShowUtilities(val); localStorage.setItem('moa_showUtilities', String(val)); if (user) await setDoc(doc(db, 'users', user.uid), { showUtilities: val }, { merge: true }) } },
-              ].map((item, i, arr) => (
-                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderBottom: i < arr.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
-                  <div style={{ flex: 1, paddingRight: 16 }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 2 }}>{item.label}</p>
-                    <p style={{ fontSize: 12, color: '#888' }}>{item.desc}</p>
-                  </div>
-                  <Toggle on={item.on} onChange={item.onChange} />
-                </div>
-              ))}
-            </div>
-
-            {/* 카테고리 관리 */}
-            <SectionLabel>카테고리 관리</SectionLabel>
-            <div style={{ background: '#fff', borderRadius: 20, padding: '20px', marginBottom: 24 }}>
-              <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 9999, padding: 3, marginBottom: 14 }}>
-                {[{ label: '지출', val: 'expense' }, { label: '수입', val: 'income' }].map(opt => (
-                  <button key={opt.val} onClick={() => setCatTab(opt.val)}
-                    style={{ flex: 1, padding: '8px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                      background: catTab === opt.val ? themeData.primary : 'transparent',
-                      color: catTab === opt.val ? '#fff' : '#888' }}>{opt.label}</button>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                {categories[catTab].map(cat => (
-                  <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f5f5f5', borderRadius: 9999, padding: '6px 10px 6px 8px' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 8, background: getCategoryColor(cat) + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CatIcon cat={guessIconKey(cat)} size={13} color={getCategoryColor(cat)} />
-                    </div>
-                    <span style={{ fontSize: 13, color: '#333' }}>{cat}</span>
-                    <button onClick={() => handleDeleteCategory(catTab, cat)} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1 }}>×</button>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="새 카테고리 이름"
-                  style={{ flex: 1, padding: '10px 12px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none', background: '#fafafa' }}
-                  onKeyDown={e => e.key === 'Enter' && handleAddCategory()} />
-                <button onClick={handleAddCategory} style={{ padding: '10px 16px', borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>추가</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── 내역 추가/수정 폼 ── */}
       {showForm && (

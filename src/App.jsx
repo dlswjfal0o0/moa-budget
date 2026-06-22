@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
@@ -13,6 +14,7 @@ import MyPage from './pages/MyPage'
 function App() {
   return (
     <ThemeProvider>
+      <SettingsProvider>
       <CardsProvider>
       <BrowserRouter>
         <Routes>
@@ -27,6 +29,7 @@ function App() {
         </Routes>
       </BrowserRouter>
       </CardsProvider>
+      </SettingsProvider>
     </ThemeProvider>
   )
 }

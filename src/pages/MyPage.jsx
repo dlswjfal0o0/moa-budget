@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
-import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
+import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
@@ -11,12 +11,22 @@ import { THEMES } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
+
+// 설정 화면용 토글
+const SToggle = ({ on, onChange, primary }) => (
+  <div onClick={() => onChange(!on)}
+    style={{ width: 48, height: 28, borderRadius: 9999, background: on ? primary : '#ddd', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: on ? 23 : 3, transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }} />
+  </div>
+)
 
 export default function MyPage() {
   const navigate = useNavigate()
   const fileRef = useRef()
-  const { themeName, setThemeName, themeData: t } = useTheme()
+  const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
   const { cards, setCards } = useCards()
+  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, categories, setCategories } = useSettings()
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
@@ -25,7 +35,12 @@ export default function MyPage() {
   const [nickname, setNickname] = useState(() => localStorage.getItem('moa_nickname') || '')
   const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
-  const [showSettings, setShowSettings] = useState(false)
+  const [settingsPage, setSettingsPage] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteChecked, setDeleteChecked] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [settingsCatTab, setSettingsCatTab] = useState('expense')
+  const [settingsNewCatName, setSettingsNewCatName] = useState('')
   const [accounts, setAccounts] = useState(() => {
     try { const a = localStorage.getItem('moa_accounts'); return a ? JSON.parse(a) : [] } catch { return [] }
   })
@@ -42,7 +57,6 @@ export default function MyPage() {
   const [newCard, setNewCard] = useState(EMPTY_CARD)
   const [newAccount, setNewAccount] = useState({ name: '', balance: '', number: '' })
   const [exporting, setExporting] = useState(false)
-  const [showUpdates, setShowUpdates] = useState(false)
   const [expandedVersion, setExpandedVersion] = useState(null)
   const [allTxns, setAllTxns] = useState([])
   const [editingCardId, setEditingCardId] = useState(null)
@@ -125,6 +139,30 @@ export default function MyPage() {
   const handleThemeChange = (name) => {
     setThemeName(name)
     saveToFirestore({ theme: name })
+  }
+
+  const handleWithdrawAccount = async () => {
+    if (!user || deletingAccount) return
+    setDeletingAccount(true)
+    try {
+      const batch = writeBatch(db)
+      const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid)))
+      txSnap.docs.forEach(d => batch.delete(d.ref))
+      await batch.commit()
+      await deleteDoc(doc(db, 'users', user.uid))
+      localStorage.clear()
+      await deleteUser(user)
+      navigate('/', { replace: true })
+    } catch (e) {
+      if (e.code === 'auth/requires-recent-login') {
+        alert('보안을 위해 재로그인 후 탈퇴를 진행해주세요.')
+        await signOut(auth)
+        navigate('/auth', { replace: true })
+      } else {
+        alert('탈퇴 중 오류가 발생했습니다.')
+      }
+      setDeletingAccount(false)
+    }
   }
 
   const handleCashSave = () => {
@@ -402,6 +440,17 @@ export default function MyPage() {
     <button onClick={onClick} style={{ background: bg, border: 'none', borderRadius: 12, padding: '7px 16px', color, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
   )
 
+  const settingsChevron = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', categories: '카테고리 관리', theme: '테마', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
+  const updatesList = [
+    { version: 'v1.5.0', date: '2026.06.22', changes: ['[ MY - 설정 ] 설정 통합 및 계정 관리 기능 개선', '[ MY - 카드 ] 신용카드 추적 방식 로직 수정', '[ MY - 카드 ] 변경사항 자동 반영'] },
+    { version: 'v1.4.0', date: '2026.06.09', changes: ['[ 가계부 ] 대출 / 상환 기능 추가', '[ 가계부 ] 내역 버그 수정', '[ MY - 카드 정보 ] 실시간 사용 금액 연동 오류 수정', '[ MY - 계좌 ] 기준 잔액 → 현재 잔액으로 수정 + 변경 가능', '[ MY - 계좌 ] 가계부 내역과 자동 연동 → 자동 잔액 수정 기능 추가'] },
+    { version: 'v1.3.0', date: '2026.06.06', changes: ['[ 가계부 ] 계좌 간 이체 기능 추가', '[ 분석 ] AI 분석 오류 수정', '[ MY - 카드 정보 ] 계좌 연동 선택 → 필수항목에서 배제'] },
+    { version: 'v1.2.0', date: '2026.06.05', changes: ['[ 홈, 분석 ] 카테고리 원형 그래프 수정', '[ 홈 ] 최근 내역 버그 수정', '[ 캘린더 ] 고정지출, 카드대금, 내역 버그 수정', '[ 가계부 ] 카드대금 내역 디자인 수정', '[ 분석 ] 결제수단별 지출 → 카드 / 이체 및 결제 수단 세분화', '[ MY - 계좌 ] 자동 잔액 수정 기능 추가'] },
+    { version: 'v1.1.0', date: '2026.06.04', changes: ['공과금 탭 설정 연동성 오류 수정', '[ 가계부 ] 공과금 목록 텍스트 자동 인식 → 분석 자동 입력 기능 추가', '[ MY - 카드 정보 ] 혜택 입력창 고정 + 내역 연/월 설정 기능 추가', '[ MY - 설정 ] 이용 방법, 업데이트 사항, 피드백 탭 추가', '[ 분석 ] 막대 그래프 수정', '[ 분석 - 공과금 ] 세부사항 수정 + 삭제 기능 추가', '[ MY ] 카드 정보 UI 수정', '[ MY ] 버그 수정'] },
+    { version: 'v1.0.0', date: '2026.06.03', changes: ['모아 가계부 출시 🎉'] },
+  ]
+
   return (
     <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
@@ -440,7 +489,7 @@ export default function MyPage() {
 
           {/* 설정 아이콘 */}
           {!editingNick && (
-            <button onClick={() => setShowSettings(true)}
+            <button onClick={() => setSettingsPage('root')}
               style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 12, width: 36, height: 36, padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"/>
@@ -962,230 +1011,385 @@ export default function MyPage() {
 
       </div>
 
-      {/* 설정 – 전체 화면 */}
-      {showSettings && (
-        <div style={{ position: 'fixed', inset: 0, background: t.bg || '#f5f6f8', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
-          {/* 헤더 */}
-          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>설정</p>
+      {/* ── 설정 – 계층형 네비게이션 ── */}
+      {settingsPage && (
+          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+            {/* 공통 헤더 */}
+            <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')}
+                  style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{settingsPageTitle}</p>
+              </div>
             </div>
-          </div>
 
-          {/* 스크롤 영역 */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 10px' }}>
-            {/* 테마 – 3열 그리드 */}
-            <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 14 }}>테마</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                {Object.entries(THEMES).map(([key, val]) => (
-                  <button key={key} onClick={() => handleThemeChange(key)}
-                    style={{ padding: '12px 8px', borderRadius: 16, cursor: 'pointer', textAlign: 'center',
-                      border: themeName === key ? `2px solid ${val.primary}` : '2px solid #f0f0f0',
-                      background: themeName === key ? val.primary + '18' : '#fafafa' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: val.primary, margin: '0 auto 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {themeName === key && (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      )}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 env(safe-area-inset-bottom, 20px)' }}>
+
+              {/* ── ROOT ── */}
+              {settingsPage === 'root' && (
+                <div style={{ padding: '0 16px' }}>
+                  {/* 기능 */}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '20px 4px 8px', letterSpacing: 0.3 }}>기능</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
+                    {[
+                      { label: '홈', desc: '표시 옵션', icon: '🏠', page: 'home' },
+                      { label: '가계부', desc: '주 시작 요일, 정렬 순서, 표시 옵션', icon: '📒', page: 'ledger' },
+                      { label: '분석', desc: '탭 구성 옵션', icon: '📊', page: 'analysis' },
+                      { label: 'MY', desc: '기능 관리', icon: '👤', page: 'my' },
+                    ].map((item, i, arr) => (
+                      <button key={item.page} onClick={() => setSettingsPage(item.page)}
+                        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
+                        <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>{item.icon}</span>
+                        <div style={{ flex: 1, textAlign: 'left' }}>
+                          <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>{item.label}</p>
+                          <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>{item.desc}</p>
+                        </div>
+                        {settingsChevron}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
+                    <button onClick={() => setSettingsPage('categories')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🏷️</span>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>카테고리 관리</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>지출 · 수입 카테고리 편집</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                  </div>
+
+                  {/* 디스플레이 */}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>디스플레이</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
+                    <button onClick={() => setSettingsPage('theme')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🎨</span>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>테마</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 색상 테마 변경</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                  </div>
+
+                  {/* 데이터 */}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>데이터</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
+                    <button onClick={() => setSettingsPage('export')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>📤</span>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>데이터 내보내기</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>엑셀 · PDF 파일로 저장</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                  </div>
+
+                  {/* 앱 정보 */}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>앱 정보</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 8 }}>
+                    <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>📖</span>
+                      <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>이용 방법</p>
+                      {settingsChevron}
+                    </button>
+                    <button onClick={() => setSettingsPage('updates')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🔔</span>
+                      <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>업데이트 내용</p>
+                      <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v1.5.0</span>
+                      {settingsChevron}
+                    </button>
+                    <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>💬</span>
+                      <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>피드백 보내기</p>
+                      {settingsChevron}
+                    </button>
+                  </div>
+
+                  {/* 계정 */}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>계정</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 32 }}>
+                    <button onClick={() => signOut(auth).then(() => { localStorage.removeItem('moa_logged_in'); setSettingsPage(null); navigate('/', { replace: true }) })}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>🚪</span>
+                      <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#191F28', textAlign: 'left' }}>로그아웃</p>
+                    </button>
+                    <button onClick={() => { setDeleteChecked(false); setSettingsPage('delete-account') }}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>⚠️</span>
+                      <p style={{ flex: 1, fontSize: 15, fontWeight: 500, color: '#FF3B30', textAlign: 'left' }}>계정 탈퇴</p>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── 홈 설정 ── */}
+              {settingsPage === 'home' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>표시 옵션</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>잔여 예산 이월</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>남은 예산을 다음 달로 이월해요</p>
+                      </div>
+                      <SToggle on={rolloverBudget} onChange={setRolloverBudget} primary={t.primary} />
                     </div>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: themeName === key ? val.primary : '#555' }}>{val.name}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 데이터 내보내기 */}
-            <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 14 }}>데이터 내보내기</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button onClick={exportToExcel} disabled={exporting}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, border: '1.5px solid #F2F4F6', background: '#F7F8FA', cursor: 'pointer' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 12, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
                   </div>
-                  <div style={{ textAlign: 'left', flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: '#191F28', marginBottom: 2 }}>엑셀로 내보내기</p>
-                    <p style={{ fontSize: 12, color: '#8B95A1' }}>전체 내역을 .xlsx 파일로 저장</p>
+                </div>
+              )}
+
+              {/* ── 가계부 설정 ── */}
+              {settingsPage === 'ledger' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>주 시작 요일</p>
+                  <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 20 }}>
+                    {[{ label: '월요일부터', val: 1 }, { label: '일요일부터', val: 0 }].map(opt => (
+                      <button key={opt.val} onClick={() => setWeekStartDay(opt.val)}
+                        style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: weekStartDay === opt.val ? 700 : 500, background: weekStartDay === opt.val ? t.primary : 'transparent', color: weekStartDay === opt.val ? '#fff' : '#8B95A1', transition: 'all 0.2s' }}>{opt.label}</button>
+                    ))}
                   </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-                <button onClick={exportToPDF} disabled={exporting}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, border: '1.5px solid #F2F4F6', background: '#F7F8FA', cursor: 'pointer' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 12, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-                    </svg>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '0 4px 8px', letterSpacing: 0.3 }}>정렬 순서</p>
+                  <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, marginBottom: 20 }}>
+                    {[{ label: '↓ 최신순', val: 'desc' }, { label: '↑ 오래된순', val: 'asc' }].map(opt => (
+                      <button key={opt.val} onClick={() => setSortOrder(opt.val)}
+                        style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: sortOrder === opt.val ? 700 : 500, background: sortOrder === opt.val ? t.primary : 'transparent', color: sortOrder === opt.val ? '#fff' : '#8B95A1', transition: 'all 0.2s' }}>{opt.label}</button>
+                    ))}
                   </div>
-                  <div style={{ textAlign: 'left', flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: '#191F28', marginBottom: 2 }}>PDF로 내보내기</p>
-                    <p style={{ fontSize: 12, color: '#8B95A1' }}>전체 내역을 .pdf 파일로 저장</p>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '0 4px 8px', letterSpacing: 0.3 }}>표시 옵션</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>체크카드 소액 신용 대금 표시</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>회색 표시, 지출 합계에서 제외</p>
+                      </div>
+                      <SToggle on={showCardBilling} onChange={setShowCardBilling} primary={t.primary} />
+                    </div>
                   </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-              </div>
-              {exporting && <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 12 }}>내보내는 중...</p>}
-            </div>
-
-            {/* 메뉴 */}
-            <div style={{ background: '#fff', borderRadius: 20, marginBottom: 16, overflow: 'hidden' }}>
-              <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
-                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: t.primaryLight || '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                  </svg>
                 </div>
-                <span style={{ flex: 1, fontSize: 14, color: '#191F28', textAlign: 'left' }}>이용 방법</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-              <div style={{ height: 1, background: '#f5f5f5', margin: '0 16px' }} />
-              <button onClick={() => setShowUpdates(true)}
-                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
-                </div>
-                <span style={{ flex: 1, fontSize: 14, color: '#191F28', textAlign: 'left' }}>업데이트 내용</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-              <div style={{ height: 1, background: '#f5f5f5', margin: '0 16px' }} />
-              <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
-                style={{ width: '100%', padding: '16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                  </svg>
-                </div>
-                <span style={{ flex: 1, fontSize: 14, color: '#191F28', textAlign: 'left' }}>피드백</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
-          </div>
+              )}
 
-          {/* 로그아웃 – 하단 고정 */}
-          <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: t.bg || '#f5f6f8', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
-            <button onClick={() => signOut(auth).then(() => {
-              localStorage.removeItem('moa_logged_in')
-              setShowSettings(false)
-              navigate('/', { replace: true })
-            })} style={{ width: '100%', padding: '14px', borderRadius: 16, border: '1.5px solid #FFCDD2', background: 'transparent', color: '#FF5A5F', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5A5F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              로그아웃
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 업데이트 내역 모달 */}
-      {showUpdates && (
-        <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 500, overflowY: 'auto' }}>
-            <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 40px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-                    <button onClick={() => setShowUpdates(false)}
-                        style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#333', padding: 0 }}>‹</button>
-                    <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>업데이트 내용</p>
+              {/* ── 분석 설정 ── */}
+              {settingsPage === 'analysis' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>탭 구성</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>공과금 탭 표시</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>분석 화면에 공과금 탭을 추가해요</p>
+                      </div>
+                      <SToggle on={showUtilities} onChange={(val) => {
+                        setShowUtilities(val)
+                        localStorage.setItem('moa_showUtilities', String(val))
+                        if (user) setDoc(doc(db, 'users', user.uid), { showUtilities: val }, { merge: true })
+                      }} primary={t.primary} />
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                {[
-                    {
-                        version: 'v1.4.0',
-                        date: '2026.06.09',
-                        changes: [
-                            '[ 가계부 ] 대출 / 상환 기능 추가',
-                            '[ 가계부 ] 내역 버그 수정',
-                            '[ MY - 카드 정보 ] 실시간 사용 금액 연동 오류 수정',
-                            '[ MY - 계좌 ] 기준 잔액 → 현재 잔액으로 수정 + 변경 가능',
-                            '[ MY - 계좌 ] 가계부 내역과 자동 연동 → 자동 잔액 수정 기능 추가',
-                        ]
-                    },
-                    {
-                        version: 'v1.3.0',
-                        date: '2026.06.06',
-                        changes: [
-                            '[ 가계부 ] 계좌 간 이체 기능 추가',
-                            '[ 분석 ] AI 분석 오류 수정',
-                            '[ MY - 카드 정보 ] 계좌 연동 선택 → 필수항목에서 배제',
-                        ]
-                    },
-                    {
-                        version: 'v1.2.0',
-                        date: '2026.06.05',
-                        changes: [
-                            '[ 홈, 분석 ] 카테고리 원형 그래프 수정',
-                            '[ 홈 ] 최근 내역 버그 수정',
-                            '[ 캘린더 ] 고정지출, 카드대금, 내역 버그 수정',
-                            '[ 가계부 ] 카드대금 내역 디자인 수정',
-                            '[ 분석 ] 결제수단별 지출 → 카드 / 이체 및 결제 수단 세분화',
-                            '[ MY - 계좌 ] 가계부 내역과 자동 연동 → 자동 잔액 수정 (직접 수정 가능) 기능 추가',
-                        ]
-                    },
-                    {
-                        version: 'v1.1.0',
-                        date: '2026.06.04',
-                        changes: [
-                            '공과금 탭 설정 연동성 오류 수정',
-                            '[ 가계부 ] “가스비”, “관리비” 등 공과금 목록 텍스트 자동 인식 → [ 분석 - 공과금 ] 자동 입력 기능 추가',
-                            '[ MY - 카드 정보 ] 혜택 입력창 고정 + 내역 연/월 설정 기능 추가',
-                            '[ MY - 설정 ] 이용 방법, 업데이트 사항, 피드백 탭 추가',
-                            '[ 분석 ] 막대 그래프 수정',
-                            '[ 분석 - 공과금 ] 가계부 연동 세부사항 수정 + 삭제 기능 추가',
-                            '[ MY ] 카드 정보 UI 수정',
-                            '[ MY ] 버그 수정',
-                        ]
-                    },
-                    {
-                        version: 'v1.0.0',
-                        date: '2026.06.03',
-                        changes: [
-                            '모아 가계부 출시 🎉',
-                        ]
-                    },
-                ].map((v, i) => {
+              {/* ── MY 설정 ── */}
+              {settingsPage === 'my' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>기능 관리</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>대출 기능 사용</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>가계부에서 대출 / 상환 항목을 관리해요</p>
+                      </div>
+                      <SToggle on={showLoan} onChange={setShowLoan} primary={t.primary} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── 카테고리 관리 ── */}
+              {settingsPage === 'categories' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <div style={{ display: 'flex', background: '#E5E8EB', borderRadius: 16, padding: 4, margin: '12px 0 20px' }}>
+                    {[{ label: '지출', val: 'expense' }, { label: '수입', val: 'income' }].map(opt => (
+                      <button key={opt.val} onClick={() => setSettingsCatTab(opt.val)}
+                        style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: settingsCatTab === opt.val ? 700 : 500, background: settingsCatTab === opt.val ? t.primary : 'transparent', color: settingsCatTab === opt.val ? '#fff' : '#8B95A1', transition: 'all 0.2s' }}>{opt.label}</button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                    {(categories[settingsCatTab] || []).map(cat => (
+                      <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 9999, padding: '7px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                        <span style={{ fontSize: 13, color: '#333', fontWeight: 500 }}>{cat}</span>
+                        <button onClick={() => {
+                          const updated = { ...categories, [settingsCatTab]: categories[settingsCatTab].filter(c => c !== cat) }
+                          setCategories(updated)
+                        }} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 17, padding: '0 2px', lineHeight: 1 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input value={settingsNewCatName} onChange={e => setSettingsNewCatName(e.target.value)}
+                      placeholder="새 카테고리 이름"
+                      style={{ flex: 1, padding: '12px 16px', borderRadius: 16, border: '1.5px solid #E5E8EB', fontSize: 14, outline: 'none', background: '#fff' }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && settingsNewCatName.trim()) {
+                          const updated = { ...categories, [settingsCatTab]: [...(categories[settingsCatTab] || []), settingsNewCatName.trim()] }
+                          setCategories(updated)
+                          setSettingsNewCatName('')
+                        }
+                      }} />
+                    <button onClick={() => {
+                      if (!settingsNewCatName.trim()) return
+                      const updated = { ...categories, [settingsCatTab]: [...(categories[settingsCatTab] || []), settingsNewCatName.trim()] }
+                      setCategories(updated)
+                      setSettingsNewCatName('')
+                    }} style={{ padding: '12px 18px', borderRadius: 16, border: 'none', background: t.primary, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>추가</button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── 테마 ── */}
+              {settingsPage === 'theme' && (
+                <div style={{ padding: '8px 16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+                    {Object.entries(THEMES).map(([key, val]) => (
+                      <button key={key} onClick={() => handleThemeChange(key)}
+                        style={{ padding: '16px 8px', borderRadius: 20, cursor: 'pointer', textAlign: 'center', border: themeName === key ? `2px solid ${val.primary}` : '2px solid #f0f0f0', background: themeName === key ? val.primary + '18' : '#fff' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: val.primary, margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {themeName === key && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        </div>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: themeName === key ? val.primary : '#555' }}>{val.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── 데이터 내보내기 ── */}
+              {settingsPage === 'export' && (
+                <div style={{ padding: '20px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <button onClick={exportToExcel} disabled={exporting}
+                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                      </div>
+                      <div style={{ textAlign: 'left', flex: 1 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .xlsx 파일로 저장</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                    <button onClick={exportToPDF} disabled={exporting}
+                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                        </svg>
+                      </div>
+                      <div style={{ textAlign: 'left', flex: 1 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .pdf 파일로 저장</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                  </div>
+                  {exporting && <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 16 }}>내보내는 중...</p>}
+                </div>
+              )}
+
+              {/* ── 업데이트 내용 ── */}
+              {settingsPage === 'updates' && (
+                <div style={{ padding: '12px 16px 40px' }}>
+                  {updatesList.map((v, i) => {
                     const isOpen = expandedVersion === v.version
                     return (
-                        <div key={i} style={{ marginBottom: 8 }}>
-                            {/* 버전 헤더 - 클릭으로 열기/닫기 */}
-                            <button
-                                onClick={() => setExpandedVersion(isOpen ? null : v.version)}
-                                style={{ width: '100%', background: isOpen ? '#f8f8f8' : '#fff', border: '1px solid #f0f0f0',
-                                    borderRadius: isOpen ? '16px 16px 0 0' : 16, padding: '14px 16px', cursor: 'pointer',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                    <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{v.version}</span>
-                                    <span style={{ fontSize: 12, color: '#aaa' }}>{v.date}</span>
-                                </div>
-                                <span style={{ fontSize: 13, color: '#bbb', transition: 'transform 0.2s',
-                                    display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
-                            </button>
-
-                            {/* 변경 내용 - 펼쳐질 때만 표시 */}
-                            {isOpen && (
-                                <div style={{ background: '#f8f8f8', border: '1px solid #f0f0f0', borderTop: 'none',
-                                    borderRadius: '0 0 16px 16px', padding: '12px 16px 16px' }}>
-                                    {v.changes.map((c, j) => (
-                                        <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
-                                            <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>•</span>
-                                            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.5 }}>{c}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <button onClick={() => setExpandedVersion(isOpen ? null : v.version)}
+                          style={{ width: '100%', background: isOpen ? '#f8f8f8' : '#fff', border: '1px solid #f0f0f0', borderRadius: isOpen ? '16px 16px 0 0' : 16, padding: '14px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{v.version}</span>
+                            <span style={{ fontSize: 12, color: '#aaa' }}>{v.date}</span>
+                          </div>
+                          <span style={{ fontSize: 13, color: '#bbb', transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
+                        </button>
+                        {isOpen && (
+                          <div style={{ background: '#f8f8f8', border: '1px solid #f0f0f0', borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '12px 16px 16px' }}>
+                            {v.changes.map((c, j) => (
+                              <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 8 }}>
+                                <span style={{ fontSize: 13, color: '#bbb', flexShrink: 0 }}>•</span>
+                                <p style={{ fontSize: 14, color: '#444', lineHeight: 1.5 }}>{c}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )
-                })}
+                  })}
+                </div>
+              )}
+
+              {/* ── 계정 탈퇴 STEP 1 ── */}
+              {settingsPage === 'delete-account' && (
+                <div style={{ padding: '20px 16px' }}>
+                  <div style={{ background: '#FFF1F0', borderRadius: 20, padding: '20px', marginBottom: 20, border: '1px solid #FFE0DD' }}>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: '#FF3B30', marginBottom: 12 }}>⚠️ 탈퇴 전 확인해 주세요</p>
+                    {[
+                      '모든 가계부 내역이 영구 삭제됩니다',
+                      '예산, 고정지출 등 설정이 모두 삭제됩니다',
+                      '카드, 계좌 등 MY 정보가 삭제됩니다',
+                      '삭제된 데이터는 복구할 수 없습니다',
+                    ].map((item, i, arr) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? 8 : 0 }}>
+                        <span style={{ color: '#FF3B30', flexShrink: 0 }}>•</span>
+                        <p style={{ fontSize: 14, color: '#FF3B30', lineHeight: 1.5 }}>{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setDeleteChecked(!deleteChecked)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginBottom: 32 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${deleteChecked ? '#FF3B30' : '#C9CDD2'}`, background: deleteChecked ? '#FF3B30' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                      {deleteChecked && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <p style={{ fontSize: 14, color: '#191F28', textAlign: 'left' }}>위 내용을 확인했으며, 탈퇴에 동의합니다</p>
+                  </button>
+                  <button onClick={() => deleteChecked && setShowDeleteModal(true)} disabled={!deleteChecked}
+                    style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', background: deleteChecked ? '#FF3B30' : '#F2F4F6', color: deleteChecked ? '#fff' : '#C9CDD2', fontSize: 16, fontWeight: 700, cursor: deleteChecked ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+                    다음 단계로
+                  </button>
+                </div>
+              )}
+
             </div>
+          </div>
+      )}
+
+      {/* 계정 탈퇴 최종 확인 바텀시트 */}
+      {showDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShowDeleteModal(false)}>
+          <div style={{ background: '#fff', borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
+            onClick={e => e.stopPropagation()}>
+            <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 8, textAlign: 'center' }}>정말 탈퇴할까요?</p>
+            <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
+            <button onClick={() => setShowDeleteModal(false)}
+              style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', background: t.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
+              계속 사용할게요
+            </button>
+            <button onClick={handleWithdrawAccount} disabled={deletingAccount}
+              style={{ width: '100%', padding: '12px', border: 'none', background: 'none', color: deletingAccount ? '#C9CDD2' : '#FF3B30', fontSize: 14, fontWeight: 500, cursor: deletingAccount ? 'not-allowed' : 'pointer' }}>
+              {deletingAccount ? '처리 중...' : '탈퇴하기'}
+            </button>
+          </div>
         </div>
       )}
 
