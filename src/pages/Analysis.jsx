@@ -243,26 +243,26 @@ export default function Analysis() {
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {/* 헤더 */}
-      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #F2F4F6' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>‹</button>
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#111' }}>{viewYear}년 {viewMonth + 1}월 분석</p>
+            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>‹</button>
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{viewYear}년 {viewMonth + 1}월 분석</p>
           <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
-            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666', padding: '4px 8px' }}>›</button>
+            style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>›</button>
         </div>
       </div>
 
       {/* 탭 (iOS 세그먼트 스타일) */}
       {showUtilities && (
         <div style={{ padding: '12px 16px 0' }}>
-          <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 9999, padding: 3 }}>
+          <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 3 }}>
             {['소비', '공과금'].map(tab => (
               <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
                 style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                   fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
                   background: activeAnalysisTab === tab ? primary : 'transparent',
-                  color: activeAnalysisTab === tab ? '#fff' : '#888',
+                  color: activeAnalysisTab === tab ? '#fff' : '#8B95A1',
                   boxShadow: 'none',
                   transition: 'all 0.15s' }}>
                 {tab}
@@ -277,23 +277,23 @@ export default function Analysis() {
         <div style={{ padding: '16px' }}>
 
           {/* 지난 달 대비 */}
-          <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>지난 달 대비</p>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '14px' }}>
-                <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>지출</p>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#ef4444' }}>{fmt(totalExpense)}원</p>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px' }}>
+                <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>지출</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#FF5A5F' }}>{fmt(totalExpense)}원</p>
                 {lastTotalExpense > 0 && (
-                  <p style={{ fontSize: 12, marginTop: 6, color: expenseDiff > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
+                  <p style={{ fontSize: 12, marginTop: 6, color: expenseDiff > 0 ? '#FF5A5F' : '#2ECC71', fontWeight: 600 }}>
                     {expenseDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(expenseDiff))}원 {expenseDiff > 0 ? '증가' : '감소'}
                   </p>
                 )}
               </div>
-              <div style={{ flex: 1, background: themeData.card, borderRadius: 16, padding: '14px' }}>
-                <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>수입</p>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#22c55e' }}>{fmt(totalIncome)}원</p>
+              <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px' }}>
+                <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>수입</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#2ECC71' }}>{fmt(totalIncome)}원</p>
                 {lastTotalIncome > 0 && (
-                  <p style={{ fontSize: 12, marginTop: 6, color: incomeDiff > 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                  <p style={{ fontSize: 12, marginTop: 6, color: incomeDiff > 0 ? '#2ECC71' : '#FF5A5F', fontWeight: 600 }}>
                     {incomeDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(incomeDiff))}원 {incomeDiff > 0 ? '증가' : '감소'}
                   </p>
                 )}
@@ -302,10 +302,10 @@ export default function Analysis() {
           </div>
 
           {/* 일별 지출 */}
-          <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>일별 지출</p>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>일별 지출</p>
             {dailyData.every(d => d.amount === 0) ? (
-              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
+              <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
             ) : (
               <>
                 <ResponsiveContainer width="100%" height={180}>
@@ -339,10 +339,10 @@ export default function Analysis() {
           </div>
 
           {/* 카테고리별 지출 – 도넛 + 2열 그리드 */}
-          <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>카테고리별 지출</p>
+          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>카테고리별 지출</p>
             {categoryData.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
+              <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
             ) : (
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 {/* 왼쪽: 도넛 차트 + 중앙 총지출 */}
@@ -354,8 +354,8 @@ export default function Analysis() {
                     <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
                   </PieChart>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <p style={{ fontSize: 9, color: '#aaa', marginBottom: 1 }}>총 지출</p>
-                    <p style={{ fontSize: totalExpense >= 10000000 ? 9 : 11, fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 9, color: '#8B95A1', marginBottom: 1 }}>총 지출</p>
+                    <p style={{ fontSize: totalExpense >= 10000000 ? 9 : 11, fontWeight: 700, color: '#191F28', whiteSpace: 'nowrap' }}>
                       {totalExpense >= 10000 ? `${Math.round(totalExpense / 10000)}만원` : `${fmt(totalExpense)}원`}
                     </p>
                   </div>
@@ -370,9 +370,9 @@ export default function Analysis() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                            <span style={{ fontSize: 11, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                            <span style={{ fontSize: 11, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                           </div>
-                          <span style={{ fontSize: 11, color: '#888', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
+                          <span style={{ fontSize: 11, color: '#8B95A1', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{pct}%</span>
                         </div>
                         <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
@@ -386,9 +386,9 @@ export default function Analysis() {
           </div>
 
           {/* AI 소비 분석 */}
-          <div style={{ background: themeData?.card || '#fff', borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>AI 소비 분석</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>AI 소비 분석</p>
               <button onClick={getAiFeedback} disabled={loadingAi}
                 style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', cursor: loadingAi ? 'not-allowed' : 'pointer',
                   background: loadingAi ? '#e0e0e0' : primary, color: loadingAi ? '#888' : '#fff', fontSize: 13, fontWeight: 500 }}>
@@ -403,18 +403,18 @@ export default function Analysis() {
               </div>
             )}
             {!loadingAi && !aiFeedbackData && !aiFeedbackRaw && (
-              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>
+              <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>
                 AI 분석 버튼을 눌러 소비 패턴을 확인해보세요
               </p>
             )}
             {aiFeedbackData && (() => {
               const rc = {
-                good:    { color: '#22c55e', bg: '#F0FFF4', label: '소비 우등생이에요 🌟' },
+                good:    { color: '#2ECC71', bg: '#F0FFF4', label: '소비 우등생이에요 🌟' },
                 warning: { color: '#f59e0b', bg: '#FFFBEB', label: '지출 관리가 필요해요 ⚠️' },
-                danger:  { color: '#ef4444', bg: '#FFF5F5', label: '지출이 너무 많아요 🚨' },
+                danger:  { color: '#FF5A5F', bg: '#FFF5F5', label: '지출이 너무 많아요 🚨' },
               }[aiFeedbackData.rating] || { color: '#22c55e', bg: '#F0FFF4', label: '분석 완료' }
 
-              const levelColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#f59e0b']
+              const levelColors = ['#FF5A5F', '#f97316', '#eab308', '#2ECC71', '#f59e0b']
               const levelNames = ['위험', '주의', '보통', '양호', '우수']
               const filledCount = Math.min(5, Math.max(1, Math.ceil((aiFeedbackData.score || 50) / 20)))
 
@@ -428,7 +428,7 @@ export default function Analysis() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: rc.color, marginBottom: 4 }}>{rc.label}</p>
-                      <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5, marginBottom: 8 }}>{aiFeedbackData.summary}</p>
+                      <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5, marginBottom: 8 }}>{aiFeedbackData.summary}</p>
                       {/* 5단계 스케일 */}
                       <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                         {levelColors.map((color, i) => (
@@ -449,7 +449,7 @@ export default function Analysis() {
                             <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 9999 }}>{cut.category}</span>
                             {cut.save > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>최대 {fmt(cut.save)}원 절약</span>}
                           </div>
-                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
+                          <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
                         </div>
                       ))}
                     </div>
@@ -462,7 +462,7 @@ export default function Analysis() {
                       {aiFeedbackData.unusual.map((u, i) => (
                         <div key={i} style={{ background: '#FFF5F5', borderRadius: 8, padding: '10px 12px', marginBottom: 6, borderLeft: '3px solid #ef4444', display: 'flex', gap: 8 }}>
                           <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
-                          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
+                          <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
                         </div>
                       ))}
                     </div>
@@ -493,10 +493,10 @@ export default function Analysis() {
           </div>
 
           {/* 결제수단별 지출 – 아코디언 */}
-          <div style={{ background: themeData.card, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111', marginBottom: 16 }}>결제수단별 지출</p>
+          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16 }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>결제수단별 지출</p>
             {expenses.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
+              <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>내역이 없어요</p>
             ) : (() => {
               const userAccounts = (() => { try { return JSON.parse(localStorage.getItem('moa_accounts') || '[]').map(a => a.name) } catch { return [] } })()
               const isCardPayment = p => p !== '현금' && p !== '계좌이체' && !userAccounts.includes(p)
@@ -540,17 +540,17 @@ export default function Analysis() {
                       <div style={{ width: 36, height: 36, borderRadius: 12, background: primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {icon}
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{label}</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>{label}</span>
                       <span style={{ fontSize: 11, fontWeight: 600, color: primary, background: `${primary}18`, padding: '2px 8px', borderRadius: 9999 }}>{pct}%</span>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#111', textAlign: 'right' }}>{fmt(amount)}원</span>
-                      <span style={{ fontSize: 15, color: '#bbb', marginLeft: 4, display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#191F28', textAlign: 'right' }}>{fmt(amount)}원</span>
+                      <span style={{ fontSize: 15, color: '#C9CDD4', marginLeft: 4, display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
                     </div>
                     {isExpanded && (
                       <div style={{ paddingLeft: 46, paddingBottom: 10 }}>
                         {Object.entries(detail).filter(([,v]) => v > 0).sort(([,a],[,b]) => b - a).map(([k, v]) => (
                           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f9f9f9' }}>
-                            <span style={{ fontSize: 13, color: '#666' }}>{k}</span>
-                            <span style={{ fontSize: 13, color: '#111', fontWeight: 500 }}>{fmt(v)}원</span>
+                            <span style={{ fontSize: 13, color: '#8B95A1' }}>{k}</span>
+                            <span style={{ fontSize: 13, color: '#191F28', fontWeight: 500 }}>{fmt(v)}원</span>
                           </div>
                         ))}
                       </div>
@@ -577,7 +577,7 @@ export default function Analysis() {
         <div style={{ padding: '16px 16px 100px' }}>
 
           {/* 총합 배너 - 항상 표시 */}
-          <div style={{ background: primary, borderRadius: 16, padding: '18px 20px', marginBottom: 16 }}>
+          <div style={{ background: primary, borderRadius: 20, padding: '18px 20px', marginBottom: 16 }}>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>이번 달 공과금 합계</p>
             <p style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: prevMonthTotal > 0 || currentMonthTotal === 0 ? 6 : 0 }}>
               {fmt(currentMonthTotal)}원
@@ -603,7 +603,7 @@ export default function Analysis() {
             const cardBg = themeData?.card || '#fff'
 
             return (
-              <div key={type} style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
+              <div key={type} style={{ background: cardBg, borderRadius: 20, overflow: 'hidden', marginBottom: 12 }}>
                 <div style={{ padding: 16 }}>
                   {/* 카드 헤더 */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -612,8 +612,8 @@ export default function Analysis() {
                         <UtilityIcon type={type} color={ustyle.color} size={20} />
                       </div>
                       <div>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{type}</p>
-                        {cur?.day && <p style={{ fontSize: 12, color: '#aaa' }}>매월 {cur.day}일</p>}
+                        <p style={{ fontSize: 15, fontWeight: 700, color: '#191F28' }}>{type}</p>
+                        {cur?.day && <p style={{ fontSize: 12, color: '#C9CDD4' }}>매월 {cur.day}일</p>}
                       </div>
                     </div>
                     {/* 연필 아이콘: 데이터 없으면 모달, 있으면 하단 펼침 */}
@@ -631,14 +631,14 @@ export default function Analysis() {
                   {cur ? (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 }}>
-                        <p style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{fmt(cur.amount)}원</p>
+                        <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>{fmt(cur.amount)}원</p>
                         <div style={{ textAlign: 'right' }}>
                           {diff !== null ? (
                             <>
-                              <p style={{ fontSize: 13, fontWeight: 600, color: diff > 0 ? '#f97316' : '#22c55e' }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: diff > 0 ? '#f97316' : '#2ECC71' }}>
                                 {diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{fmt(diff)}원
                               </p>
-                              <p style={{ fontSize: 11, color: '#bbb' }}>전월 {fmt(prev.amount)}원</p>
+                              <p style={{ fontSize: 11, color: '#C9CDD4' }}>전월 {fmt(prev.amount)}원</p>
                             </>
                           ) : (
                             <span style={{ fontSize: 11, background: `${primary}18`, color: primary, padding: '3px 10px', borderRadius: 9999, fontWeight: 600 }}>첫 등록</span>
@@ -648,7 +648,7 @@ export default function Analysis() {
                       <UtilityChart type={type} utilities={utilities} primary={primary} viewYear={viewYear} viewMonth={viewMonth} />
                     </>
                   ) : (
-                    <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>이번 달 데이터가 없어요</p>
+                    <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '12px 0' }}>이번 달 데이터가 없어요</p>
                   )}
                 </div>
 
@@ -662,7 +662,7 @@ export default function Analysis() {
                           setEditingUtility(cur.id)
                           setShowAddUtility(true)
                           toggleUtility(type)
-                        }} style={{ flex: 1, padding: '11px', border: 'none', background: cardBg, color: '#555', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        }} style={{ flex: 1, padding: '11px', border: 'none', background: cardBg, color: '#8B95A1', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           수정
                         </button>
@@ -691,16 +691,16 @@ export default function Analysis() {
           })}
 
           {/* AI 공과금 분석 */}
-          <div style={{ background: themeData?.card || '#fff', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: 16, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#111' }}>AI 공과금 분석</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>AI 공과금 분석</p>
               <button onClick={getUtilityAI} disabled={loadingUtilityAI}
                 style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', cursor: loadingUtilityAI ? 'not-allowed' : 'pointer',
                   background: loadingUtilityAI ? '#e0e0e0' : primary, color: loadingUtilityAI ? '#888' : '#fff', fontSize: 13 }}>
                 {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
               </button>
             </div>
-            {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
+            {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
             {loadingUtilityAI && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <p style={{ fontSize: 14, color: '#888' }}>공과금 패턴을 분석하고 있어요...</p>
@@ -725,14 +725,14 @@ export default function Analysis() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{type}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{type}</span>
                           {diff !== null && (
                             <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: `${badgeColor}18`, padding: '2px 8px', borderRadius: 9999 }}>
                               {isUp ? '↑' : '↓'} {diff > 0 ? '+' : ''}{fmt(diff)}원
                             </span>
                           )}
                         </div>
-                        <p style={{ fontSize: 12, color: '#888', lineHeight: 1.45 }}>{item.comment}</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', lineHeight: 1.45 }}>{item.comment}</p>
                       </div>
                     </div>
                   )
@@ -757,28 +757,29 @@ export default function Analysis() {
 
           {/* 추가/수정 모달 */}
           {showAddUtility && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', zIndex: 999 }}
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', zIndex: 999 }}
               onClick={() => setShowAddUtility(false)}>
-              <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: 24 }} onClick={e => e.stopPropagation()}>
-                <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>{newUtility.type} 입력</p>
+              <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }} onClick={e => e.stopPropagation()}>
+                <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>{newUtility.type} 입력</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
                   <input type="number" placeholder="금액 (원)" value={newUtility.amount}
                     onChange={e => setNewUtility(p => ({ ...p, amount: e.target.value }))}
-                    style={{ padding: '11px 14px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 14, outline: 'none' }} />
+                    style={{ padding: '14px 16px', borderRadius: 12, border: '1.5px solid #E5E8EB', fontSize: 15, outline: 'none', background: '#F7F8FA', color: '#191F28' }} />
                   <input type="number" placeholder="납부일 (예: 15)" min="1" max="31" value={newUtility.day}
                     onChange={e => setNewUtility(p => ({ ...p, day: e.target.value }))}
-                    style={{ padding: '11px 14px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 14, outline: 'none' }} />
+                    style={{ padding: '14px 16px', borderRadius: 12, border: '1.5px solid #E5E8EB', fontSize: 15, outline: 'none', background: '#F7F8FA', color: '#191F28' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setShowAddUtility(false)}
-                    style={{ flex: 1, padding: 14, borderRadius: 12, border: '1.5px solid #e8e8e8', background: '#fff', fontSize: 15, cursor: 'pointer' }}>취소</button>
+                    style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', fontSize: 15, cursor: 'pointer', color: '#8B95A1' }}>취소</button>
                   <button onClick={() => {
                     if (!newUtility.amount) return alert('금액을 입력해주세요.')
                     const entry = { id: editingUtility || Date.now(), type: newUtility.type, amount: Number(newUtility.amount), day: newUtility.day, year: viewYear, month: viewMonth + 1 }
                     const filtered = utilities.filter(u => !(u.type === newUtility.type && u.year === viewYear && u.month === viewMonth + 1))
                     saveUtilities([...filtered, entry])
                     setShowAddUtility(false); setEditingUtility(null)
-                  }} style={{ flex: 1, padding: 14, borderRadius: 12, border: 'none', background: primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+                  }} style={{ flex: 1, height: 56, borderRadius: 16, border: 'none', background: primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
                 </div>
               </div>
             </div>

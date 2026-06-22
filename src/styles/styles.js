@@ -202,7 +202,7 @@ export const toggleThumb = (on) => ({
 export const fabStyle = {
   position: 'fixed',
   bottom: 90,
-  right: 'calc(50% - 215px + 20px)',
+  right: 20,
   width: 56,
   height: 56,
   borderRadius: 24,

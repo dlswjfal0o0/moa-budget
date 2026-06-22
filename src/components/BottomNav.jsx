@@ -37,10 +37,7 @@ export default function BottomNav() {
         const color = active ? themeData.primary : '#C9CDD4'
         return (
           <button key={tab.path} onClick={() => navigate(tab.path)}
-            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
-            {active && (
-              <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 28, height: 3, borderRadius: '0 0 4px 4px', background: themeData.primary }} />
-            )}
+            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
             <Icon name={tab.icon} color={color} />
             <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px' }}>{tab.label}</span>
           </button>
