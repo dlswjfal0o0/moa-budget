@@ -586,7 +586,9 @@ export default function MyPage() {
             const TRACKING_OPTS = [
               {
                 val: 'spend',
-                title: '신용카드 지출이 중요해요',
+                titleNode: (sel, primary) => (
+                  <span>신용카드 <span style={{ color: primary, fontWeight: 800 }}>지출</span>이 중요해요</span>
+                ),
                 desc: '카드를 사용하는 순간마다 가계부 지출로 기록합니다. 소비 습관 관리를 원하는 사용자에게 적합합니다.',
                 tags: ['결제 내역 → 지출 포함', '결제 대금 : 지출 미포함', '소비 패턴 분석'],
                 icon: (color) => (
@@ -597,7 +599,9 @@ export default function MyPage() {
               },
               {
                 val: 'billing',
-                title: '신용카드 대금이 중요해요',
+                titleNode: (sel, primary) => (
+                  <span>신용카드 <span style={{ color: primary, fontWeight: 800 }}>대금</span>이 중요해요</span>
+                ),
                 desc: '매월 카드 대금 청구 시점에 지출을 기록합니다. 카드값 관리 중심 사용자에게 적합합니다.',
                 tags: ['청구일 기준 기록', '카드값 관리', '결제 내역 : 지출 미포함'],
                 icon: (color) => (
@@ -632,7 +636,7 @@ export default function MyPage() {
                 </div>
 
                 {/* Scrollable Body */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 0', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 40px', WebkitOverflowScrolling: 'touch' }}>
 
                   {/* ── 1. 카드 종류 Segmented Control ── */}
                   <div style={{ marginBottom: 24 }}>
@@ -645,9 +649,9 @@ export default function MyPage() {
                             onClick={() => setData(c => ({ ...c, cardType: opt.val, creditTracking: opt.val === 'debit' ? '' : c.creditTracking }))}
                             style={{ flex: 1, height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 15,
                               fontWeight: sel ? 700 : 500,
-                              background: sel ? '#fff' : 'transparent',
-                              color: sel ? '#191F28' : '#8B95A1',
-                              boxShadow: sel ? '0 2px 8px rgba(0,0,0,0.10)' : 'none',
+                              background: sel ? t.primary : 'transparent',
+                              color: sel ? '#fff' : '#8B95A1',
+                              boxShadow: sel ? `0 2px 10px ${t.primary}44` : 'none',
                               transition: 'all 180ms ease-out' }}>
                             {opt.label}
                           </button>
@@ -657,18 +661,22 @@ export default function MyPage() {
                   </div>
 
                   {/* ── 2. 신용카드 지출 추적 방식 (animated) ── */}
+                  {/* 바깥 wrapper: clip 없이 opacity+height만 제어 */}
                   <div style={{
-                    maxHeight: isCredit ? '600px' : '0px',
+                    maxHeight: isCredit ? '800px' : '0px',
                     opacity: isCredit ? 1 : 0,
-                    overflow: 'hidden',
+                    pointerEvents: isCredit ? 'auto' : 'none',
                     transition: isCredit
                       ? 'max-height 250ms ease-out, opacity 200ms ease-out'
                       : 'max-height 200ms ease-in, opacity 150ms ease-in',
                     marginBottom: isCredit ? 24 : 0,
+                    overflow: 'visible',   /* scale()이 잘리지 않도록 */
                   }}>
+                    {/* 안쪽 wrapper로 overflow:hidden 분리 → 높이 collapse 담당 */}
+                    <div style={{ overflow: 'hidden', paddingBottom: 2 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>지출 추적 방식</p>
                     <p style={{ fontSize: 13, color: '#B0B8C1', marginBottom: 14 }}>신용카드를 어떻게 관리할지 선택해주세요</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {TRACKING_OPTS.map(opt => {
                         const sel = data.creditTracking === opt.val
                         return (
@@ -678,9 +686,8 @@ export default function MyPage() {
                               border: `2px solid ${sel ? t.primary : '#E5E8EB'}`,
                               background: sel ? `${t.primary}0D` : '#fff',
                               cursor: 'pointer',
-                              transform: sel ? 'scale(1.015)' : 'scale(1)',
-                              transition: 'all 150ms ease-out',
-                              boxShadow: sel ? `0 4px 20px ${t.primary}22` : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                              transition: 'border-color 150ms ease-out, background 150ms ease-out, box-shadow 150ms ease-out',
+                              boxShadow: sel ? `0 4px 20px ${t.primary}28` : '0 1px 4px rgba(0,0,0,0.04)' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                               {/* 아이콘 */}
                               <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, marginTop: 2,
@@ -692,8 +699,8 @@ export default function MyPage() {
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 {/* 제목 + 라디오 */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                  <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms' }}>{opt.title}</p>
-                                  <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginLeft: 8,
+                                  <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms', lineHeight: 1.4 }}>{opt.titleNode(sel, t.primary)}</p>
+                                  <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginLeft: 10,
                                     border: `2px solid ${sel ? t.primary : '#D1D6DB'}`,
                                     background: sel ? t.primary : 'transparent',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -718,6 +725,7 @@ export default function MyPage() {
                           </button>
                         )
                       })}
+                    </div>
                     </div>
                   </div>
 
