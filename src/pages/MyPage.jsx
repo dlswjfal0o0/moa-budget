@@ -474,7 +474,13 @@ export default function MyPage() {
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>카드</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+              <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>카드</p>
+              {cards.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{cards.length}개</span>}
+            </div>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
           {cards.map(card => {
@@ -836,10 +842,10 @@ export default function MyPage() {
         </div>
 
         {/* 현금 */}
-        <div style={{ background: '#F7FCF9', border: '1px solid #D8F0E0', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ background: `${t.primary}08`, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
               </svg>
               <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
