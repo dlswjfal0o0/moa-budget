@@ -1146,7 +1146,7 @@ export default function MyPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
                       <div style={{ flex: 1, paddingRight: 16 }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>잔여 예산 이월</p>
-                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>남은 예산을 다음 달로 이월해요</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>남은 예산을 다음 달로 이월</p>
                       </div>
                       <SToggle on={rolloverBudget} onChange={setRolloverBudget} primary={t.primary} />
                     </div>
@@ -1192,7 +1192,7 @@ export default function MyPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
                       <div style={{ flex: 1, paddingRight: 16 }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>공과금 탭 표시</p>
-                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>분석 화면에 공과금 탭을 추가해요</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>분석 화면에 공과금 탭을 추가</p>
                       </div>
                       <SToggle on={showUtilities} onChange={(val) => {
                         setShowUtilities(val)
@@ -1212,7 +1212,7 @@ export default function MyPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
                       <div style={{ flex: 1, paddingRight: 16 }}>
                         <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28' }}>대출 기능 사용</p>
-                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>가계부에서 대출 / 상환 항목을 관리해요</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>가계부 및 MY에서 대출 / 상환 항목 관리</p>
                       </div>
                       <SToggle on={showLoan} onChange={setShowLoan} primary={t.primary} />
                     </div>
