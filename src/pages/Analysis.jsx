@@ -243,7 +243,7 @@ export default function Analysis() {
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {/* 헤더 */}
-      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', borderBottom: '1px solid #F2F4F6' }}>
+      <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>‹</button>
@@ -255,7 +255,7 @@ export default function Analysis() {
 
       {/* 탭 (iOS 세그먼트 스타일) */}
       {showUtilities && (
-        <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ padding: '12px 20px 0' }}>
           <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 3 }}>
             {['소비', '공과금'].map(tab => (
               <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
@@ -274,7 +274,7 @@ export default function Analysis() {
 
       {/* ── 소비 탭 ── */}
       {(!showUtilities || activeAnalysisTab === '소비') && (
-        <div style={{ padding: '16px' }}>
+        <div style={{ padding: '16px 20px' }}>
 
           {/* 지난 달 대비 */}
           <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33` }}>
@@ -574,7 +574,7 @@ export default function Analysis() {
 
       {/* ── 공과금 탭 ── */}
       {showUtilities && activeAnalysisTab === '공과금' && (
-        <div style={{ padding: '16px 16px 100px' }}>
+        <div style={{ padding: '16px 20px 100px' }}>
 
           {/* 총합 배너 - 항상 표시 */}
           <div style={{ background: primary, borderRadius: 20, padding: '18px 20px', marginBottom: 16 }}>

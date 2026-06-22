@@ -131,7 +131,7 @@ export default function Calendar() {
     }}>
 
       {/* ── 고정: 캘린더만 ── */}
-      <div style={{ flexShrink: 0, background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px', borderBottom: '1px solid #F2F4F6' }}>
+      <div style={{ flexShrink: 0, background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 24px 12px', borderBottom: '1px solid #F2F4F6' }}>
           {/* 월 네비게이션 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
@@ -218,7 +218,7 @@ export default function Calendar() {
         )}
 
         {/* 이번 주 / 이번 달 수입·지출 요약 */}
-        <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ padding: '12px 20px 0' }}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 지출</p>
@@ -242,7 +242,7 @@ export default function Calendar() {
         </div>
 
         {/* ── 고정지출 ── */}
-        <div style={{ margin: '12px 8px 0', borderRadius: 20, overflow: 'hidden' }}>
+        <div style={{ margin: '12px 16px 0', borderRadius: 20, overflow: 'hidden' }}>
 
           {/* 고정지출 헤더 */}
           <div style={{
@@ -256,7 +256,7 @@ export default function Calendar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>고정지출</p>
               {fixedExpenses.length > 0 && (
-                <span style={{ fontSize: 12, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 10px', fontWeight: 500 }}>
+                <span style={{ fontSize: 11, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '3px 9px', fontWeight: 700 }}>
                   {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
                 </span>
               )}
@@ -299,14 +299,14 @@ export default function Calendar() {
                           const dayNum2 = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : ''
                           setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '' })
                           setExpandedFixedId(null)
-                        }} style={{ flex: 1, padding: '11px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#8B95A1', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        }} style={{ flex: 1, padding: '14px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           수정
                         </button>
                         <div style={{ width: 1, background: '#F2F4F6' }} />
                         <button onClick={() => { handleDeleteFixed(f.id); setExpandedFixedId(null) }}
-                          style={{ flex: 1, padding: '11px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#FF5A5F', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          style={{ flex: 1, padding: '14px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                           삭제
                         </button>
                       </div>

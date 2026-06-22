@@ -613,7 +613,7 @@ export default function Ledger() {
                 <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="새 카테고리 이름"
                   style={{ flex: 1, padding: '10px 12px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none', background: '#fafafa' }}
                   onKeyDown={e => e.key === 'Enter' && handleAddCategory()} />
-                <button onClick={handleAddCategory} style={{ padding: '10px 16px', borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>추가</button>
+                <button onClick={handleAddCategory} style={{ padding: '10px 16px', borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>추가</button>
               </div>
             </div>
           </div>
@@ -699,25 +699,25 @@ export default function Ledger() {
             {form.type === 'transfer' && (
               <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>이체 정보</p>
-                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8 }}>출금 계좌</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>출금 계좌</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                   {userAccountsList.length > 0 ? userAccountsList.map(a => (
                     <button key={a} onClick={() => setForm(f => ({ ...f, payment: a }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: form.payment === a ? themeData.primary : '#f0f0f0',
-                        color: form.payment === a ? '#fff' : '#666' }}>{a}</button>
+                        background: form.payment === a ? themeData.primary : '#F2F4F6',
+                        color: form.payment === a ? '#fff' : '#8B95A1' }}>{a}</button>
                   )) : (
                     <input style={inputStyle} placeholder="출금 계좌" value={form.payment === '카드' ? '' : form.payment}
                       onChange={e => setForm(f => ({ ...f, payment: e.target.value }))} />
                   )}
                 </div>
-                <p style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>입금 계좌</p>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>입금 계좌</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {userAccountsList.length > 0 ? userAccountsList.map(a => (
                     <button key={a} onClick={() => setForm(f => ({ ...f, toAccount: a }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
-                        background: form.toAccount === a ? themeData.primary : '#f0f0f0',
-                        color: form.toAccount === a ? '#fff' : '#666' }}>{a}</button>
+                        background: form.toAccount === a ? themeData.primary : '#F2F4F6',
+                        color: form.toAccount === a ? '#fff' : '#8B95A1' }}>{a}</button>
                   )) : (
                     <input style={inputStyle} placeholder="입금 계좌" value={form.toAccount}
                       onChange={e => setForm(f => ({ ...f, toAccount: e.target.value }))} />

@@ -451,7 +451,7 @@ export default function MyPage() {
         </div>
       </div>
 
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: '16px 20px' }}>
 
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -467,7 +467,7 @@ export default function MyPage() {
 
         {/* 카드 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>카드</p>
             {smallBtn(() => setShowAddCard(true), '+ 추가', t.primary, '#fff')}
           </div>
@@ -529,7 +529,7 @@ export default function MyPage() {
                 </div>
                 {/* 수정/삭제 펼침 행 */}
                 {expandedCardId === card.id && (
-                  <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                     <button onClick={() => {
                       setEditingCardId(card.id)
                       setEditCardData({
@@ -542,14 +542,14 @@ export default function MyPage() {
                         billingDay: card.billingDay ? String(card.billingDay) : '',
                       })
                       setExpandedCardId(null)
-                    }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    }} style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       수정
                     </button>
-                    <div style={{ width: 1, background: '#f0f0f0' }} />
+                    <div style={{ width: 1, background: '#F2F4F6' }} />
                     <button onClick={e => { e.stopPropagation(); handleDeleteCard(card.id) }}
-                      style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#FF5A5F', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                       삭제
                     </button>
                   </div>
@@ -681,7 +681,7 @@ export default function MyPage() {
 
         {/* 계좌 */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>계좌</p>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
