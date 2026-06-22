@@ -187,8 +187,19 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
 
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
-  const isCredit = (p) => cards.some(c => c.name === p && c.cardType === 'credit')
-  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan))
+  // 신용카드 추적 방식에 따라 집계 제외 여부 판단
+  const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
+  const isCreditExcluded = (t) => {
+    if (t.cardBilling) {
+      // 대금 납부: billing 모드에서는 지출로 집계
+      const card = getCreditCard(t.payment)
+      return card?.creditTracking !== 'billing'
+    }
+    // 카드 사용: billing 모드에서는 집계 제외
+    const card = getCreditCard(t.payment)
+    return card?.creditTracking === 'billing'
+  }
+  const expenses = transactions.filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
   const incomes = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
@@ -258,7 +269,9 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
           ) : (
             budgets.map(b => {
               const bCats = Array.isArray(b.categories) ? b.categories : []
-              const spent = expenses.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
+              // 예산: 카드 사용 내역은 추적 방식과 관계없이 항상 포함, 대금 납부만 제외
+              const budgetTxns = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan))
+              const spent = budgetTxns.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount
               const color = exceeded ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary

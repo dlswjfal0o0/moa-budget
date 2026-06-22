@@ -332,8 +332,17 @@ export default function Ledger() {
   }
 
   const filtered = getFiltered()
-  const isCredit = (paymentName) => userCardsList.some(c => c.name === paymentName && c.cardType === 'credit')
-  const totalExpense = filtered.filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
+  // 신용카드 추적 방식에 따라 집계 제외 여부 판단
+  const getCreditCard = (p) => userCardsList.find(c => c.name === p && c.cardType === 'credit')
+  const isCreditExcluded = (t) => {
+    if (t.cardBilling) {
+      const card = getCreditCard(t.payment)
+      return card?.creditTracking !== 'billing'
+    }
+    const card = getCreditCard(t.payment)
+    return card?.creditTracking === 'billing'
+  }
+  const totalExpense = filtered.filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
@@ -459,11 +468,11 @@ export default function Ledger() {
                 </span>
                 <div style={{ flex: 1, height: 1, background: '#F2F4F6' }} />
                 <span style={{ fontSize: 12, whiteSpace: 'nowrap', display: 'flex', gap: 8, fontWeight: 600 }}>
-                  {dateGroups[date].some(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && !t.creditCardBilling && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                  {dateGroups[date].some(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)) && (
+                    <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
                   {(() => {
-                    const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && (t.cardBilling || isCredit(t.payment) || t.creditCardBilling)).reduce((s, t) => s + t.amount, 0)
+                    const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && isCreditExcluded(t)).reduce((s, t) => s + t.amount, 0)
                     return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}>-{grayAmt.toLocaleString()}원</span> : null
                   })()}
                   {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
@@ -491,7 +500,7 @@ export default function Ledger() {
                       onTouchEnd={e => handleTouchEnd(e, t.id)}
                       onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
                       style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
-                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.cardBilling || isCredit(t.payment)) ? '#FAFAFA' : '#fff',
+                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : '#fff',
                         transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
                         transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
                       {/* 카테고리 아이콘 */}
@@ -514,7 +523,7 @@ export default function Ledger() {
                         </p>
                       </div>
                       <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
-                        color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.cardBilling || isCredit(t.payment)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
+                        color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
                         {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                       </p>
                     </div>

@@ -139,8 +139,16 @@ export default function Analysis() {
   const fmt = n => n.toLocaleString('ko-KR')
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
-  const isCredit = p => cards.some(c => c.name === p && c.cardType === 'credit')
-  const expenses = transactions.filter(t => t.type === 'expense' && !t.cardBilling && !isCredit(t.payment) && (!showLoan || !t.isLoan))
+  const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
+  const isCreditExcluded = (t) => {
+    if (t.cardBilling) {
+      const card = getCreditCard(t.payment)
+      return card?.creditTracking !== 'billing'
+    }
+    const card = getCreditCard(t.payment)
+    return card?.creditTracking === 'billing'
+  }
+  const expenses = transactions.filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
   const incomes = transactions.filter(t => t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
