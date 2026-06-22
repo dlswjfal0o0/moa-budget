@@ -1102,7 +1102,6 @@ export default function MyPage() {
                         setLoanForm({ name: loan.name, principal: String(loan.principal), remainingPrincipal: String(loan.remainingPrincipal), startDate: loan.startDate, rate: loan.rate != null ? String(loan.rate) : '', rateType: loan.rateType || 'simple', monthlyPayment: loan.monthlyPayment != null ? String(loan.monthlyPayment) : '', paymentDay: loan.paymentDay != null ? String(loan.paymentDay) : '', maturityDate: loan.maturityDate || '' })
                         setEditingLoan(loan); setExpandedLoanId(null)
                       }} style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         수정
                       </button>
                       <div style={{ width: 1, background: '#F2F4F6' }} />
@@ -1746,7 +1745,7 @@ export default function MyPage() {
         const isEdit = !!editingLoan
         const monthlyInterest = calcMonthlyInterest(loanForm.remainingPrincipal, loanForm.rate, loanForm.rateType)
         const isValid = !!loanForm.name && !!loanForm.principal && !!loanForm.remainingPrincipal && !!loanForm.startDate
-        const lInput = { ...inputStyle }
+        const lInput = { ...inputStyle, height: 52, appearance: 'none', WebkitAppearance: 'none' }
         return (
           <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
             {/* 헤더 */}
@@ -1861,8 +1860,9 @@ export default function MyPage() {
                 <button onClick={() => {
                   setLoanForm({ name: loan.name, principal: String(loan.principal), remainingPrincipal: String(loan.remainingPrincipal), startDate: loan.startDate, rate: loan.rate != null ? String(loan.rate) : '', rateType: loan.rateType || 'simple', monthlyPayment: loan.monthlyPayment != null ? String(loan.monthlyPayment) : '', paymentDay: loan.paymentDay != null ? String(loan.paymentDay) : '', maturityDate: loan.maturityDate || '' })
                   setEditingLoan(loan)
-                }} style={{ background: '#F2F4F6', border: 'none', borderRadius: 10, padding: '6px 14px', fontSize: 13, fontWeight: 600, color: '#191F28', cursor: 'pointer' }}>
-                  ✏️ 수정
+                }} style={{ background: '#F2F4F6', border: 'none', borderRadius: 10, padding: '6px 14px', fontSize: 13, fontWeight: 600, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  수정
                 </button>
               </div>
             </div>

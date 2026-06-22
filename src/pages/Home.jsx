@@ -149,14 +149,14 @@ export default function Home() {
                 messages: [{ role: 'user', content:
                     `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.
 
-모든 내용은 반드시 한국어로만 작성해. 아래 JSON 형식으로만 응답해. 마크다운, 코드블록, 설명 없이 JSON 객체만:
+모든 내용은 반드시 한국어로만 작성해. 문체는 반드시 서술형(~해요, ~있어요, ~됩니다)으로 작성하고, 명령형(~하세요, ~하라, ~합시다)은 절대 사용하지 마. 아래 JSON 형식으로만 응답해. 마크다운, 코드블록, 설명 없이 JSON 객체만:
 {
   "status": "${pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'}",
-  "summary": "2문장 이내 현황 요약 (친근한 한국어 말투)",
+  "summary": "2문장 이내 현황 요약. 친근한 서술형 말투로 작성해요.",
   "tips": [
-    { "icon": "food", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" },
-    { "icon": "chart", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" },
-    { "icon": "adjust", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" }
+    { "icon": "food", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." },
+    { "icon": "chart", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." },
+    { "icon": "adjust", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." }
   ]
 }
 tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money, calendar, target 중 하나여야 해.`

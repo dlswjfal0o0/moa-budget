@@ -102,7 +102,7 @@ export default function Auth() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 'calc(env(safe-area-inset-top, 0px) + 32px) 28px 32px', background: '#fff' }}>
       <div style={{ flex: 1 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 6 }}>
-          {mode === 'signup' ? '시작해볼까요?' : '다시 만나서 반가워요 👋'}
+          {mode === 'signup' ? '시작해볼까요?' : '다시 만나서 반가워요'}
         </h2>
         <p style={{ fontSize: 14, color: '#999', marginBottom: 32 }}>
           {mode === 'signup' ? '계정을 만들어 데이터를 안전하게 저장하세요' : '계정에 로그인하세요'}

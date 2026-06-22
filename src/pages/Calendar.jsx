@@ -272,7 +272,7 @@ export default function Calendar() {
                     <p style={{ fontSize: 14, color: '#191F28', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
                     <p style={{ fontSize: 12, color: '#C9CDD4' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
                   </div>
-                  <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#FF5A5F' : (t.cardBilling || isCredit(t.payment)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
                     {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                   </p>
                 </div>

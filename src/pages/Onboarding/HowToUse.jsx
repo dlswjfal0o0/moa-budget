@@ -34,7 +34,7 @@ function HomeMockup() {
       {/* 헤더 */}
       <div style={{ background:PRIMARY, padding:'8px 12px 12px', color:'white', flexShrink:0, animation:'moaFadeUp 0.4s ease both' }}>
         <div style={{ fontSize:7, opacity:0.8, marginBottom:1 }}>6월 가계부</div>
-        <div style={{ fontSize:11, fontWeight:700, marginBottom:6 }}>안녕하세요 👋</div>
+        <div style={{ fontSize:11, fontWeight:700, marginBottom:6 }}>안녕하세요</div>
         <div style={{ background:'rgba(255,255,255,0.18)', borderRadius:12, padding:'8px 10px' }}>
           <div style={{ fontSize:6.5, opacity:0.8, marginBottom:2 }}>이번 달 잔액</div>
           <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>1,250,000원</div>
@@ -110,8 +110,8 @@ function HomeMockup() {
           </div>
           {[{t:'투썸플레이스',c:'식비',a:'-6,500',tp:'e'},{t:'급여',c:'급여',a:'+2,000,000',tp:'i'}].map((item,i)=>(
             <div key={i} style={{ display:'flex', alignItems:'center', gap:5, padding:'3px 0', borderBottom: i===0?'1px solid #f8f8f8':'none' }}>
-              <div style={{ width:18, height:18, borderRadius:8, background:item.tp==='e'?'#FFF0F0':'#F0FFF4', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, flexShrink:0 }}>
-                {item.tp==='e'?'💸':'💰'}
+              <div style={{ width:18, height:18, borderRadius:8, background:item.tp==='e'?'#FFF0F0':'#F0FFF4', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {item.tp==='e'?<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>:<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:7, color:'#111' }}>{item.t}</div>
@@ -255,8 +255,8 @@ function LedgerMockup() {
               return (
                 <div key={item.t} style={{ background:'white', borderRadius:16, padding:'5px 7px', marginBottom:3, display:'flex', alignItems:'center', gap:5,
                   animation:`moaSlideRight 0.45s ${d}s ease both` }}>
-                  <div style={{ width:20, height:20, borderRadius:12, background:item.tp==='e'?'#FFF0F0':'#F0FFF4', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:9 }}>
-                    {item.tp==='e'?'💸':'💰'}
+                  <div style={{ width:20, height:20, borderRadius:12, background:item.tp==='e'?'#FFF0F0':'#F0FFF4', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    {item.tp==='e'?<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>:<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:7.5, fontWeight:500, color:'#111' }}>{item.t}</div>
@@ -338,7 +338,7 @@ function AnalysisMockup() {
       <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
           <span style={{ fontSize:7, fontWeight:600, color:'#111' }}>AI 소비 분석</span>
-          <div style={{ background:'#F0FFF4', borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'#22c55e', fontWeight:700 }}>{score}점 🌟</div>
+          <div style={{ background:'#F0FFF4', borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'#22c55e', fontWeight:700, display:'flex', alignItems:'center', gap:2 }}>{score}점 <svg width="8" height="8" viewBox="0 0 24 24" fill="#22c55e" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
         </div>
         <div style={{ background:'#F0FFF4', borderRadius:9999, padding:'3px 5px', borderLeft:`2px solid #22c55e` }}>
           <div style={{ fontSize:5.5, color:'#555', lineHeight:1.4 }}>식비 전월 대비 15% 증가. 외식 줄이면 ~50,000원 절약!</div>
@@ -362,10 +362,10 @@ function AnalysisUtilityMockup() {
   const [barsOn, setBarsOn] = useState(false)
   useEffect(() => { const t = setTimeout(() => setBarsOn(true), 300); return () => clearTimeout(t) }, [])
   const items = [
-    {emoji:'🏢',name:'관리비',amount:'80,000',diff:'+2,000',up:true,bars:[65,70,68,72,75,80]},
-    {emoji:'💧',name:'수도세',amount:'25,000',diff:'+3,000',up:true,bars:[20,22,20,21,22,25]},
-    {emoji:'⚡',name:'전기세',amount:'45,000',diff:'-13,000',up:false,bars:[60,55,70,65,58,45]},
-    {emoji:'🔥',name:'가스비',amount:'12,000',diff:'-23,000',up:false,bars:[40,35,30,28,35,12]},
+    {icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,name:'관리비',amount:'80,000',diff:'+2,000',up:true,bars:[65,70,68,72,75,80]},
+    {icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,name:'수도세',amount:'25,000',diff:'+3,000',up:true,bars:[20,22,20,21,22,25]},
+    {icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,name:'전기세',amount:'45,000',diff:'-13,000',up:false,bars:[60,55,70,65,58,45]},
+    {icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2c0 6-6 8-6 14a6 6 0 0 0 12 0c0-6-6-8-6-14z"/></svg>,name:'가스비',amount:'12,000',diff:'-23,000',up:false,bars:[40,35,30,28,35,12]},
   ]
   return (
     <div style={{ flex:1, background:'#f5f6f8', overflow:'hidden', padding:'4px 5px', display:'flex', flexDirection:'column', gap:3 }}>
@@ -384,7 +384,7 @@ function AnalysisUtilityMockup() {
         <div key={item.name} style={{ background:'white', borderRadius:16, padding:'4px 6px', flexShrink:0, animation:`moaFadeUp 0.4s ${0.2+idx*0.15}s ease both` }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
             <div style={{ display:'flex', alignItems:'center', gap:3 }}>
-              <span style={{ fontSize:11 }}>{item.emoji}</span>
+              <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:11, height:11 }}>{item.icon}</span>
               <span style={{ fontSize:7, fontWeight:600, color:'#111' }}>{item.name}</span>
             </div>
             <div style={{ textAlign:'right' }}>
@@ -404,10 +404,10 @@ function AnalysisUtilityMockup() {
       <div style={{ background:'white', borderRadius:16, padding:'5px 6px', flexShrink:0 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
           <span style={{ fontSize:7, fontWeight:600, color:'#111' }}>AI 공과금 분석</span>
-          <div style={{ background:PRIMARY, borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'white', animation:'moaBlink 1.5s 1.5s ease infinite' }}>✨ AI</div>
+          <div style={{ background:PRIMARY, borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'white', animation:'moaBlink 1.5s 1.5s ease infinite', display:'flex', alignItems:'center', gap:2 }}><svg width="7" height="7" viewBox="0 0 24 24" fill="white" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>AI</div>
         </div>
         <div style={{ background:'#EEF2FF', borderRadius:9999, padding:'3px 5px', borderLeft:`2px solid ${PRIMARY}` }}>
-          <div style={{ fontSize:5.5, color:'#555', lineHeight:1.4 }}>⚡ 전기세 13,000원 절약! 🔥 가스비 전년 대비 60% 감소!</div>
+          <div style={{ fontSize:5.5, color:'#555', lineHeight:1.4 }}>전기세 13,000원 절약! 가스비 전년 대비 60% 감소!</div>
         </div>
       </div>
     </div>
@@ -527,7 +527,7 @@ function LedgerSettingsMockup() {
       <div style={{ background:'#EEF2FF', borderRadius:16, padding:'5px 7px', border:`1.5px solid ${PRIMARY}44` }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div>
-            <p style={{ fontSize:7, fontWeight:700, color:PRIMARY }}>✨ 분석 공과금 탭</p>
+            <p style={{ fontSize:7, fontWeight:700, color:PRIMARY, display:'flex', alignItems:'center', gap:2 }}><svg width="8" height="8" viewBox="0 0 24 24" fill={PRIMARY} stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>분석 공과금 탭</p>
             <p style={{ fontSize:5, color:'#666', marginTop:1 }}>ON 시 공과금 전월 비교 & AI 분석 가능</p>
           </div>
           <div style={{ width:22, height:12, borderRadius:9999, background:PRIMARY, position:'relative', flexShrink:0 }}>
@@ -565,9 +565,9 @@ function MySettingsMockup() {
         {/* 데이터 내보내기 */}
         <div style={{ background:'white', borderRadius:16, padding:'7px 8px', marginBottom:4 }}>
           <p style={{ fontSize:7, fontWeight:600, color:'#333', marginBottom:6 }}>데이터 내보내기</p>
-          {[{icon:'📊',label:'엑셀로 내보내기',desc:'전체 내역을 .xlsx 파일로',bg:'#E8F5E9'},{icon:'📄',label:'PDF로 내보내기',desc:'전체 내역을 .pdf 파일로',bg:'#FEE2E2'}].map(item=>(
+          {[{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,label:'엑셀로 내보내기',desc:'전체 내역을 .xlsx 파일로',bg:'#E8F5E9'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,label:'PDF로 내보내기',desc:'전체 내역을 .pdf 파일로',bg:'#FEE2E2'}].map(item=>(
             <div key={item.label} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 0', borderBottom:'1px solid #f8f8f8' }}>
-              <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, flexShrink:0 }}>{item.icon}</div>
+              <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</div>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:7, fontWeight:600, color:'#111' }}>{item.label}</p>
                 <p style={{ fontSize:5, color:'#888' }}>{item.desc}</p>
@@ -578,10 +578,10 @@ function MySettingsMockup() {
         </div>
         {/* 메뉴 */}
         <div style={{ background:'white', borderRadius:16, overflow:'hidden' }}>
-          {[{icon:'ℹ️',label:'이용 방법',bg:'#EEF2FF'},{icon:'🔔',label:'업데이트 내용',bg:'#FFF7ED'},{icon:'📊',label:'피드백',bg:'#F0FDF4'}].map((item,i)=>(
+          {[{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,label:'이용 방법',bg:'#EEF2FF'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,label:'업데이트 내용',bg:'#FFF7ED'},{icon:<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,label:'피드백',bg:'#F0FDF4'}].map((item,i)=>(
             <div key={item.label}>
               <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 8px' }}>
-                <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, flexShrink:0 }}>{item.icon}</div>
+                <div style={{ width:20, height:20, borderRadius:10, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</div>
                 <span style={{ flex:1, fontSize:7, color:'#333' }}>{item.label}</span>
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
