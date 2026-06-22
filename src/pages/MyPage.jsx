@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
@@ -13,6 +14,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
+import { haptic } from '../utils/haptics'
 
 // 설정 화면용 토글
 const SToggle = ({ on, onChange, primary }) => (
@@ -71,6 +73,24 @@ export default function MyPage() {
   const [allTxns, setAllTxns] = useState([])
   const [editingCardId, setEditingCardId] = useState(null)
   const [editCardData, setEditCardData] = useState({})
+  // Stagger: 0=총자산, 1=카드, 2=계좌, 3=현금, 4=대출
+  const isSectionVisible = useStagger(5, 30, 80)
+  const sectionStagger = (i) => ({
+    opacity: isSectionVisible(i) ? 1 : 0,
+    transform: isSectionVisible(i) ? 'translateY(0)' : 'translateY(12px)',
+    transition: 'opacity 300ms ease, transform 300ms ease',
+  })
+  // ── Card CRUD motion state ───────────────────────
+  const [cardSaveState, setCardSaveState] = useState(null) // null | 'loading' | 'success'
+  const [cardBtnPressed, setCardBtnPressed] = useState(false)
+  const [deleteConfirmCard, setDeleteConfirmCard] = useState(null)
+  const [cardExitId, setCardExitId] = useState(null)
+  const [deletedCard, setDeletedCard] = useState(null)
+  const [undoSnackbar, setUndoSnackbar] = useState(false)
+  const undoTimerRef = useRef(null)
+  const [newCardId, setNewCardId] = useState(null)
+  const [highlightCardId, setHighlightCardId] = useState(null)
+  // ────────────────────────────────────────────────
   const [expandedAccountHistoryId, setExpandedAccountHistoryId] = useState(null)
   const [expandedCardId, setExpandedCardId] = useState(null)
   const [showAccountNumbers, setShowAccountNumbers] = useState(false)
@@ -86,6 +106,11 @@ export default function MyPage() {
   const [expandedLoanId, setExpandedLoanId] = useState(null)
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      setNickname(localStorage.getItem('moa_nickname') || '데모 사용자')
+      return
+    }
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) navigate('/auth', { replace: true })
       else {
@@ -202,49 +227,115 @@ export default function MyPage() {
     setEditingCash(false)
   }
 
-  const handleAddCard = () => {
+  const handleAddCard = async () => {
     if (!newCard.name || !newCard.cardType) return
-    if (newCard.cardType === 'credit' && !newCard.creditTracking) return
+    if (newCard.cardType === 'credit' && !newCard.creditTracking) {
+      haptic.warning(); return
+    }
+    haptic.light()
+    setCardBtnPressed(true)
+    setTimeout(() => setCardBtnPressed(false), 80)
+
+    const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
+    const newId = Date.now()
     const updated = [...cards, {
-        id: Date.now(),
-        cardType: newCard.cardType,
-        name: newCard.name,
-        limit: Number(newCard.limit) || 0,
-        used: 0,
-        cardNumber: newCard.cardNumber || '',
-        expiry: newCard.expiry || '',
-        linkedAccount: newCard.linkedAccount || '',
-        billingDay: newCard.billingDay ? Number(newCard.billingDay) : null,
-        creditTracking: newCard.creditTracking || '',
-        benefits: [],
+      id: newId,
+      cardType: newCard.cardType,
+      name: newCard.name,
+      limit: Number(newCard.limit) || 0,
+      used: 0,
+      cardNumber: newCard.cardNumber || '',
+      expiry: newCard.expiry || '',
+      linkedAccount: newCard.linkedAccount || '',
+      billingDay: newCard.billingDay ? Number(newCard.billingDay) : null,
+      creditTracking: newCard.creditTracking || '',
+      benefits: [],
     }]
-    setCards(updated); saveToFirestore({ cards: updated })
+    await saveToFirestore({ cards: updated })
+    setCards(updated)
+    clearTimeout(loadingTimer)
+    setCardSaveState('success')
+    haptic.success()
+    await new Promise(r => setTimeout(r, 600))
+    setCardSaveState(null)
     setNewCard(EMPTY_CARD)
     setShowAddCard(false)
+    setNewCardId(newId)
+    setTimeout(() => setNewCardId(null), 2200)
   }
 
   const handleDeleteCard = (id) => {
-    const updated = cards.filter(c => c.id !== id)
-    setCards(updated); saveToFirestore({ cards: updated })
+    const card = cards.find(c => c.id === id)
+    setDeleteConfirmCard(card)
+    setExpandedCardId(null)
   }
 
-  const handleSaveCard = () => {
+  const confirmDeleteCard = async (id) => {
+    haptic.light()
+    setDeleteConfirmCard(null)
+    const idx = cards.findIndex(c => c.id === id)
+    const card = cards.find(c => c.id === id)
+    setCardExitId(id)
+    await new Promise(r => setTimeout(r, 250))
+    const updated = cards.filter(c => c.id !== id)
+    setCards(updated)
+    saveToFirestore({ cards: updated })
+    setCardExitId(null)
+    setDeletedCard({ card, index: idx, originalCards: cards })
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    setUndoSnackbar(true)
+    undoTimerRef.current = setTimeout(() => {
+      setUndoSnackbar(false)
+      setDeletedCard(null)
+    }, 5000)
+  }
+
+  const handleUndo = async () => {
+    if (!deletedCard) return
+    haptic.success()
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    setUndoSnackbar(false)
+    const restored = deletedCard.originalCards
+    setCards(restored)
+    saveToFirestore({ cards: restored })
+    setNewCardId(deletedCard.card.id)
+    setTimeout(() => setNewCardId(null), 800)
+    setDeletedCard(null)
+  }
+
+  const handleSaveCard = async () => {
     if (!editCardData.name || !editCardData.cardType) return
-    if (editCardData.cardType === 'credit' && !editCardData.creditTracking) return
+    if (editCardData.cardType === 'credit' && !editCardData.creditTracking) {
+      haptic.warning(); return
+    }
+    haptic.light()
+    setCardBtnPressed(true)
+    setTimeout(() => setCardBtnPressed(false), 80)
+
+    const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
     const updated = cards.map(c => c.id === editingCardId
-        ? { ...c,
-            cardType: editCardData.cardType || c.cardType,
-            name: editCardData.name,
-            cardNumber: editCardData.cardNumber,
-            expiry: editCardData.expiry,
-            linkedAccount: editCardData.linkedAccount,
-            limit: Number(editCardData.limit) || 0,
-            billingDay: editCardData.billingDay ? Number(editCardData.billingDay) : null,
-            creditTracking: editCardData.creditTracking || '',
-          }
-        : c)
-    setCards(updated); saveToFirestore({ cards: updated })
+      ? { ...c,
+          cardType: editCardData.cardType || c.cardType,
+          name: editCardData.name,
+          cardNumber: editCardData.cardNumber,
+          expiry: editCardData.expiry,
+          linkedAccount: editCardData.linkedAccount,
+          limit: Number(editCardData.limit) || 0,
+          billingDay: editCardData.billingDay ? Number(editCardData.billingDay) : null,
+          creditTracking: editCardData.creditTracking || '',
+        }
+      : c)
+    await saveToFirestore({ cards: updated })
+    setCards(updated)
+    clearTimeout(loadingTimer)
+    setCardSaveState('success')
+    haptic.success()
+    await new Promise(r => setTimeout(r, 600))
+    const savedId = editingCardId
+    setCardSaveState(null)
     setEditingCardId(null)
+    setHighlightCardId(savedId)
+    setTimeout(() => setHighlightCardId(null), 900)
   }
 
   const handleAddAccount = () => {
@@ -541,7 +632,7 @@ export default function MyPage() {
       <div style={{ padding: '16px 24px' }}>
 
         {/* 총 자산 */}
-        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
           <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}>{fmt(totalAsset)}원</p>
           <div style={{ display: 'flex', gap: 20 }}>
@@ -559,7 +650,7 @@ export default function MyPage() {
         </div>
 
         {/* 카드 */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16, ...sectionStagger(1) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -576,11 +667,27 @@ export default function MyPage() {
             const achieved = card.limit > 0 && cardUsed >= card.limit
 
             // 일반 카드 아이템
+            const isExiting = cardExitId === card.id
+            const isNew = newCardId === card.id
+            const isHighlighted = highlightCardId === card.id
             return (
-              <div key={card.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+              <div key={card.id} style={{
+                marginBottom: isExiting ? 0 : 10,
+                maxHeight: isExiting ? 0 : 400,
+                opacity: isExiting ? 0 : 1,
+                overflow: 'hidden',
+                borderRadius: 20,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                background: isHighlighted ? `color-mix(in srgb, ${t.primary} 8%, ${t.card || '#fff'})` : (t.card || '#fff'),
+                transition: isExiting
+                  ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease'
+                  : 'background-color 400ms ease',
+                animation: isNew ? 'cardEnter 300ms cubic-bezier(0.34,1.2,0.64,1) forwards' : undefined,
+              }}>
                 {/* 카드 본문 – 탭하면 상세 모달 */}
                 <div style={{ padding: '12px 14px', cursor: 'pointer' }}
                   onClick={() => {
+                    haptic.selection()
                     setSelectedCard(card)
                     setCardDetailTab('benefits')
                     const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
@@ -703,7 +810,8 @@ export default function MyPage() {
             ]
 
             return (
-              <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column',
+                animation: isEdit ? 'slideInFromRight 350ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' : 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
                 {/* Header */}
                 <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -855,14 +963,30 @@ export default function MyPage() {
                     </p>
                   )}
                   <button onClick={isEdit ? handleSaveCard : handleAddCard}
-                    disabled={!isValid}
+                    disabled={!isValid || !!cardSaveState}
                     style={{ width: '100%', height: 56, borderRadius: 16,
-                      background: isValid ? t.primary : '#E5E8EB',
+                      background: cardSaveState === 'success' ? '#22c55e' : (isValid ? t.primary : '#E5E8EB'),
                       color: isValid ? '#fff' : '#B0B8C1',
                       border: 'none', fontSize: 16, fontWeight: 700,
-                      cursor: isValid ? 'pointer' : 'not-allowed',
-                      transition: 'background 200ms, color 200ms' }}>
-                    {isEdit ? '저장하기' : '추가하기'}
+                      cursor: (isValid && !cardSaveState) ? 'pointer' : 'not-allowed',
+                      transition: 'background 200ms, color 200ms, transform 80ms ease-out',
+                      transform: cardBtnPressed ? 'scale(0.97)' : 'scale(1)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {cardSaveState === 'loading' ? (
+                      <>
+                        <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                        저장 중...
+                      </>
+                    ) : cardSaveState === 'success' ? (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        저장 완료
+                      </>
+                    ) : (
+                      isEdit ? '저장하기' : '추가하기'
+                    )}
                   </button>
                 </div>
               </div>
@@ -871,7 +995,7 @@ export default function MyPage() {
         </div>
 
         {/* 계좌 */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16, ...sectionStagger(2) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1021,7 +1145,7 @@ export default function MyPage() {
         </div>
 
         {/* 현금 */}
-        <div style={{ background: `${t.primary}08`, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ background: `${t.primary}08`, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(3) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1049,7 +1173,7 @@ export default function MyPage() {
 
         {/* 대출 */}
         {showLoan && (
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 16, ...sectionStagger(4) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1225,7 +1349,11 @@ export default function MyPage() {
                   {/* 계정 */}
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>계정</p>
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-                    <button onClick={() => signOut(auth).then(() => { localStorage.removeItem('moa_logged_in'); setSettingsPage(null); navigate('/', { replace: true }) })}
+                    <button onClick={() => {
+                      localStorage.removeItem('moa_demo_mode')
+                      localStorage.removeItem('moa_logged_in')
+                      signOut(auth).finally(() => { setSettingsPage(null); navigate('/', { replace: true }) })
+                    }}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg="#6B7280"><SI><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>로그아웃</p>
@@ -1956,6 +2084,52 @@ export default function MyPage() {
           </div>
         )
       })()}
+
+      {/* ── 카드 삭제 확인 Bottom Sheet ─────────── */}
+      {deleteConfirmCard && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={() => setDeleteConfirmCard(null)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
+            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', zIndex: 1 }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 10 }}>카드를 삭제할까요?</p>
+            <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>
+              이 카드와 연결된 정보는 유지되지만<br/>카드 관리 목록에서는 제거됩니다.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDeleteConfirmCard(null)}
+                style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                취소
+              </button>
+              <button onClick={() => confirmDeleteCard(deleteConfirmCard.id)}
+                style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Undo Snackbar ───────────────────────── */}
+      <div style={{
+        position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 900,
+        transform: undoSnackbar ? 'translateY(0)' : 'translateY(120px)',
+        opacity: undoSnackbar ? 1 : 0,
+        transition: undoSnackbar
+          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
+          : 'transform 200ms ease-in, opacity 200ms ease-in',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: '#191F28', borderRadius: 16, padding: '14px 16px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+        pointerEvents: undoSnackbar ? 'auto' : 'none',
+      }}>
+        <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>카드가 삭제되었습니다.</span>
+        <button onClick={handleUndo}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
+          실행 취소
+        </button>
+      </div>
 
       <BottomNav />
     </div>

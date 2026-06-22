@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
+import { haptic } from '../utils/haptics'
 
 const Icon = ({ name, color }) => {
   const p = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }
@@ -36,10 +37,11 @@ export default function BottomNav() {
         const active = location.pathname === tab.path
         const color = active ? themeData.primary : '#C9CDD4'
         return (
-          <button key={tab.path} onClick={() => navigate(tab.path)}
-            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button key={tab.path} onClick={() => { if (!active) { haptic.selection(); navigate(tab.path) } }}
+            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer',
+              transition: 'opacity 80ms ease' }}>
             <Icon name={tab.icon} color={color} />
-            <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px' }}>{tab.label}</span>
+            <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
           </button>
         )
       })}

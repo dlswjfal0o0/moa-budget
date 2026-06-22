@@ -35,7 +35,7 @@ body {
 
 #root {
   width: 100%;
-  max-width: 430px;
+  max-width: 100%;
   background: #F7F8FA;
   min-height: 100vh;
   position: relative;
@@ -51,6 +51,70 @@ input:focus, textarea:focus {
   border-color: #3182F6 !important;
   box-shadow: 0 0 0 3px rgba(49,130,246,0.12);
 }
+
+/* ── Global Motion System ─────────────────────────── */
+@keyframes pageEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+@keyframes txnExpand {
+  from { opacity: 0; max-height: 0; margin-bottom: 0; }
+  to   { opacity: 1; max-height: 120px; margin-bottom: 10px; }
+}
+
+@keyframes slideContentLeft {
+  from { opacity: 1; transform: translateX(0); }
+  50%  { opacity: 0; transform: translateX(-24px); }
+  51%  { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideContentRight {
+  from { opacity: 1; transform: translateX(0); }
+  50%  { opacity: 0; transform: translateX(24px); }
+  51%  { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+/* ── Card CRUD motion ─────────────────────────────── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cardSuccessPulse {
+  0%   { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  40%  { box-shadow: 0 4px 28px rgba(0,0,0,0.12); }
+  100% { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+/* ───────────────────────────────────────────────── */
 
 .theme-pastel-blue-bg,
 .theme-pastel-pink-bg,

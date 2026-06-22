@@ -1,5 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { useState, useEffect, useRef } from 'react'
+import { haptic } from '../utils/haptics'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -154,9 +155,32 @@ export default function Ledger() {
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
+  // ── Ledger motion state ──────────────────────────
+  const [formSaveState, setFormSaveState] = useState(null) // null | 'loading' | 'success'
+  const [formBtnPressed, setFormBtnPressed] = useState(false)
+  const [deleteConfirmTxnId, setDeleteConfirmTxnId] = useState(null)
+  const [txnExitId, setTxnExitId] = useState(null)
+  const [deletedTxn, setDeletedTxn] = useState(null)
+  const [txnUndoSnackbar, setTxnUndoSnackbar] = useState(false)
+  const txnUndoTimerRef = useRef(null)
+  const [newTxnId, setNewTxnId] = useState(null)
+  // ────────────────────────────────────────────────
   const [userAccountsList, setUserAccountsList] = useState([])
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      try {
+        const allTxns = []
+        ;['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'].forEach(m => {
+          const t = localStorage.getItem(`moa_txns_${m}`)
+          if (t) allTxns.push(...JSON.parse(t))
+        })
+        setTransactions(allTxns)
+      } catch {}
+      try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccountsList(JSON.parse(a).map(x => x.name)) } catch {}
+      return
+    }
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) navigate('/auth', { replace: true })
       else {
@@ -251,17 +275,24 @@ export default function Ledger() {
   }
 
   const handleSubmit = async () => {
-    if (!form.title || !form.amount) return alert('제목과 금액을 입력해주세요.')
+    if (!form.title || !form.amount) { haptic.warning(); return }
+    haptic.light()
+    setFormBtnPressed(true)
+    setTimeout(() => setFormBtnPressed(false), 80)
+
+    const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
     const monthDate = new Date(form.date)
     const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
     const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
+    let savedId = null
     if (editItem) {
       await updateDoc(doc(db, 'transactions', editItem.id), data)
+      savedId = editItem.id
     } else {
-      await addDoc(collection(db, 'transactions'), data)
+      const ref = await addDoc(collection(db, 'transactions'), data)
+      savedId = ref.id
     }
     if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
-    // 대출 상환 내역 자동 반영 (신규 추가 시에만)
     if (form.type === 'expense' && form.isLoan && form.loanId && !editItem) {
       const targetLoan = loans.find(l => l.id === Number(form.loanId))
       if (targetLoan) {
@@ -271,17 +302,52 @@ export default function Ledger() {
         await setLoans(loans.map(l => l.id === targetLoan.id ? { ...targetLoan, repayments: [...prevRepayments, newRepayment] } : l))
       }
     }
+    clearTimeout(loadingTimer)
+    setFormSaveState('success')
+    haptic.success()
+    await new Promise(r => setTimeout(r, 500))
+    setFormSaveState(null)
     setShowForm(false)
     setEditItem(null)
     setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
-    fetchTransactions()
+    if (savedId && !editItem) setNewTxnId(savedId)
+    await fetchTransactions()
+    setTimeout(() => setNewTxnId(null), 1000)
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('삭제할까요?')) return
+  const handleDelete = (id) => {
+    setDeleteConfirmTxnId(id)
+    setSwipedId(null)
+  }
+
+  const confirmDeleteTxn = async (id) => {
+    haptic.light()
+    setDeleteConfirmTxnId(null)
+    const txn = transactions.find(t => t.id === id)
+    setTxnExitId(id)
+    await new Promise(r => setTimeout(r, 250))
     await deleteDoc(doc(db, 'transactions', id))
-    setSelectedId(null); setSwipedId(null)
-    fetchTransactions()
+    setTransactions(prev => prev.filter(t => t.id !== id))
+    setSelectedId(null)
+    setTxnExitId(null)
+    setDeletedTxn(txn)
+    if (txnUndoTimerRef.current) clearTimeout(txnUndoTimerRef.current)
+    setTxnUndoSnackbar(true)
+    txnUndoTimerRef.current = setTimeout(() => { setTxnUndoSnackbar(false); setDeletedTxn(null) }, 5000)
+  }
+
+  const handleUndoTxn = async () => {
+    if (!deletedTxn) return
+    haptic.success()
+    if (txnUndoTimerRef.current) clearTimeout(txnUndoTimerRef.current)
+    setTxnUndoSnackbar(false)
+    const { id: _id, ...data } = deletedTxn
+    const ref = await addDoc(collection(db, 'transactions'), data)
+    const restoredId = ref.id
+    setTransactions(prev => [{ ...data, id: restoredId }, ...prev])
+    setNewTxnId(restoredId)
+    setTimeout(() => setNewTxnId(null), 800)
+    setDeletedTxn(null)
   }
 
   const handleEdit = (t) => {
@@ -450,7 +516,12 @@ export default function Ledger() {
                 const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
                 const iconColor = t.type === 'transfer' ? '#888' : getCategoryColor(t.category || '기타')
                 return (
-                  <div key={t.id} style={{ position: 'relative', marginBottom: 10, borderRadius: 20, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                  <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                    marginBottom: txnExitId === t.id ? 0 : 10,
+                    maxHeight: txnExitId === t.id ? 0 : 200,
+                    opacity: txnExitId === t.id ? 0 : 1,
+                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : 'none',
+                    animation: newTxnId === t.id ? 'fadeSlideUp 250ms ease forwards' : undefined }}>
                     {swipedId === t.id && (
                       <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                         onClick={() => handleDelete(t.id)}>
@@ -523,7 +594,8 @@ export default function Ledger() {
 
       {/* ── 내역 추가/수정 폼 ── */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
+          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
           {/* 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <button onClick={() => { setShowForm(false); setEditItem(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
@@ -583,12 +655,13 @@ export default function Ledger() {
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 14, fontWeight: 600 }}>카테고리</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {categories[form.type === 'expense' ? 'expense' : 'income'].map(cat => (
-                    <button key={cat} onClick={() => setForm(f => ({ ...f, category: cat }))}
+                    <button key={cat} onClick={() => { haptic.selection(); setForm(f => ({ ...f, category: cat })) }}
                       style={{ padding: '12px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: form.category === cat ? themeData.primary : '#F2F4F6',
                         color: form.category === cat ? '#fff' : '#191F28',
                         fontWeight: form.category === cat ? 700 : 500, textAlign: 'center',
-                        transition: 'all 0.15s' }}>
+                        transform: form.category === cat ? 'scale(1)' : 'scale(1)',
+                        transition: 'all 0.15s, transform 120ms cubic-bezier(0.34,1.56,0.64,1)' }}>
                       {cat}
                     </button>
                   ))}
@@ -814,10 +887,28 @@ export default function Ledger() {
             </div>
 
             <button onClick={handleSubmit}
+              disabled={!!formSaveState}
               style={{ width: '100%', height: 56, borderRadius: 16,
-                background: form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : themeData.primary,
-                color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer', letterSpacing: '-0.2px' }}>
-              {editItem ? '수정 완료' : '추가하기'}
+                background: formSaveState === 'success' ? '#22c55e' : (form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : themeData.primary),
+                color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: formSaveState ? 'not-allowed' : 'pointer',
+                letterSpacing: '-0.2px', transition: 'background 200ms, transform 80ms ease-out',
+                transform: formBtnPressed ? 'scale(0.97)' : 'scale(1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              {formSaveState === 'loading' ? (
+                <>
+                  <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                  저장 중...
+                </>
+              ) : formSaveState === 'success' ? (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  저장 완료
+                </>
+              ) : (
+                editItem ? '수정 완료' : '추가하기'
+              )}
             </button>
           </div>
         </div>
@@ -831,6 +922,50 @@ export default function Ledger() {
           onClose={() => setShowYMPicker(false)}
         />
       )}
+
+      {/* ── 내역 삭제 확인 Bottom Sheet ── */}
+      {deleteConfirmTxnId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={() => setDeleteConfirmTxnId(null)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
+            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', zIndex: 1 }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 10 }}>내역을 삭제할까요?</p>
+            <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>삭제 후 5초 이내에 되돌릴 수 있어요.</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDeleteConfirmTxnId(null)}
+                style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+                취소
+              </button>
+              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)}
+                style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Undo Snackbar ── */}
+      <div style={{
+        position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 400,
+        transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
+        opacity: txnUndoSnackbar ? 1 : 0,
+        transition: txnUndoSnackbar
+          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
+          : 'transform 200ms ease-in, opacity 200ms ease-in',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: '#191F28', borderRadius: 16, padding: '14px 16px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+        pointerEvents: txnUndoSnackbar ? 'auto' : 'none',
+      }}>
+        <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 삭제되었습니다.</span>
+        <button onClick={handleUndoTxn}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
+          실행 취소
+        </button>
+      </div>
 
       <BottomNav />
     </div>

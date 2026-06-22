@@ -36,6 +36,14 @@ export default function Calendar() {
   const [showYMPicker, setShowYMPicker] = useState(false)
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccounts(JSON.parse(a)) } catch {}
+      try { const c = localStorage.getItem('moa_cards'); if (c) setUserCards(JSON.parse(c)) } catch {}
+      const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+      try { const t = localStorage.getItem(`moa_txns_${monthStr}`); if (t) setTransactions(JSON.parse(t)) } catch {}
+      return
+    }
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) navigate('/auth', { replace: true })
       else {

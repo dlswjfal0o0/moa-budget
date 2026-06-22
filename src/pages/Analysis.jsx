@@ -1,5 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -101,6 +102,10 @@ export default function Analysis() {
   const [expandedPayments, setExpandedPayments] = useState(new Set())
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [expandedUtilities, setExpandedUtilities] = useState(new Set())
+  const [monthSlideDir, setMonthSlideDir] = useState(null) // 'prev' | 'next' | null
+  const monthSlideTimerRef = useRef(null)
+  // Stagger: 0=compare, 1=daily, 2=category, 3=AI, 4=payment
+  const isVisible = useStagger(5, 40, 80)
   const toggleUtility = (type) => setExpandedUtilities(prev => {
     const next = new Set(prev)
     next.has(type) ? next.delete(type) : next.add(type)
@@ -108,6 +113,12 @@ export default function Analysis() {
   })
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      try { const u = localStorage.getItem('moa_utilities'); if (u) setUtilities(JSON.parse(u)) } catch {}
+      fetchDemoData()
+      return
+    }
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) navigate('/auth', { replace: true })
       else {
@@ -126,6 +137,15 @@ export default function Analysis() {
   }, [])
 
   useEffect(() => { if (user) fetchData() }, [user, viewYear, viewMonth])
+
+  const fetchDemoData = () => {
+    const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+    const lm = viewMonth === 0 ? 11 : viewMonth - 1
+    const ly = viewMonth === 0 ? viewYear - 1 : viewYear
+    const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
+    try { const t = localStorage.getItem(`moa_txns_${monthStr}`); setTransactions(t ? JSON.parse(t) : []) } catch {}
+    try { const t = localStorage.getItem(`moa_txns_${lastStr}`); setLastMonthTx(t ? JSON.parse(t) : []) } catch {}
+  }
 
   const fetchData = async () => {
     const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
@@ -245,6 +265,12 @@ export default function Analysis() {
     setLoadingUtilityAI(false)
   }
 
+  const triggerMonthSlide = (dir) => {
+    setMonthSlideDir(dir)
+    if (monthSlideTimerRef.current) clearTimeout(monthSlideTimerRef.current)
+    monthSlideTimerRef.current = setTimeout(() => setMonthSlideDir(null), 260)
+  }
+
   const primary = themeData?.primary || '#4F46E5'
   const primaryLight = themeData?.primaryLight || '#EEF2FF'
 
@@ -254,10 +280,13 @@ export default function Analysis() {
       {/* 헤더 */}
       <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
+          <button onClick={() => { triggerMonthSlide('prev'); if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>‹</button>
-          <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{viewYear}년 {viewMonth + 1}월 분석</p>
-          <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28',
+            animation: monthSlideDir === 'prev' ? 'slideContentRight 260ms ease' : monthSlideDir === 'next' ? 'slideContentLeft 260ms ease' : undefined }}>
+            {viewYear}년 {viewMonth + 1}월 분석
+          </p>
+          <button onClick={() => { triggerMonthSlide('next'); if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>›</button>
         </div>
       </div>
@@ -286,7 +315,8 @@ export default function Analysis() {
         <div style={{ padding: '16px 20px' }}>
 
           {/* 지난 달 대비 */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            opacity: isVisible(0) ? 1 : 0, transform: isVisible(0) ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 300ms ease, transform 300ms ease' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>지난 달 대비</p>
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -311,7 +341,8 @@ export default function Analysis() {
           </div>
 
           {/* 일별 지출 */}
-          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            opacity: isVisible(1) ? 1 : 0, transform: isVisible(1) ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 300ms ease 40ms, transform 300ms ease 40ms' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>일별 지출</p>
             {dailyData.every(d => d.amount === 0) ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
@@ -348,7 +379,8 @@ export default function Analysis() {
           </div>
 
           {/* 카테고리별 지출 – 도넛 + 2열 그리드 */}
-          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            opacity: isVisible(2) ? 1 : 0, transform: isVisible(2) ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 300ms ease 80ms, transform 300ms ease 80ms' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>카테고리별 지출</p>
             {categoryData.length === 0 ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
@@ -395,7 +427,8 @@ export default function Analysis() {
           </div>
 
           {/* AI 소비 분석 */}
-          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            opacity: isVisible(3) ? 1 : 0, transform: isVisible(3) ? 'translateY(0)' : 'translateY(14px)', transition: 'opacity 300ms ease 120ms, transform 300ms ease 120ms' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>AI 소비 분석</p>
               <button onClick={getAiFeedback} disabled={loadingAi}

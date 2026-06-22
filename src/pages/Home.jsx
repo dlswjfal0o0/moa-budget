@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { CATEGORY_COLORS, getCategoryColors, DEFAULT_CATEGORIES } from '../styles/theme'
 import { useState, useEffect } from 'react'
+import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -94,6 +95,11 @@ export default function Home() {
   const [fixedExpenses, setFixedExpenses] = useState([])
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch {}
+      return
+    }
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) navigate('/auth', { replace: true })
       else {
@@ -190,6 +196,13 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
   }
 
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
+  // Stagger: 0=header, 1=budget, 2=upcoming, 3=category, 4=recent
+  const isVisible = useStagger(5, 30, 60)
+  const stagger = (i) => ({
+    opacity: isVisible(i) ? 1 : 0,
+    transform: isVisible(i) ? 'translateY(0)' : 'translateY(14px)',
+    transition: 'opacity 300ms ease, transform 300ms ease',
+  })
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
@@ -235,7 +248,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
   return (
     <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 80 }}>
       {/* 헤더 — Toss 스타일 컬러 배너 */}
-      <div style={{ background: themeData.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff' }}>
+      <div style={{ background: themeData.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff', ...stagger(0) }}>
         <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth()+1}월</p>
         <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 24, opacity: 0.95 }}>이번 달 현황</p>
         {/* 잔액 카드 */}
@@ -260,7 +273,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
 
       <div style={{ padding: '24px 24px 0' }}>
         {/* 예산 관리 */}
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 32, ...stagger(1) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28' }}>예산 관리</p>
             <button onClick={() => setShowAddBudget(true)}
@@ -387,7 +400,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
 
         {/* 다가오는 결제 */}
         {upcomingPayments.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
+          <div style={{ marginBottom: 32, ...stagger(2) }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 16 }}>다가오는 결제</p>
             <div style={{ background: themeData.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               {upcomingPayments.map((f, i) => {
@@ -418,7 +431,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
         )}
 
         {/* 카테고리별 지출 */}
-        <div style={{ background: themeData.card || '#fff', borderRadius: 20, padding: '20px', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ background: themeData.card || '#fff', borderRadius: 20, padding: '20px', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...stagger(3) }}>
           <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 20 }}>카테고리별 지출</p>
           {categoryData.length === 0 ? (
             <p style={{ fontSize: 15, color: '#8B95A1', textAlign: 'center', padding: '24px 0' }}>아직 지출 내역이 없어요</p>
@@ -463,7 +476,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
         </div>
 
         {/* 최근 내역 */}
-        <div style={{ background: themeData.card || '#fff', borderRadius: 20, padding: '20px', marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <div style={{ background: themeData.card || '#fff', borderRadius: 20, padding: '20px', marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...stagger(4) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28' }}>최근 내역</p>
             <span onClick={() => navigate('/ledger')} style={{ fontSize: 14, color: themeData.primary, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 2 }}>전체보기 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>

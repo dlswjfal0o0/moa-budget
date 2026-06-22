@@ -10,6 +10,11 @@ export function LoansProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
 
   useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      try { const l = localStorage.getItem('moa_loans'); if (l) setLoansState(JSON.parse(l)) } catch {}
+      return
+    }
     const unsub = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user)
       if (!user) return
