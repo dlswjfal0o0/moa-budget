@@ -19,6 +19,19 @@ function CustomPieTooltip({ active, payload }) {
   )
 }
 
+function TipIcon({ type, color = '#3182F6' }) {
+  const p = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  switch (type) {
+    case 'food': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    case 'chart': return <svg {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    case 'adjust': return <svg {...p}><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+    case 'money': return <svg {...p}><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+    case 'calendar': return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    case 'target': return <svg {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    default: return <svg {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  }
+}
+
 function BudgetCard({ budget, spent, themeData, fmt }) {
   const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0
   const remaining = Math.max(budget.amount - spent, 0)
@@ -69,6 +82,7 @@ export default function Home() {
   const [budgetInsights, setBudgetInsights] = useState({})
   const [loadingInsightId, setLoadingInsightId] = useState(null)
   const [expandedBudgetEditId, setExpandedBudgetEditId] = useState(null)
+  const [expandedTipIds, setExpandedTipIds] = useState({})
   const [editingBudgetId, setEditingBudgetId] = useState(null)
   const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
   const now = new Date()
@@ -127,16 +141,34 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'claude-sonnet-4-20250514',
-                max_tokens: 300,
+                max_tokens: 600,
                 messages: [{ role: 'user', content:
-                    `예산 "${budget.label}": ${fmt(budget.amount)}원 중 ${fmt(spent)}원 사용 (${pct}%). 잔여 ${fmt(remaining)}원, 남은 기간 ${daysLeft}일. 친근하게 현황 분석과 절감 팁을 2~3문장으로 알려줘.`
+                    `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.
+
+아래 JSON 형식으로만 응답해. 마크다운이나 다른 텍스트 없이 JSON만:
+{
+  "status": "${pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'}",
+  "summary": "2문장 이내 현황 요약 (친근한 말투)",
+  "tips": [
+    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" },
+    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" },
+    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" }
+  ]
+}`
                 }]
             })
         })
         const data = await res.json()
-        setBudgetInsights(prev => ({ ...prev, [budget.id]: data.content[0].text }))
+        const raw = data.content[0].text
+        try {
+            const jsonMatch = raw.match(/\{[\s\S]*\}/)
+            const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw)
+            setBudgetInsights(prev => ({ ...prev, [budget.id]: parsed }))
+        } catch {
+            setBudgetInsights(prev => ({ ...prev, [budget.id]: { status: 'good', summary: raw, tips: [] } }))
+        }
     } catch {
-        setBudgetInsights(prev => ({ ...prev, [budget.id]: '분석에 실패했어요.' }))
+        setBudgetInsights(prev => ({ ...prev, [budget.id]: { status: 'good', summary: '분석에 실패했어요. 잠시 후 다시 시도해주세요.', tips: [] } }))
     }
     setLoadingInsightId(null)
   }
@@ -264,25 +296,55 @@ export default function Home() {
                         </p>
                       </div>
                     </div>
-                    {/* AI 조언 — 분석 탭과 동일 스타일 */}
+                    {/* AI 분석 결과 — 카드형 토글 UI */}
                     {aiText && (() => {
-                      const ai = typeof aiText === 'string' ? { status: 'good', emoji: '💡', message: aiText } : aiText
-                      const sc = { great: { color: '#22c55e', bg: '#F0FFF4' }, good: { color: '#3b82f6', bg: '#EFF6FF' }, warning: { color: '#f59e0b', bg: '#FFFBEB' }, danger: { color: '#ef4444', bg: '#FFF5F5' } }[ai.status] || { color: themeData.primary, bg: themeData.primary + '12' }
+                      const ai = typeof aiText === 'string' ? { status: 'good', summary: aiText, tips: [] } : aiText
+                      const sc = {
+                        danger:  { color: '#FF5A5F', bg: '#FFF1F1', dot: '#FF5A5F' },
+                        warning: { color: '#F59E0B', bg: '#FFFBEB', dot: '#F59E0B' },
+                        good:    { color: themeData.primary, bg: themeData.primary + '10', dot: themeData.primary },
+                      }[ai.status] || { color: themeData.primary, bg: themeData.primary + '10', dot: themeData.primary }
+                      const tips = Array.isArray(ai.tips) ? ai.tips : []
                       return (
-                        <div style={{ background: sc.bg, borderRadius: 16, padding: '14px 16px', marginTop: 10, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontSize: 22 }}>{ai.emoji}</span>
+                        <div style={{ marginTop: 14 }} onClick={e => e.stopPropagation()}>
+                          {/* 요약 카드 */}
+                          <div style={{ background: sc.bg, borderRadius: 14, padding: '13px 14px', marginBottom: tips.length > 0 ? 10 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <div style={{ width: 7, height: 7, borderRadius: '50%', background: sc.dot, flexShrink: 0, marginTop: 5 }} />
+                            <p style={{ fontSize: 13, color: '#191F28', lineHeight: 1.65 }}>{ai.summary}</p>
                           </div>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: sc.color, marginBottom: 4 }}>AI 예산 조언</p>
-                            <p style={{ fontSize: 12, color: '#555', lineHeight: 1.6 }}>{ai.message}</p>
-                          </div>
+                          {/* 토글 조언 카드 3개 */}
+                          {tips.map((tip, i) => {
+                            const tipKey = `${b.id}-${i}`
+                            const isOpen = !!expandedTipIds[tipKey]
+                            return (
+                              <div key={i} style={{ background: '#fff', borderRadius: 16, border: '1px solid #E5E8EB', marginBottom: i < tips.length - 1 ? 8 : 0, overflow: 'hidden' }}>
+                                <button
+                                  onClick={e => { e.stopPropagation(); setExpandedTipIds(prev => ({ ...prev, [tipKey]: !prev[tipKey] })) }}
+                                  style={{ width: '100%', padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', minHeight: 52, WebkitTapHighlightColor: 'transparent' }}>
+                                  <div style={{ width: 36, height: 36, borderRadius: 10, background: themeData.primary + '12', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <TipIcon type={tip.icon} color={themeData.primary} />
+                                  </div>
+                                  <p style={{ flex: 1, fontSize: 14, fontWeight: 600, color: '#191F28', textAlign: 'left', lineHeight: 1.3 }}>{tip.title}</p>
+                                  <div style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease', flexShrink: 0 }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                  </div>
+                                </button>
+                                <div style={{ maxHeight: isOpen ? '300px' : '0px', overflow: 'hidden', transition: 'max-height 0.25s ease' }}>
+                                  <div style={{ background: '#FAFAFB', borderTop: '1px solid #F2F4F6', padding: '12px 16px 14px' }}>
+                                    <p style={{ fontSize: 14, color: '#191F28', lineHeight: 1.65 }}>{tip.detail}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )
                     })()}
                     <button onClick={e => { e.stopPropagation(); getAiInsight(b, spent) }} disabled={loadingInsightId === b.id}
                       style={{ width: '100%', marginTop: 12, background: themeData.primary + '10', border: 'none', borderRadius: 12, padding: '10px 0', color: themeData.primary, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                      {loadingInsightId === b.id ? '분석 중...' : '✨ AI 조언 보기'}
+                      {loadingInsightId === b.id ? '분석 중...' : aiText ? '🔄 다시 분석' : '✨ AI 조언 보기'}
                     </button>
                   </div>
                   {expandedBudgetEditId === b.id && (
