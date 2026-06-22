@@ -702,63 +702,78 @@ export default function MyPage() {
           </div>
           {accounts.map(acc => (
             <div key={acc.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden' }}>
-              {editingAccountId === acc.id ? (
-                <div style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <input style={inputStyle} placeholder="은행/계좌 이름" value={editAccountData.name} onChange={e => setEditAccountData(d => ({ ...d, name: e.target.value }))} />
-                    <input style={inputStyle} type="number" placeholder="현재 잔액" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
-                    <input style={inputStyle} placeholder="계좌번호 (선택)" value={editAccountData.number} onChange={e => setEditAccountData(d => ({ ...d, number: e.target.value }))} />
+              {/* 클릭 시 내역/수정/삭제 토글 */}
+              <div style={{ padding: '12px 14px', cursor: 'pointer' }}
+                onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28' }}>{acc.name}</p>
+                    {acc.number && <p style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button onClick={() => setEditingAccountId(null)} style={{ flex: 1, padding: '10px', borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', cursor: 'pointer', fontSize: 13, color: '#8B95A1' }}>취소</button>
-                    <button onClick={handleSaveAccount} style={{ flex: 1, padding: '10px', borderRadius: 16, border: 'none', background: t.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>저장</button>
-                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
                 </div>
-              ) : (
-                <>
-                  {/* 클릭 시 내역/수정/삭제 토글 */}
-                  <div style={{ padding: '12px 14px', cursor: 'pointer' }}
-                    onClick={() => setExpandedAccountEditId(expandedAccountEditId === acc.id ? null : acc.id)}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#333' }}>{acc.name}</p>
-                        {acc.number && <p style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
-                      </div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{fmt(getAccountBalance(acc))}원</p>
-                    </div>
-                  </div>
-                  {/* 내역/수정/삭제 펼침 행 */}
-                  {expandedAccountEditId === acc.id && (
-                    <div style={{ display: 'flex', borderTop: '1px solid #f0f0f0' }}>
-                      <button onClick={e => {
-                        e.stopPropagation()
-                        setSelectedAccount(acc)
-                        setAccountHistoryMonth(null)
-                        setExpandedAccountEditId(null)
-                      }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: t.primary, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                        내역
-                      </button>
-                      <div style={{ width: 1, background: '#f0f0f0' }} />
-                      <button onClick={() => {
-                        handleEditAccount(acc)
-                        setExpandedAccountEditId(null)
-                      }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#555', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        수정
-                      </button>
-                      <div style={{ width: 1, background: '#f0f0f0' }} />
-                      <button onClick={e => { e.stopPropagation(); handleDeleteAccount(acc.id) }}
-                        style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#FF5A5F', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                        삭제
-                      </button>
-                    </div>
-                  )}
-                </>
+              </div>
+              {/* 내역/수정/삭제 펼침 행 */}
+              {expandedAccountEditId === acc.id && (
+                <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
+                  <button onClick={e => {
+                    e.stopPropagation()
+                    setSelectedAccount(acc)
+                    setAccountHistoryMonth(null)
+                    setExpandedAccountEditId(null)
+                  }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: t.primary, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    내역
+                  </button>
+                  <div style={{ width: 1, background: '#F2F4F6' }} />
+                  <button onClick={() => {
+                    handleEditAccount(acc)
+                    setExpandedAccountEditId(null)
+                  }} style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#8B95A1', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    수정
+                  </button>
+                  <div style={{ width: 1, background: '#F2F4F6' }} />
+                  <button onClick={e => { e.stopPropagation(); handleDeleteAccount(acc.id) }}
+                    style={{ flex: 1, padding: '11px', border: 'none', background: t.card || '#fff', color: '#FF5A5F', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    삭제
+                  </button>
+                </div>
               )}
             </div>
           ))}
+          {/* 계좌 수정 bottom sheet */}
+          {editingAccountId && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+              onClick={() => setEditingAccountId(null)}>
+              <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
+                onClick={e => e.stopPropagation()}>
+                <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
+                <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>계좌 수정</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>계좌 이름 <span style={{ color: '#FF5A5F' }}>*</span></p>
+                    <input style={{ ...inputStyle }} placeholder="예: 국민은행" value={editAccountData.name} onChange={e => setEditAccountData(d => ({ ...d, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>현재 잔액</p>
+                    <input style={{ ...inputStyle }} type="number" placeholder="예: 1500000" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>계좌번호 <span style={{ fontSize: 12, color: '#C9CDD4', fontWeight: 400 }}>(선택)</span></p>
+                    <input style={{ ...inputStyle }} placeholder="예: 1234-56-789012" value={editAccountData.number} onChange={e => setEditAccountData(d => ({ ...d, number: e.target.value }))} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                  <button onClick={() => setEditingAccountId(null)}
+                    style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+                  <button onClick={handleSaveAccount}
+                    style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: t.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* 계좌 추가 bottom sheet */}
           {showAddAccount && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}

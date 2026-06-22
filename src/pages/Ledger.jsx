@@ -501,8 +501,8 @@ export default function Ledger() {
                         <CatIcon cat={iconKey} size={20} color={iconColor} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 15, fontWeight: 500, color: '#191F28', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                        <p style={{ fontSize: 13, color: '#8B95A1' }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1' }}>
                           {t.type === 'transfer'
                             ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
                             : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
@@ -540,7 +540,7 @@ export default function Ledger() {
 
       {/* ── FAB ── */}
       <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false }); setShowForm(true) }}
-        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 'calc(50% - 215px + 20px)', width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
 
       {/* ── 설정 — 전체화면 ── */}
       {showSettings && (
