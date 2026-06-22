@@ -75,11 +75,12 @@ export default function MyPage() {
   const [editCardData, setEditCardData] = useState({})
   // Stagger: 0=총자산, 1=카드, 2=계좌, 3=현금, 4=대출
   const isSectionVisible = useStagger(5, 30, 80)
-  const sectionStagger = (i) => ({
-    opacity: isSectionVisible(i) ? 1 : 0,
-    transform: isSectionVisible(i) ? 'translateY(0)' : 'translateY(12px)',
-    transition: 'opacity 300ms ease, transform 300ms ease',
-  })
+  const sectionStagger = (i) => {
+    const visible = isSectionVisible(i)
+    return visible
+      ? { opacity: 1, transition: 'opacity 300ms ease, transform 300ms ease' }
+      : { opacity: 0, transform: 'translateY(12px)', transition: 'opacity 300ms ease, transform 300ms ease' }
+  }
   // ── Card CRUD motion state ───────────────────────
   const [cardSaveState, setCardSaveState] = useState(null) // null | 'loading' | 'success'
   const [cardBtnPressed, setCardBtnPressed] = useState(false)
