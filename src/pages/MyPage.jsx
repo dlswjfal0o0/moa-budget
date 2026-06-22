@@ -846,7 +846,9 @@ export default function MyPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M6 12h.01M18 12h.01"/>
               </svg>
               <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#191F28' }}>현금</p>
             </div>

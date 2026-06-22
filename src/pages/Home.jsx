@@ -145,16 +145,17 @@ export default function Home() {
                 messages: [{ role: 'user', content:
                     `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.
 
-아래 JSON 형식으로만 응답해. 마크다운이나 다른 텍스트 없이 JSON만:
+모든 내용은 반드시 한국어로만 작성해. 아래 JSON 형식으로만 응답해. 마크다운, 코드블록, 설명 없이 JSON 객체만:
 {
   "status": "${pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'}",
-  "summary": "2문장 이내 현황 요약 (친근한 말투)",
+  "summary": "2문장 이내 현황 요약 (친근한 한국어 말투)",
   "tips": [
-    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" },
-    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" },
-    { "icon": "food|chart|adjust|money|calendar|target", "title": "조언 제목 (12자 이내)", "detail": "구체적인 실천 방법 1~2문장" }
+    { "icon": "food", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" },
+    { "icon": "chart", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" },
+    { "icon": "adjust", "title": "한국어 조언 제목", "detail": "한국어 구체적인 실천 방법 1~2문장" }
   ]
-}`
+}
+tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money, calendar, target 중 하나여야 해.`
                 }]
             })
         })
@@ -304,7 +305,7 @@ export default function Home() {
                         warning: { color: '#F59E0B', bg: '#FFFBEB', dot: '#F59E0B' },
                         good:    { color: themeData.primary, bg: themeData.primary + '10', dot: themeData.primary },
                       }[ai.status] || { color: themeData.primary, bg: themeData.primary + '10', dot: themeData.primary }
-                      const tips = Array.isArray(ai.tips) ? ai.tips : []
+                      const tips = Array.isArray(ai.tips) ? ai.tips.slice(0, 3) : []
                       return (
                         <div style={{ marginTop: 14 }} onClick={e => e.stopPropagation()}>
                           {/* 요약 카드 */}

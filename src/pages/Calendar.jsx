@@ -23,6 +23,7 @@ export default function Calendar() {
   const [editFixedData, setEditFixedData] = useState(EMPTY_FIXED)
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES.expense)
   const [userAccounts, setUserAccounts] = useState([])
+  const [userCards, setUserCards] = useState([])
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
@@ -40,6 +41,9 @@ export default function Calendar() {
 
         // Load categories
         if (data.categories?.expense?.length > 0) setCategories(data.categories.expense)
+
+        // Load cards
+        if (data.cards?.length > 0) setUserCards(data.cards)
 
         // Load accounts
         const accSnap = await getDocs(collection(db, 'users', u.uid, 'accounts'))
@@ -417,7 +421,7 @@ export default function Calendar() {
               <div>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {['현금', ...userAccounts.map(a => a.bankName)].map(p => (
+                  {['현금', ...userCards.map(c => c.name), ...userAccounts.map(a => a.bankName)].filter(Boolean).map(p => (
                     <button key={p} onClick={() => setEditFixedData(d => ({ ...d, payment: p }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: editFixedData.payment === p ? themeData.primary : '#F2F4F6',
@@ -507,7 +511,7 @@ export default function Calendar() {
               <div>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>결제수단</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {['현금', ...userAccounts.map(a => a.bankName)].map(p => (
+                  {['현금', ...userCards.map(c => c.name), ...userAccounts.map(a => a.bankName)].filter(Boolean).map(p => (
                     <button key={p} onClick={() => setNewFixed(f => ({ ...f, payment: p }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: newFixed.payment === p ? themeData.primary : '#F2F4F6',
