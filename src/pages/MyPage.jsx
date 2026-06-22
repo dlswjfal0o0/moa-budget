@@ -12,6 +12,7 @@ import { inputStyle } from '../styles/styles'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useLoans } from '../contexts/LoansContext'
 
 // 설정 화면용 토글
 const SToggle = ({ on, onChange, primary }) => (
@@ -34,6 +35,7 @@ export default function MyPage() {
   const fileRef = useRef()
   const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
   const { cards, setCards } = useCards()
+  const { loans, setLoans } = useLoans()
   const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, categories, setCategories } = useSettings()
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
@@ -75,6 +77,13 @@ export default function MyPage() {
   const [expandedAccountEditId, setExpandedAccountEditId] = useState(null)
   const [selectedAccount, setSelectedAccount] = useState(null)
   const [accountHistoryMonth, setAccountHistoryMonth] = useState(null)
+  const EMPTY_LOAN = { name: '', principal: '', remainingPrincipal: '', startDate: '', rate: '', rateType: 'simple', monthlyPayment: '', paymentDay: '', maturityDate: '' }
+  const [loanForm, setLoanForm] = useState(EMPTY_LOAN)
+  const [showAddLoan, setShowAddLoan] = useState(false)
+  const [editingLoan, setEditingLoan] = useState(null)
+  const [selectedLoan, setSelectedLoan] = useState(null)
+  const [loanDetailSort, setLoanDetailSort] = useState('desc')
+  const [expandedLoanId, setExpandedLoanId] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async u => {
@@ -363,6 +372,27 @@ export default function MyPage() {
   }
 
   const fmt = n => Number(n).toLocaleString('ko-KR')
+  const calcMonthlyInterest = (remaining, rate, rateType) => {
+    if (!remaining || !rate) return 0
+    const r = Number(rate) / 100
+    if (rateType === 'compound') return Math.round(Number(remaining) * (Math.pow(1 + r / 12, 1) - 1))
+    return Math.round(Number(remaining) * r / 12)
+  }
+  const handleAddLoan = () => {
+    if (!loanForm.name || !loanForm.principal || !loanForm.remainingPrincipal || !loanForm.startDate) return alert('필수 항목을 모두 입력해주세요.')
+    const updated = [...loans, { id: Date.now(), ...loanForm, principal: Number(loanForm.principal), remainingPrincipal: Number(loanForm.remainingPrincipal), rate: loanForm.rate ? Number(loanForm.rate) : null, monthlyPayment: loanForm.monthlyPayment ? Number(loanForm.monthlyPayment) : null, paymentDay: loanForm.paymentDay ? Number(loanForm.paymentDay) : null, repayments: [] }]
+    setLoans(updated); setLoanForm(EMPTY_LOAN); setShowAddLoan(false)
+  }
+  const handleSaveLoan = () => {
+    if (!loanForm.name || !loanForm.principal || !loanForm.remainingPrincipal || !loanForm.startDate) return alert('필수 항목을 모두 입력해주세요.')
+    const updated = loans.map(l => l.id === editingLoan.id ? { ...l, ...loanForm, principal: Number(loanForm.principal), remainingPrincipal: Number(loanForm.remainingPrincipal), rate: loanForm.rate ? Number(loanForm.rate) : null, monthlyPayment: loanForm.monthlyPayment ? Number(loanForm.monthlyPayment) : null, paymentDay: loanForm.paymentDay ? Number(loanForm.paymentDay) : null } : l)
+    setLoans(updated); setEditingLoan(null); setLoanForm(EMPTY_LOAN)
+    if (selectedLoan?.id === editingLoan.id) setSelectedLoan(updated.find(l => l.id === editingLoan.id))
+  }
+  const handleDeleteLoan = (id) => {
+    if (!window.confirm('대출을 삭제할까요?')) return
+    setLoans(loans.filter(l => l.id !== id)); setExpandedLoanId(null); setSelectedLoan(null)
+  }
   const maskAccountNumber = (num) => {
     if (!num) return ''
     const digits = num.replace(/[\s-]/g, '')
@@ -1017,6 +1047,78 @@ export default function MyPage() {
           )}
         </div>
 
+        {/* 대출 */}
+        {showLoan && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>대출</p>
+                {loans.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
+              </div>
+              {smallBtn(() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }, '+ 추가', t.primary, '#fff')}
+            </div>
+            {loans.length === 0 && <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
+            {loans.map(loan => {
+              const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
+              const repaid = loan.principal - loan.remainingPrincipal
+              const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0
+              return (
+                <div key={loan.id} style={{ marginBottom: 10, background: t.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                  <div style={{ padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                    onClick={() => { setSelectedLoan({ ...loan }); setLoanDetailSort('desc') }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 12, background: '#FFF1F1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5A5F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loan.name}</p>
+                      <p style={{ fontSize: 12, color: '#8B95A1' }}>원금 {fmt(loan.principal)}원</p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>
+                        {fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원
+                      </p>
+                      {loan.rate && <p style={{ fontSize: 11, color: '#8B95A1', marginTop: 1 }}>월 이자 {fmt(monthlyInterest)}원</p>}
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); setExpandedLoanId(expandedLoanId === loan.id ? null : loan.id) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedLoanId === loan.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* 상환 진행률 바 */}
+                  <div style={{ height: 3, background: '#F2F4F6', margin: '0 16px 12px' }}>
+                    <div style={{ height: '100%', width: `${progress}%`, background: progress >= 100 ? '#2ECC71' : t.primary, borderRadius: 9999, transition: 'width 0.4s' }} />
+                  </div>
+                  {expandedLoanId === loan.id && (
+                    <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
+                      <button onClick={e => {
+                        e.stopPropagation()
+                        setLoanForm({ name: loan.name, principal: String(loan.principal), remainingPrincipal: String(loan.remainingPrincipal), startDate: loan.startDate, rate: loan.rate != null ? String(loan.rate) : '', rateType: loan.rateType || 'simple', monthlyPayment: loan.monthlyPayment != null ? String(loan.monthlyPayment) : '', paymentDay: loan.paymentDay != null ? String(loan.paymentDay) : '', maturityDate: loan.maturityDate || '' })
+                        setEditingLoan(loan); setExpandedLoanId(null)
+                      }} style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        수정
+                      </button>
+                      <div style={{ width: 1, background: '#F2F4F6' }} />
+                      <button onClick={e => { e.stopPropagation(); handleDeleteLoan(loan.id) }}
+                        style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
       </div>
 
       {/* ── 설정 – 계층형 네비게이션 ── */}
@@ -1634,6 +1736,220 @@ export default function MyPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── 대출 추가/수정 전체화면 폼 ── */}
+      {(showAddLoan || !!editingLoan) && (() => {
+        const isEdit = !!editingLoan
+        const monthlyInterest = calcMonthlyInterest(loanForm.remainingPrincipal, loanForm.rate, loanForm.rateType)
+        const isValid = !!loanForm.name && !!loanForm.principal && !!loanForm.remainingPrincipal && !!loanForm.startDate
+        const lInput = { ...inputStyle }
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+            {/* 헤더 */}
+            <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }}
+                    style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{isEdit ? '대출 수정' : '대출 추가'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 스크롤 본문 */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 40px', WebkitOverflowScrolling: 'touch' }}>
+
+              {/* 필수 항목 */}
+              <div style={{ background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>필수 항목</p>
+                {[
+                  { label: '대출 이름', key: 'name', placeholder: '예: 국민은행 신용대출', type: 'text' },
+                  { label: '대출 원금', key: 'principal', placeholder: '예: 10000000', type: 'number' },
+                  { label: '잔여 원금', key: 'remainingPrincipal', placeholder: '예: 7500000', type: 'number' },
+                  { label: '대출 일자', key: 'startDate', placeholder: '', type: 'date' },
+                ].map(({ label, key, placeholder, type }, i, arr) => (
+                  <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label} <span style={{ color: '#FF5A5F' }}>*</span></p>
+                    <input style={lInput} type={type} placeholder={placeholder}
+                      value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+
+              {/* 선택 항목 */}
+              <div style={{ background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>선택 항목</p>
+
+                {/* 금리 + 단리/복리 */}
+                <div style={{ marginBottom: 18 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금리</p>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <input style={{ ...lInput, paddingRight: 36 }} type="number" placeholder="예: 4.5"
+                        value={loanForm.rate} onChange={e => setLoanForm(f => ({ ...f, rate: e.target.value }))} />
+                      <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#8B95A1', fontWeight: 600 }}>%</span>
+                    </div>
+                    <div style={{ display: 'flex', background: '#ECEEF0', borderRadius: 12, padding: 3, gap: 2 }}>
+                      {[{ val: 'simple', label: '단리' }, { val: 'compound', label: '복리' }].map(opt => (
+                        <button key={opt.val} onClick={() => setLoanForm(f => ({ ...f, rateType: opt.val }))}
+                          style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: loanForm.rateType === opt.val ? 700 : 500, background: loanForm.rateType === opt.val ? t.primary : 'transparent', color: loanForm.rateType === opt.val ? '#fff' : '#8B95A1', transition: 'all 150ms' }}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 예상 월 이자 자동 계산 */}
+                  {loanForm.rate && loanForm.remainingPrincipal && (
+                    <div style={{ marginTop: 12, background: `${t.primary}10`, borderRadius: 14, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>예상 월 이자 ({loanForm.rateType === 'simple' ? '단리' : '복리'})</p>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: t.primary }}>₩ {fmt(monthlyInterest)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {[
+                  { label: '월 상환액', key: 'monthlyPayment', placeholder: '예: 500000', type: 'number' },
+                  { label: '상환일', key: 'paymentDay', placeholder: '예: 25', type: 'number' },
+                  { label: '만기일', key: 'maturityDate', placeholder: '', type: 'date' },
+                ].map(({ label, key, placeholder, type }, i, arr) => (
+                  <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label}</p>
+                    <input style={lInput} type={type} placeholder={placeholder}
+                      value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 하단 버튼 */}
+            <div style={{ padding: '12px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #F2F4F6', flexShrink: 0 }}>
+              <button onClick={isEdit ? handleSaveLoan : handleAddLoan} disabled={!isValid}
+                style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: isValid ? t.primary : '#E5E8EB', color: isValid ? '#fff' : '#B0B8C1', fontSize: 16, fontWeight: 700, cursor: isValid ? 'pointer' : 'not-allowed', transition: 'all 200ms' }}>
+                {isEdit ? '저장하기' : '추가하기'}
+              </button>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── 대출 상세 화면 ── */}
+      {selectedLoan && (() => {
+        const loan = loans.find(l => l.id === selectedLoan.id) || selectedLoan
+        const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
+        const totalWithInterest = loan.remainingPrincipal + (loan.rate ? monthlyInterest : 0)
+        const repaid = loan.principal - loan.remainingPrincipal
+        const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0
+        const repayments = [...(loan.repayments || [])].sort((a, b) => loanDetailSort === 'desc' ? (b.date || '').localeCompare(a.date || '') : (a.date || '').localeCompare(b.date || ''))
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+            {/* 헤더 */}
+            <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <button onClick={() => setSelectedLoan(null)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#191F28' }}>{loan.name}</p>
+                <button onClick={() => {
+                  setLoanForm({ name: loan.name, principal: String(loan.principal), remainingPrincipal: String(loan.remainingPrincipal), startDate: loan.startDate, rate: loan.rate != null ? String(loan.rate) : '', rateType: loan.rateType || 'simple', monthlyPayment: loan.monthlyPayment != null ? String(loan.monthlyPayment) : '', paymentDay: loan.paymentDay != null ? String(loan.paymentDay) : '', maturityDate: loan.maturityDate || '' })
+                  setEditingLoan(loan)
+                }} style={{ background: '#F2F4F6', border: 'none', borderRadius: 10, padding: '6px 14px', fontSize: 13, fontWeight: 600, color: '#191F28', cursor: 'pointer' }}>
+                  ✏️ 수정
+                </button>
+              </div>
+            </div>
+
+            {/* 스크롤 본문 */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', WebkitOverflowScrolling: 'touch' }}>
+
+              {/* 상단 요약 카드 */}
+              <div style={{ background: t.primary, borderRadius: 24, padding: '24px 20px', marginBottom: 20, color: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                  <div>
+                    <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
+                    <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}>-{fmt(totalWithInterest)}원</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 원금</p>
+                    <p style={{ fontSize: 18, fontWeight: 700 }}>{fmt(loan.remainingPrincipal)}원</p>
+                  </div>
+                </div>
+
+                {/* 상환 진행률 */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, opacity: 0.75 }}>상환 진행률</span>
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>{Math.round(progress)}%</span>
+                  </div>
+                  <div style={{ height: 6, background: 'rgba(255,255,255,0.25)', borderRadius: 9999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress}%`, background: '#fff', borderRadius: 9999, transition: 'width 0.6s' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                    <span style={{ fontSize: 11, opacity: 0.65 }}>누적 상환 {fmt(repaid)}원</span>
+                    <span style={{ fontSize: 11, opacity: 0.65 }}>원금 {fmt(loan.principal)}원</span>
+                  </div>
+                </div>
+
+                {/* 메타 정보 */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600 }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
+                  {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(loan.monthlyPayment)}원</p></div>}
+                  {loan.paymentDay && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600 }}>매월 {loan.paymentDay}일</p></div>}
+                  {loan.startDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.startDate}</p></div>}
+                  {loan.maturityDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.maturityDate}</p></div>}
+                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(monthlyInterest)}원</p></div>}
+                </div>
+              </div>
+
+              {/* 상환 내역 */}
+              <div style={{ background: '#fff', borderRadius: 20, padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: t.text || '#191F28' }}>상환 내역</p>
+                  <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 10, padding: 3 }}>
+                    {[{ val: 'desc', label: '최신순' }, { val: 'asc', label: '오래된순' }].map(opt => (
+                      <button key={opt.val} onClick={() => setLoanDetailSort(opt.val)}
+                        style={{ padding: '5px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: loanDetailSort === opt.val ? 700 : 400, background: loanDetailSort === opt.val ? '#fff' : 'transparent', color: loanDetailSort === opt.val ? '#191F28' : '#8B95A1', transition: 'all 150ms', boxShadow: loanDetailSort === opt.val ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {repayments.length === 0 ? (
+                  <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 상환 내역이 없어요</p>
+                ) : (
+                  <>
+                    {/* 테이블 헤더 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1.3fr', gap: 4, padding: '8px 0', borderBottom: '1.5px solid #F2F4F6', marginBottom: 4 }}>
+                      {['상환일자', '경과일수', '상환액', '누적 상환액'].map(h => (
+                        <p key={h} style={{ fontSize: 11, fontWeight: 600, color: '#8B95A1', textAlign: h !== '상환일자' ? 'right' : 'left' }}>{h}</p>
+                      ))}
+                    </div>
+                    {repayments.map((r, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1.2fr 1.3fr', gap: 4, padding: '10px 0', borderBottom: i < repayments.length - 1 ? '1px solid #F8F9FA' : 'none', alignItems: 'center' }}>
+                        <p style={{ fontSize: 13, color: '#191F28', fontWeight: 500 }}>{r.date}</p>
+                        <p style={{ fontSize: 13, color: '#8B95A1', textAlign: 'right' }}>{r.daysElapsed != null ? `${r.daysElapsed}일` : '-'}</p>
+                        <p style={{ fontSize: 13, color: '#FF5A5F', fontWeight: 600, textAlign: 'right' }}>{fmt(r.amount)}</p>
+                        <p style={{ fontSize: 13, color: t.primary, fontWeight: 700, textAlign: 'right' }}>{fmt(r.cumulativeAmount)}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* 삭제 버튼 */}
+              <button onClick={() => handleDeleteLoan(loan.id)}
+                style={{ width: '100%', marginTop: 16, padding: '14px', borderRadius: 16, border: '1.5px solid #FF5A5F', background: 'transparent', color: '#FF5A5F', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                대출 삭제
+              </button>
             </div>
           </div>
         )

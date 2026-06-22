@@ -14,6 +14,7 @@ import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useLoans } from '../contexts/LoansContext'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -130,6 +131,7 @@ const SectionLabel = ({ children }) => (
 export default function Ledger() {
   const { themeData, themeName, showUtilities, setShowUtilities } = useTheme()
   const { cards: userCardsList } = useCards()
+  const { loans, setLoans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, rolloverBudget, showLoan, categories } = useSettings()
   const navigate = useNavigate()
   const now = new Date()
@@ -147,7 +149,7 @@ export default function Ledger() {
   const [swipedId, setSwipedId] = useState(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const [userPayments, setUserPayments] = useState(['현금'])
-  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false })
+  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
   const touchStartX = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardSelector, setShowCardSelector] = useState(false)
@@ -259,9 +261,19 @@ export default function Ledger() {
       await addDoc(collection(db, 'transactions'), data)
     }
     if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+    // 대출 상환 내역 자동 반영 (신규 추가 시에만)
+    if (form.type === 'expense' && form.isLoan && form.loanId && !editItem) {
+      const targetLoan = loans.find(l => l.id === Number(form.loanId))
+      if (targetLoan) {
+        const prevRepayments = targetLoan.repayments || []
+        const cumulativeAmount = prevRepayments.reduce((s, r) => s + r.amount, 0) + Number(form.amount)
+        const newRepayment = { date: form.date, daysElapsed: form.daysElapsed ? Number(form.daysElapsed) : null, amount: Number(form.amount), cumulativeAmount }
+        await setLoans(loans.map(l => l.id === targetLoan.id ? { ...targetLoan, repayments: [...prevRepayments, newRepayment] } : l))
+      }
+    }
     setShowForm(false)
     setEditItem(null)
-    setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false })
+    setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
     fetchTransactions()
   }
 
@@ -278,7 +290,8 @@ export default function Ledger() {
       category: t.category || (t.type === 'transfer' ? '이체' : '기타'),
       date: t.date, time: t.time || '12:00', memo: t.memo || '',
       payment: t.payment || '카드', cardBilling: t.cardBilling || false, isLoan: t.isLoan || false,
-      creditCardBilling: t.creditCardBilling || false, toAccount: t.toAccount || '' })
+      creditCardBilling: t.creditCardBilling || false, toAccount: t.toAccount || '',
+      loanId: t.loanId || '', daysElapsed: t.daysElapsed != null ? String(t.daysElapsed) : '' })
     setShowForm(true); setSelectedId(null)
   }
 
@@ -737,12 +750,37 @@ export default function Ledger() {
 
             {/* 대출 / 상환 */}
             {form.type === 'expense' && showLoan && (
-              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>대출 / 상환</p>
-                  <p style={{ fontSize: 13, color: '#8B95A1' }}>합계에서 제외</p>
+              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>대출 / 상환</p>
+                    <p style={{ fontSize: 13, color: '#8B95A1' }}>합계에서 제외</p>
+                  </div>
+                  <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val, loanId: '', daysElapsed: '' }))} />
                 </div>
-                <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val }))} />
+                {form.isLoan && loans.length > 0 && (
+                  <div style={{ marginTop: 14 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 8 }}>어떤 대출의 상환인가요?</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                      {loans.map(loan => {
+                        const sel = form.loanId === String(loan.id)
+                        return (
+                          <button key={loan.id} onClick={() => setForm(f => ({ ...f, loanId: String(loan.id) }))}
+                            style={{ padding: '7px 14px', borderRadius: 12, border: `1.5px solid ${sel ? themeData.primary : '#E5E8EB'}`, background: sel ? `${themeData.primary}15` : '#F7F8FA', color: sel ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: sel ? 700 : 500, cursor: 'pointer' }}>
+                            {loan.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 8 }}>경과일수 <span style={{ fontWeight: 400 }}>(선택)</span></p>
+                    <input type="number" placeholder="직전 상환일로부터 경과된 일수"
+                      value={form.daysElapsed} onChange={e => setForm(f => ({ ...f, daysElapsed: e.target.value }))}
+                      style={{ ...inputStyle }} />
+                  </div>
+                )}
+                {form.isLoan && loans.length === 0 && (
+                  <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 10 }}>MY에서 대출을 먼저 등록해주세요</p>
+                )}
               </div>
             )}
 

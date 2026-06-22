@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider } from './contexts/SettingsContext'
+import { LoansProvider } from './contexts/LoansContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
@@ -16,6 +17,7 @@ function App() {
     <ThemeProvider>
       <SettingsProvider>
       <CardsProvider>
+      <LoansProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SplashScreen />} />
@@ -28,6 +30,7 @@ function App() {
           <Route path="/my" element={<MyPage />} />
         </Routes>
       </BrowserRouter>
+      </LoansProvider>
       </CardsProvider>
       </SettingsProvider>
     </ThemeProvider>
