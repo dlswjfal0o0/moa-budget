@@ -266,8 +266,8 @@ export default function Calendar() {
             {selectedTxs.length === 0 ? (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '8px 0' }}>내역이 없어요</p>
             ) : (
-              selectedTxs.map(t => (
-                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #F2F4F6' }}>
+              selectedTxs.map((t, idx) => (
+                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: idx < selectedTxs.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
                   <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: 8 }}>
                     <p style={{ fontSize: 14, color: '#191F28', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
                     <p style={{ fontSize: 12, color: '#C9CDD4' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
