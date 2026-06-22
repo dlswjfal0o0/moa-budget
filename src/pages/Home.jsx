@@ -272,8 +272,8 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
           ) : (
             budgets.map(b => {
               const bCats = Array.isArray(b.categories) ? b.categories : []
-              // 예산: 카드 사용 내역은 추적 방식과 관계없이 항상 포함, 대금 납부만 제외
-              const budgetTxns = transactions.filter(t => t.type === 'expense' && !t.cardBilling && (!showLoan || !t.isLoan))
+              // 총 지출과 동일한 신용카드 필터 적용
+              const budgetTxns = transactions.filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
               const spent = budgetTxns.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount
