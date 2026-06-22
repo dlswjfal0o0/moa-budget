@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
+import { useCards } from '../contexts/CardsContext'
 
 function CustomPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -67,6 +68,7 @@ function BudgetCard({ budget, spent, themeData, fmt }) {
 export default function Home() {
   const navigate = useNavigate()
   const { themeData } = useTheme()
+  const { cards } = useCards()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState(() => {
     try {
@@ -186,7 +188,6 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
   }
 
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
-  const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {

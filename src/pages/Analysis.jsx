@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
 import { CATEGORY_COLORS, getCategoryColors } from '../styles/theme'
+import { useCards } from '../contexts/CardsContext'
 
 const UTILITY_STYLES = {
   관리비: { bg: '#F3F4F6', color: '#6B7280' },
@@ -77,6 +78,7 @@ function CustomPieTooltip({ active, payload }) {
 
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
+  const { cards } = useCards()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -138,7 +140,6 @@ export default function Analysis() {
 
   const fmt = n => n.toLocaleString('ko-KR')
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
-  const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
     if (t.cardBilling) {

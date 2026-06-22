@@ -8,9 +8,11 @@ import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
 import { DEFAULT_CATEGORIES } from '../styles/theme'
+import { useCards } from '../contexts/CardsContext'
 
 export default function Calendar() {
   const { themeData, themeName } = useTheme()
+  const { cards } = useCards()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -137,7 +139,6 @@ export default function Calendar() {
   const fmt = n => n.toLocaleString('ko-KR')
   const accNames = userAccounts.map(a => a.name).filter(Boolean)
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
-  const cards = JSON.parse(localStorage.getItem('moa_cards') || '[]')
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
     if (t.cardBilling) {

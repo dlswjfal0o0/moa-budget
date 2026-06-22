@@ -12,6 +12,7 @@ import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { CATEGORY_COLORS, DEFAULT_CATEGORIES, getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
+import { useCards } from '../contexts/CardsContext'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -127,6 +128,7 @@ const SectionLabel = ({ children }) => (
 
 export default function Ledger() {
   const { themeData, themeName, showUtilities, setShowUtilities } = useTheme()
+  const { cards: userCardsList } = useCards()
   const navigate = useNavigate()
   const now = new Date()
   const [user, setUser] = useState(null)
@@ -157,7 +159,6 @@ export default function Ledger() {
   const [showLoan, setShowLoan] = useState(() => localStorage.getItem('moa_showLoan') === 'true')
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
-  const [userCardsList, setUserCardsList] = useState([])
   const [userAccountsList, setUserAccountsList] = useState([])
 
   useEffect(() => {
@@ -187,7 +188,6 @@ export default function Ledger() {
     getDoc(doc(db, 'users', user.uid)).then(snap => {
       if (snap.exists()) {
         const data = snap.data()
-        if (data.cards) setUserCardsList(data.cards)
         const accounts = data.accounts ? data.accounts.map(a => a.name).filter(Boolean) : []
         setUserAccountsList(accounts)
         setUserPayments(['현금'])

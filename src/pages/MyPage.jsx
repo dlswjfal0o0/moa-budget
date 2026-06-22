@@ -10,11 +10,13 @@ import html2canvas from 'html2canvas'
 import { THEMES } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useTheme } from '../contexts/ThemeContext'
+import { useCards } from '../contexts/CardsContext'
 
 export default function MyPage() {
   const navigate = useNavigate()
   const fileRef = useRef()
   const { themeName, setThemeName, themeData: t } = useTheme()
+  const { cards, setCards } = useCards()
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
@@ -24,9 +26,6 @@ export default function MyPage() {
   const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
   const [showSettings, setShowSettings] = useState(false)
-  const [cards, setCards] = useState(() => {
-    try { const c = localStorage.getItem('moa_cards'); return c ? JSON.parse(c) : [] } catch { return [] }
-  })
   const [accounts, setAccounts] = useState(() => {
     try { const a = localStorage.getItem('moa_accounts'); return a ? JSON.parse(a) : [] } catch { return [] }
   })
@@ -74,7 +73,6 @@ export default function MyPage() {
             if (data.theme) setThemeName(data.theme)
             if (data.cards) {
                 setCards(data.cards)
-                localStorage.setItem('moa_cards', JSON.stringify(data.cards))
             }
             if (data.accounts) {
                 setAccounts(data.accounts)
@@ -97,10 +95,6 @@ export default function MyPage() {
     })
     return unsub
   }, [])                       // ← 첫 번째 useEffect 여기서 닫기
-
-  useEffect(() => {            // ← 별도 useEffect
-    localStorage.setItem('moa_cards', JSON.stringify(cards))
-  }, [cards])
 
   useEffect(() => {            // ← 별도 useEffect
     localStorage.setItem('moa_accounts', JSON.stringify(accounts))
@@ -558,6 +552,7 @@ export default function MyPage() {
                         linkedAccount: card.linkedAccount || '',
                         limit: String(card.limit || ''),
                         billingDay: card.billingDay ? String(card.billingDay) : '',
+                        creditTracking: card.creditTracking || '',
                       })
                       setExpandedCardId(null)
                     }} style={{ flex: 1, padding: '14px', border: 'none', background: t.card || '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
