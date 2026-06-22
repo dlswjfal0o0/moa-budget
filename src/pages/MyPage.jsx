@@ -39,7 +39,8 @@ export default function MyPage() {
   const [editAccountData, setEditAccountData] = useState({})
   const [showAddCard, setShowAddCard] = useState(false)
   const [showAddAccount, setShowAddAccount] = useState(false)
-  const [newCard, setNewCard] = useState({ cardType: 'debit', name: '', limit: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
+  const EMPTY_CARD = { cardType: '', name: '', limit: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '', creditTracking: '' }
+  const [newCard, setNewCard] = useState(EMPTY_CARD)
   const [newAccount, setNewAccount] = useState({ name: '', balance: '', number: '' })
   const [exporting, setExporting] = useState(false)
   const [showUpdates, setShowUpdates] = useState(false)
@@ -153,10 +154,11 @@ export default function MyPage() {
   }
 
   const handleAddCard = () => {
-    if (!newCard.name) return
+    if (!newCard.name || !newCard.cardType) return
+    if (newCard.cardType === 'credit' && !newCard.creditTracking) return
     const updated = [...cards, {
         id: Date.now(),
-        cardType: newCard.cardType || 'debit',
+        cardType: newCard.cardType,
         name: newCard.name,
         limit: Number(newCard.limit) || 0,
         used: 0,
@@ -164,10 +166,11 @@ export default function MyPage() {
         expiry: newCard.expiry || '',
         linkedAccount: newCard.linkedAccount || '',
         billingDay: newCard.billingDay ? Number(newCard.billingDay) : null,
+        creditTracking: newCard.creditTracking || '',
         benefits: [],
     }]
     setCards(updated); saveToFirestore({ cards: updated })
-    setNewCard({ cardType: 'debit', name: '', limit: '', cardNumber: '', expiry: '', linkedAccount: '', billingDay: '' })
+    setNewCard(EMPTY_CARD)
     setShowAddCard(false)
   }
 
@@ -177,6 +180,8 @@ export default function MyPage() {
   }
 
   const handleSaveCard = () => {
+    if (!editCardData.name || !editCardData.cardType) return
+    if (editCardData.cardType === 'credit' && !editCardData.creditTracking) return
     const updated = cards.map(c => c.id === editingCardId
         ? { ...c,
             cardType: editCardData.cardType || c.cardType,
@@ -186,6 +191,7 @@ export default function MyPage() {
             linkedAccount: editCardData.linkedAccount,
             limit: Number(editCardData.limit) || 0,
             billingDay: editCardData.billingDay ? Number(editCardData.billingDay) : null,
+            creditTracking: editCardData.creditTracking || '',
           }
         : c)
     setCards(updated); saveToFirestore({ cards: updated })
@@ -569,126 +575,209 @@ export default function MyPage() {
               </div>
             )
           })}
-          {showAddCard && (
-            <div style={{ position: 'fixed', inset: 0, background: t.bg || '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => setShowAddCard(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>카드 추가</p>
+          {(showAddCard || !!editingCardId) && (() => {
+            const isEdit = !!editingCardId
+            const data = isEdit ? editCardData : newCard
+            const setData = isEdit ? setEditCardData : setNewCard
+            const isCredit = data.cardType === 'credit'
+            const isValid = !!data.name && !!data.cardType && (!isCredit || !!data.creditTracking)
+            const showValidationMsg = isCredit && !!data.name && !data.creditTracking
+
+            const TRACKING_OPTS = [
+              {
+                val: 'spend',
+                title: '신용카드 지출이 중요해요',
+                desc: '카드를 사용하는 순간마다 가계부 지출로 기록합니다. 소비 습관 관리를 원하는 사용자에게 적합합니다.',
+                tags: ['결제 내역 → 지출 포함', '결제 대금 : 지출 미포함', '소비 패턴 분석'],
+                icon: (color) => (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+                  </svg>
+                ),
+              },
+              {
+                val: 'billing',
+                title: '신용카드 대금이 중요해요',
+                desc: '매월 카드 대금 청구 시점에 지출을 기록합니다. 카드값 관리 중심 사용자에게 적합합니다.',
+                tags: ['청구일 기준 기록', '카드값 관리', '결제 내역 : 지출 미포함'],
+                icon: (color) => (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                ),
+              },
+            ]
+
+            const CARD_FIELDS = [
+              { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
+              { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
+              { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
+              { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
+              { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
+            ]
+
+            return (
+              <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button onClick={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }}
+                      style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                      </svg>
+                    </button>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{isEdit ? '카드 수정' : '카드 추가'}</p>
+                  </div>
                 </div>
-              </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 0' }}>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 12 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 12 }}>카드 종류</p>
-                  <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 4 }}>
-                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
-                      <button key={opt.val} onClick={() => setNewCard(c => ({ ...c, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '11px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 14,
-                          fontWeight: newCard.cardType === opt.val ? 700 : 500,
-                          background: newCard.cardType === opt.val ? t.primary : 'transparent',
-                          color: newCard.cardType === opt.val ? '#fff' : '#888',
-                          boxShadow: newCard.cardType === opt.val ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-                          transition: 'all 0.15s' }}>{opt.label}</button>
+
+                {/* Scrollable Body */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 0', WebkitOverflowScrolling: 'touch' }}>
+
+                  {/* ── 1. 카드 종류 Segmented Control ── */}
+                  <div style={{ marginBottom: 24 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' }}>카드 종류</p>
+                    <div style={{ display: 'flex', background: '#ECEEF0', borderRadius: 16, padding: 4, gap: 4 }}>
+                      {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => {
+                        const sel = data.cardType === opt.val
+                        return (
+                          <button key={opt.val}
+                            onClick={() => setData(c => ({ ...c, cardType: opt.val, creditTracking: opt.val === 'debit' ? '' : c.creditTracking }))}
+                            style={{ flex: 1, height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 15,
+                              fontWeight: sel ? 700 : 500,
+                              background: sel ? '#fff' : 'transparent',
+                              color: sel ? '#191F28' : '#8B95A1',
+                              boxShadow: sel ? '0 2px 8px rgba(0,0,0,0.10)' : 'none',
+                              transition: 'all 180ms ease-out' }}>
+                            {opt.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ── 2. 신용카드 지출 추적 방식 (animated) ── */}
+                  <div style={{
+                    maxHeight: isCredit ? '600px' : '0px',
+                    opacity: isCredit ? 1 : 0,
+                    overflow: 'hidden',
+                    transition: isCredit
+                      ? 'max-height 250ms ease-out, opacity 200ms ease-out'
+                      : 'max-height 200ms ease-in, opacity 150ms ease-in',
+                    marginBottom: isCredit ? 24 : 0,
+                  }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>지출 추적 방식</p>
+                    <p style={{ fontSize: 13, color: '#B0B8C1', marginBottom: 14 }}>신용카드를 어떻게 관리할지 선택해주세요</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {TRACKING_OPTS.map(opt => {
+                        const sel = data.creditTracking === opt.val
+                        return (
+                          <button key={opt.val}
+                            onClick={() => setData(c => ({ ...c, creditTracking: opt.val }))}
+                            style={{ width: '100%', textAlign: 'left', padding: '18px 16px', borderRadius: 22,
+                              border: `2px solid ${sel ? t.primary : '#E5E8EB'}`,
+                              background: sel ? `${t.primary}0D` : '#fff',
+                              cursor: 'pointer',
+                              transform: sel ? 'scale(1.015)' : 'scale(1)',
+                              transition: 'all 150ms ease-out',
+                              boxShadow: sel ? `0 4px 20px ${t.primary}22` : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                              {/* 아이콘 */}
+                              <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, marginTop: 2,
+                                background: sel ? `${t.primary}18` : '#F2F4F6',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'background 150ms' }}>
+                                {opt.icon(sel ? t.primary : '#8B95A1')}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                {/* 제목 + 라디오 */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                  <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms' }}>{opt.title}</p>
+                                  <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginLeft: 8,
+                                    border: `2px solid ${sel ? t.primary : '#D1D6DB'}`,
+                                    background: sel ? t.primary : 'transparent',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'all 150ms' }}>
+                                    {sel && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+                                  </div>
+                                </div>
+                                <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.55, marginBottom: 12 }}>{opt.desc}</p>
+                                {/* 태그 칩 */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                  {opt.tags.map(tag => (
+                                    <span key={tag} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 9999,
+                                      background: sel ? `${t.primary}15` : '#F2F4F6',
+                                      color: sel ? t.primary : '#8B95A1',
+                                      fontWeight: sel ? 600 : 400,
+                                      border: `1px solid ${sel ? `${t.primary}30` : 'transparent'}`,
+                                      transition: 'all 150ms', whiteSpace: 'nowrap' }}>{tag}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ── 3. 카드 정보 ── */}
+                  <div style={{ background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>카드 정보</p>
+                    {CARD_FIELDS.map(({ label, req, placeholder, key, type, extra }, i, arr) => (
+                      <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>
+                          {label}{req && <span style={{ color: '#FF5A5F' }}> *</span>}
+                        </p>
+                        <input style={{ ...inputStyle }} type={type} placeholder={placeholder}
+                          value={data[key] || ''} onChange={e => setData(c => ({ ...c, [key]: e.target.value }))} {...extra} />
+                      </div>
                     ))}
                   </div>
-                </div>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 12 }}>
-                  {[
-                    { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
-                    { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
-                    { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
-                    { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
-                    { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
-                  ].map(({ label, req, placeholder, key, type, extra }, i, arr) => (
-                    <div key={key} style={{ marginBottom: i < arr.length - 1 ? 16 : 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label}{req && <span style={{ color: '#FF5A5F' }}> *</span>}</p>
-                      <input style={{ ...inputStyle }} type={type} placeholder={placeholder}
-                        value={newCard[key]} onChange={e => setNewCard(c => ({ ...c, [key]: e.target.value }))} {...extra} />
+
+                  {/* ── 4. 연동 계좌 ── */}
+                  <div style={{ background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 32, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                      연동 계좌 <span style={{ fontWeight: 400, textTransform: 'none', fontSize: 12 }}>(선택)</span>
+                    </p>
+                    <p style={{ fontSize: 13, color: '#B0B8C1', marginBottom: 14 }}>카드 대금이 출금되는 계좌를 선택하세요</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {[{ id: '__none', name: '없음' }, ...accounts].map(a => {
+                        const sel = a.id === '__none' ? data.linkedAccount === '' : data.linkedAccount === a.name
+                        return (
+                          <button key={a.id} onClick={() => setData(c => ({ ...c, linkedAccount: a.id === '__none' ? '' : a.name }))}
+                            style={{ padding: '9px 16px', borderRadius: 9999, cursor: 'pointer', fontSize: 13,
+                              border: `1.5px solid ${sel ? t.primary : '#E5E8EB'}`,
+                              background: sel ? `${t.primary}10` : '#F7F8FA',
+                              color: sel ? t.primary : '#8B95A1', fontWeight: sel ? 600 : 400,
+                              transition: 'all 150ms' }}>{a.name}</button>
+                        )
+                      })}
                     </div>
-                  ))}
-                </div>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 24 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 12 }}>연동 계좌 <span style={{ fontSize: 12, color: '#C9CDD4', fontWeight: 400 }}>(선택)</span></p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {[{ id: '__none', name: '연동 계좌 없음' }, ...accounts].map(a => {
-                      const sel = a.id === '__none' ? newCard.linkedAccount === '' : newCard.linkedAccount === a.name
-                      return (
-                        <button key={a.id} onClick={() => setNewCard(c => ({ ...c, linkedAccount: a.id === '__none' ? '' : a.name }))}
-                          style={{ padding: '8px 14px', borderRadius: 9999, cursor: 'pointer', fontSize: 13, border: 'none',
-                            background: sel ? t.primary + '22' : '#f0f0f0',
-                            color: sel ? t.primary : '#666', fontWeight: sel ? 600 : 400 }}>{a.name}</button>
-                      )
-                    })}
                   </div>
                 </div>
-              </div>
-              <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #F2F4F6', flexShrink: 0 }}>
-                <button onClick={handleAddCard} style={{ width: '100%', height: 56, borderRadius: 16, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-                  추가하기
-                </button>
-              </div>
-            </div>
-          )}
-          {editingCardId && (
-            <div style={{ position: 'fixed', inset: 0, background: t.bg || '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => setEditingCardId(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>카드 수정</p>
+
+                {/* Footer */}
+                <div style={{ padding: '12px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #F2F4F6', flexShrink: 0 }}>
+                  {showValidationMsg && (
+                    <p style={{ fontSize: 12, fontWeight: 500, color: '#FF5A5F', textAlign: 'center', marginBottom: 8 }}>
+                      지출 추적 방식을 선택해주세요
+                    </p>
+                  )}
+                  <button onClick={isEdit ? handleSaveCard : handleAddCard}
+                    disabled={!isValid}
+                    style={{ width: '100%', height: 56, borderRadius: 16,
+                      background: isValid ? t.primary : '#E5E8EB',
+                      color: isValid ? '#fff' : '#B0B8C1',
+                      border: 'none', fontSize: 16, fontWeight: 700,
+                      cursor: isValid ? 'pointer' : 'not-allowed',
+                      transition: 'background 200ms, color 200ms' }}>
+                    {isEdit ? '저장하기' : '추가하기'}
+                  </button>
                 </div>
               </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 0' }}>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 12 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 12 }}>카드 종류</p>
-                  <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 4 }}>
-                    {[{ val: 'debit', label: '체크카드' }, { val: 'credit', label: '신용카드' }].map(opt => (
-                      <button key={opt.val} onClick={() => setEditCardData(d => ({ ...d, cardType: opt.val }))}
-                        style={{ flex: 1, padding: '11px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 14,
-                          fontWeight: editCardData.cardType === opt.val ? 700 : 500,
-                          background: editCardData.cardType === opt.val ? t.primary : 'transparent',
-                          color: editCardData.cardType === opt.val ? '#fff' : '#888',
-                          boxShadow: editCardData.cardType === opt.val ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-                          transition: 'all 0.15s' }}>{opt.label}</button>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 12 }}>
-                  {[
-                    { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
-                    { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
-                    { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
-                    { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
-                    { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
-                  ].map(({ label, req, placeholder, key, type, extra }, i, arr) => (
-                    <div key={key} style={{ marginBottom: i < arr.length - 1 ? 16 : 0 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label}{req && <span style={{ color: '#FF5A5F' }}> *</span>}</p>
-                      <input style={{ ...inputStyle }} type={type} placeholder={placeholder}
-                        value={editCardData[key] || ''} onChange={e => setEditCardData(d => ({ ...d, [key]: e.target.value }))} {...extra} />
-                    </div>
-                  ))}
-                </div>
-                <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', marginBottom: 24 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 12 }}>연동 계좌 <span style={{ fontSize: 12, color: '#C9CDD4', fontWeight: 400 }}>(선택)</span></p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {[{ id: '__none', name: '연동 계좌 없음' }, ...accounts].map(a => {
-                      const sel = a.id === '__none' ? editCardData.linkedAccount === '' : editCardData.linkedAccount === a.name
-                      return (
-                        <button key={a.id} onClick={() => setEditCardData(d => ({ ...d, linkedAccount: a.id === '__none' ? '' : a.name }))}
-                          style={{ padding: '8px 14px', borderRadius: 9999, cursor: 'pointer', fontSize: 13, border: 'none',
-                            background: sel ? t.primary + '22' : '#f0f0f0',
-                            color: sel ? t.primary : '#666', fontWeight: sel ? 600 : 400 }}>{a.name}</button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #F2F4F6', flexShrink: 0 }}>
-                <button onClick={handleSaveCard} style={{ width: '100%', height: 56, borderRadius: 16, background: t.primary, color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-                  저장하기
-                </button>
-              </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         {/* 계좌 */}
