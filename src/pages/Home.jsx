@@ -98,6 +98,35 @@ export default function Home() {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
       try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch {}
+      setFixedExpenses([
+        { id: 1,  title: '월세',             amount: 550000, dueDate: '2026-06-05', category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+        { id: 2,  title: '넷플릭스',         amount: 17000,  dueDate: '2026-06-03', category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+        { id: 3,  title: '헬스장',           amount: 80000,  dueDate: '2026-06-11', category: '스포츠/레저', payment: 'KB국민 신용카드', autoRegister: false, doneMonths: [], autoRegisteredMonths: [] },
+        { id: 4,  title: '전세자금대출 이자', amount: 285000, dueDate: '2026-06-25', category: '금융',       payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+        { id: 5,  title: '자동차 할부',       amount: 280000, dueDate: '2026-06-10', category: '교통',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+        { id: 6,  title: '유튜브 프리미엄',   amount: 14900,  dueDate: '2026-06-18', category: '구독',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+        { id: 7,  title: '실손보험',          amount: 32000,  dueDate: '2026-06-22', category: '의료/건강',  payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
+      ])
+      setBudgetInsights({
+        1: {
+          status: 'warning',
+          summary: '생활비 예산의 51%를 사용했어요. 남은 기간 동안 하루 약 15,000원씩 쓸 수 있어요.',
+          tips: [
+            { icon: 'food',   title: '식비 조절이 필요해요', detail: '이번 달 배달음식 지출이 늘었어요. 집밥 횟수를 늘리면 남은 예산을 여유 있게 유지할 수 있어요.' },
+            { icon: 'chart',  title: '지출 패턴 점검', detail: '주말 지출이 평일보다 높은 편이에요. 주말 소비 계획을 미리 세워두면 초과를 막을 수 있어요.' },
+            { icon: 'adjust', title: '마지막 일주일 전략', detail: '남은 예산을 7일로 나눠 일일 한도를 정해보세요. 작은 목표가 예산 관리를 쉽게 만들어줘요.' },
+          ],
+        },
+        2: {
+          status: 'good',
+          summary: '교통비 예산을 훌륭하게 관리하고 있어요! 현재 사용률 54%로 여유가 있어요.',
+          tips: [
+            { icon: 'chart',  title: '이번 달 교통비 우수', detail: '지난달 대비 교통비가 안정적으로 유지되고 있어요. 현재 패턴을 그대로 유지해보세요.' },
+            { icon: 'adjust', title: '남은 예산 활용 팁', detail: '남은 교통 예산으로 카풀이나 자전거 이용을 더 늘리면 다음 달 예산을 더 줄일 수도 있어요.' },
+            { icon: 'food',   title: '대중교통 최적화', detail: '정기권이나 교통카드 할인 혜택을 활용하면 매달 교통비를 10~15% 절약할 수 있어요.' },
+          ],
+        },
+      })
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {

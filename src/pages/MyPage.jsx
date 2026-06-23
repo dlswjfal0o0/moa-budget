@@ -559,7 +559,7 @@ export default function MyPage() {
             }
         }
         return allTxns
-            .filter(t => t.payment === card.name && t.type === 'expense' && !t.creditCardBilling && (t.month || t.date?.slice(0, 7)) === currentMonth)
+            .filter(t => t.payment === card.name && t.type === 'expense' && !t.creditCardBilling && !t.cardBilling && (t.month || t.date?.slice(0, 7)) === currentMonth)
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }

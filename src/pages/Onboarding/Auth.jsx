@@ -302,22 +302,20 @@ export default function Auth() {
           {loading ? '처리 중...' : mode === 'signup' ? '이메일로 가입' : '로그인'}
         </button>
 
-        {/* 개발 환경 전용 우회 버튼 */}
-        {import.meta.env.MODE === 'development' && (
-          <button
-            onClick={() => {
-              injectDemoData()
-              navigate('/home', { replace: true })
-            }}
-            style={{
-              width: '100%', padding: '12px', borderRadius: 14,
-              background: 'transparent', color: '#aaa',
-              border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
-              cursor: 'pointer', marginTop: 8
-            }}>
-            🛠 개발 로그인 (시뮬레이터 전용)
-          </button>
-        )}
+        {/* 데모 체험 버튼 */}
+        <button
+          onClick={() => {
+            injectDemoData()
+            navigate('/home', { replace: true })
+          }}
+          style={{
+            width: '100%', padding: '12px', borderRadius: 14,
+            background: 'transparent', color: '#aaa',
+            border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', marginTop: 8
+          }}>
+          🛠 개발 로그인 (시뮬레이터 전용)
+        </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
           <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />

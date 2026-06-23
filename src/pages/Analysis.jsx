@@ -115,7 +115,32 @@ export default function Analysis() {
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
-      try { const u = localStorage.getItem('moa_utilities'); if (u) setUtilities(JSON.parse(u)) } catch {}
+      setUtilities([
+        { type: '전기세', year: 2026, month: 1, amount: 45000, day: 25 },
+        { type: '전기세', year: 2026, month: 2, amount: 52000, day: 25 },
+        { type: '전기세', year: 2026, month: 3, amount: 38000, day: 25 },
+        { type: '전기세', year: 2026, month: 4, amount: 32000, day: 25 },
+        { type: '전기세', year: 2026, month: 5, amount: 29000, day: 25 },
+        { type: '전기세', year: 2026, month: 6, amount: 33000, day: 25 },
+        { type: '수도세', year: 2026, month: 1, amount: 18000, day: 25 },
+        { type: '수도세', year: 2026, month: 2, amount: 15000, day: 25 },
+        { type: '수도세', year: 2026, month: 3, amount: 16000, day: 25 },
+        { type: '수도세', year: 2026, month: 4, amount: 14000, day: 25 },
+        { type: '수도세', year: 2026, month: 5, amount: 13000, day: 25 },
+        { type: '수도세', year: 2026, month: 6, amount: 15000, day: 25 },
+        { type: '가스비', year: 2026, month: 1, amount: 89000, day: 25 },
+        { type: '가스비', year: 2026, month: 2, amount: 76000, day: 25 },
+        { type: '가스비', year: 2026, month: 3, amount: 54000, day: 25 },
+        { type: '가스비', year: 2026, month: 4, amount: 32000, day: 25 },
+        { type: '가스비', year: 2026, month: 5, amount: 15000, day: 25 },
+        { type: '가스비', year: 2026, month: 6, amount: 12000, day: 25 },
+        { type: '관리비', year: 2026, month: 1, amount: 95000, day: 20 },
+        { type: '관리비', year: 2026, month: 2, amount: 98000, day: 20 },
+        { type: '관리비', year: 2026, month: 3, amount: 92000, day: 20 },
+        { type: '관리비', year: 2026, month: 4, amount: 88000, day: 20 },
+        { type: '관리비', year: 2026, month: 5, amount: 91000, day: 20 },
+        { type: '관리비', year: 2026, month: 6, amount: 94000, day: 20 },
+      ])
       fetchDemoData()
       return
     }
@@ -145,6 +170,28 @@ export default function Analysis() {
     const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
     try { const t = localStorage.getItem(`moa_txns_${monthStr}`); setTransactions(t ? JSON.parse(t) : []) } catch {}
     try { const t = localStorage.getItem(`moa_txns_${lastStr}`); setLastMonthTx(t ? JSON.parse(t) : []) } catch {}
+    setAiFeedbackData({
+      score: 72,
+      rating: 'warning',
+      summary: '이번 달 식비 지출이 지난달보다 18% 증가했어요. 배달음식 횟수를 줄이면 절약에 도움이 돼요.',
+      cuts: [
+        { category: '식비', save: 50000, tip: '배달음식을 주 2회로 줄이면 이번 달 약 5만원을 절약할 수 있어요.' },
+        { category: '쇼핑', save: 30000, tip: '충동 구매보다 위시리스트를 활용해 계획적으로 구매해보세요.' },
+      ],
+      unusual: ['배달음식 지출이 이번 달 2회로, 지난달 대비 2배 증가했어요.'],
+      saving_goal: 80000,
+      message: '조금만 더 노력하면 저축 목표를 달성할 수 있어요! 화이팅 💪',
+    })
+    setUtilityAI({
+      items: [
+        { type: '전기세', status: 'up',   comment: '지난달보다 4,000원 증가했어요. 초여름 에어컨 사용이 늘어난 것 같아요.' },
+        { type: '수도세', status: 'same', comment: '지난달과 비슷한 수준으로 안정적으로 유지되고 있어요.' },
+        { type: '가스비', status: 'down', comment: '날씨가 따뜻해지면서 지난달보다 3,000원 줄었어요.' },
+        { type: '관리비', status: 'up',   comment: '지난달보다 3,000원 소폭 증가했어요. 계절별 공용부분 관리비 영향이에요.' },
+      ],
+      overall: '전반적으로 공과금 지출이 안정적이에요. 여름철 전기세 관리에 집중해보세요.',
+      tip: '에어컨 설정 온도를 1°C 올리면 전기세를 약 7% 절약할 수 있어요!',
+    })
   }
 
   const fetchData = async () => {
