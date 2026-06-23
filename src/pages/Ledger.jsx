@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
-import { CATEGORY_COLORS, getCategoryColor } from '../styles/theme'
+import { getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -125,15 +125,16 @@ const BackIcon = () => (
 )
 
 // ── 설정 섹션 레이블 ──────────────────────────────────
+// eslint-disable-next-line no-unused-vars
 const SectionLabel = ({ children }) => (
   <p style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, paddingLeft: 4 }}>{children}</p>
 )
 
 export default function Ledger() {
-  const { themeData, themeName, showUtilities, setShowUtilities } = useTheme()
+  const { themeData } = useTheme()
   const { cards: userCardsList } = useCards()
   const { loans, setLoans } = useLoans()
-  const { weekStartDay, sortOrder, setSortOrder, showCardBilling, rolloverBudget, showLoan, categories } = useSettings()
+  const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
   const navigate = useNavigate()
   const now = new Date()
   const [user, setUser] = useState(null)
@@ -176,9 +177,14 @@ export default function Ledger() {
           const t = localStorage.getItem(`moa_txns_${m}`)
           if (t) allTxns.push(...JSON.parse(t))
         })
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTransactions(allTxns)
-      } catch {}
-      try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccountsList(JSON.parse(a).map(x => x.name)) } catch {}
+      } catch { /* ignore */ }
+      try {
+        const a = localStorage.getItem('moa_accounts')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (a) setUserAccountsList(JSON.parse(a).map(x => x.name))
+      } catch { /* ignore */ }
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
@@ -203,7 +209,7 @@ export default function Ledger() {
     })
   }, [user])
 
-  const fetchTransactions = async () => {
+  async function fetchTransactions() {
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), orderBy('date', 'desc'))
     const snap = await getDocs(q)
     setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })))
@@ -284,7 +290,7 @@ export default function Ledger() {
     const monthDate = new Date(form.date)
     const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
     const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
-    let savedId = null
+    let savedId
     if (editItem) {
       await updateDoc(doc(db, 'transactions', editItem.id), data)
       savedId = editItem.id
@@ -341,6 +347,7 @@ export default function Ledger() {
     haptic.success()
     if (txnUndoTimerRef.current) clearTimeout(txnUndoTimerRef.current)
     setTxnUndoSnackbar(false)
+    // eslint-disable-next-line no-unused-vars
     const { id: _id, ...data } = deletedTxn
     const ref = await addDoc(collection(db, 'transactions'), data)
     const restoredId = ref.id
@@ -395,6 +402,7 @@ export default function Ledger() {
   )
 
   // ── 세그먼트 버튼 공통 스타일 ──
+  // eslint-disable-next-line no-unused-vars
   const segBtn = (active) => ({
     flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer',
     fontSize: 14, fontWeight: active ? 700 : 500,
@@ -404,7 +412,7 @@ export default function Ledger() {
   })
 
   return (
-    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeData.bgClass}>
+    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
 
       {/* ── 헤더 ── */}
       <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0', borderBottom: '1px solid #F2F4F6' }}>
@@ -949,7 +957,7 @@ export default function Ledger() {
 
       {/* ── Undo Snackbar ── */}
       <div style={{
-        position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 400,
+        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: txnUndoSnackbar ? 1 : 0,
         transition: txnUndoSnackbar

@@ -21,7 +21,7 @@ export default function YearMonthPicker({ viewYear, viewMonth, onConfirm, onClos
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
       onClick={onClose}>
-      <div style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px 44px' }}
+      <div style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 14px' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

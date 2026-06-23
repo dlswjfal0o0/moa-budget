@@ -83,7 +83,7 @@ export default function Auth() {
     try {
       await signInWithPopup(auth, googleProvider)
       navigate('/home', { replace: true })
-    } catch (e) {
+    } catch {
       setError('Google 로그인에 실패했어요.')
     }
     setLoading(false)
@@ -103,7 +103,7 @@ export default function Auth() {
       const credential = provider.credential({ idToken: identityToken })
       await signInWithCredential(auth, credential)
       navigate('/home', { replace: true })
-    } catch (e) {
+    } catch {
       setError('Apple 로그인에 실패했어요.')
     }
     setLoading(false)

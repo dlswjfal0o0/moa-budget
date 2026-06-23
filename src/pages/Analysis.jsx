@@ -1,13 +1,12 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { useState, useEffect, useRef } from 'react'
 import { useStagger } from '../hooks/useStagger'
-import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
-import { CATEGORY_COLORS, getCategoryColors } from '../styles/theme'
+import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 
 const UTILITY_STYLES = {
@@ -80,7 +79,6 @@ function CustomPieTooltip({ active, payload }) {
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const { cards } = useCards()
-  const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [lastMonthTx, setLastMonthTx] = useState([])
@@ -92,30 +90,8 @@ export default function Analysis() {
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
   const [utilities, setUtilities] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('moa_utilities') || '[]') } catch { return [] }
-  })
-  const [showAddUtility, setShowAddUtility] = useState(false)
-  const [editingUtility, setEditingUtility] = useState(null)
-  const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
-  const [utilityAI, setUtilityAI] = useState(null)
-  const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
-  const [expandedPayments, setExpandedPayments] = useState(new Set())
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const [expandedUtilities, setExpandedUtilities] = useState(new Set())
-  const [monthSlideDir, setMonthSlideDir] = useState(null) // 'prev' | 'next' | null
-  const monthSlideTimerRef = useRef(null)
-  // Stagger: 0=compare, 1=daily, 2=category, 3=AI, 4=payment
-  const isVisible = useStagger(5, 40, 80)
-  const toggleUtility = (type) => setExpandedUtilities(prev => {
-    const next = new Set(prev)
-    next.has(type) ? next.delete(type) : next.add(type)
-    return next
-  })
-
-  useEffect(() => {
-    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
-    if (isDemo) {
-      setUtilities([
+    if (localStorage.getItem('moa_demo_mode') === 'true') {
+      return [
         { type: '전기세', year: 2026, month: 1, amount: 45000, day: 25 },
         { type: '전기세', year: 2026, month: 2, amount: 52000, day: 25 },
         { type: '전기세', year: 2026, month: 3, amount: 38000, day: 25 },
@@ -140,36 +116,34 @@ export default function Analysis() {
         { type: '관리비', year: 2026, month: 4, amount: 88000, day: 20 },
         { type: '관리비', year: 2026, month: 5, amount: 91000, day: 20 },
         { type: '관리비', year: 2026, month: 6, amount: 94000, day: 20 },
-      ])
-      fetchDemoData()
-      return
+      ]
     }
-    const unsub = onAuthStateChanged(auth, async u => {
-      if (!u) navigate('/auth', { replace: true })
-      else {
-        setUser(u)
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists()) {
-          const data = snap.data()
-          if (data.utilities) {
-            setUtilities(data.utilities)
-            localStorage.setItem('moa_utilities', JSON.stringify(data.utilities))
-          }
-        }
-      }
-    })
-    return unsub
-  }, [])
+    try { return JSON.parse(localStorage.getItem('moa_utilities') || '[]') } catch { return [] }
+  })
+  const [showAddUtility, setShowAddUtility] = useState(false)
+  const [editingUtility, setEditingUtility] = useState(null)
+  const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
+  const [utilityAI, setUtilityAI] = useState(null)
+  const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
+  const [expandedPayments, setExpandedPayments] = useState(new Set())
+  const [expandedUtilities, setExpandedUtilities] = useState(new Set())
+  const [monthSlideDir, setMonthSlideDir] = useState(null) // 'prev' | 'next' | null
+  const monthSlideTimerRef = useRef(null)
+  // Stagger: 0=compare, 1=daily, 2=category, 3=AI, 4=payment
+  const isVisible = useStagger(5, 40, 80)
+  const toggleUtility = (type) => setExpandedUtilities(prev => {
+    const next = new Set(prev)
+    next.has(type) ? next.delete(type) : next.add(type)
+    return next
+  })
 
-  useEffect(() => { if (user) fetchData() }, [user, viewYear, viewMonth])
-
-  const fetchDemoData = () => {
+  function fetchDemoData() {
     const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const lm = viewMonth === 0 ? 11 : viewMonth - 1
     const ly = viewMonth === 0 ? viewYear - 1 : viewYear
     const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
-    try { const t = localStorage.getItem(`moa_txns_${monthStr}`); setTransactions(t ? JSON.parse(t) : []) } catch {}
-    try { const t = localStorage.getItem(`moa_txns_${lastStr}`); setLastMonthTx(t ? JSON.parse(t) : []) } catch {}
+    try { const t = localStorage.getItem(`moa_txns_${monthStr}`); setTransactions(t ? JSON.parse(t) : []) } catch { /* ignore */ }
+    try { const t = localStorage.getItem(`moa_txns_${lastStr}`); setLastMonthTx(t ? JSON.parse(t) : []) } catch { /* ignore */ }
     setAiFeedbackData({
       score: 72,
       rating: 'warning',
@@ -194,7 +168,7 @@ export default function Analysis() {
     })
   }
 
-  const fetchData = async () => {
+  async function fetchData() {
     const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const snap1 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr)))
     setTransactions(snap1.docs.map(d => ({ id: d.id, ...d.data() })))
@@ -204,6 +178,17 @@ export default function Analysis() {
     const snap2 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', lastStr)))
     setLastMonthTx(snap2.docs.map(d => ({ id: d.id, ...d.data() })))
   }
+
+  useEffect(() => {
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isDemo) { fetchDemoData(); return }
+    const unsub = onAuthStateChanged(auth, u => { setUser(u) })
+    return unsub
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { if (user) fetchData() }, [user, viewYear, viewMonth]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fmt = n => n.toLocaleString('ko-KR')
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
@@ -322,7 +307,7 @@ export default function Analysis() {
   const primaryLight = themeData?.primaryLight || '#EEF2FF'
 
   return (
-    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {/* 헤더 */}
       <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6' }}>

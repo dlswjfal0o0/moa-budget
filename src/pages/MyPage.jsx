@@ -92,6 +92,7 @@ export default function MyPage() {
   const [newCardId, setNewCardId] = useState(null)
   const [highlightCardId, setHighlightCardId] = useState(null)
   // ────────────────────────────────────────────────
+  // eslint-disable-next-line no-unused-vars
   const [expandedAccountHistoryId, setExpandedAccountHistoryId] = useState(null)
   const [expandedCardId, setExpandedCardId] = useState(null)
   const [showAccountNumbers, setShowAccountNumbers] = useState(false)
@@ -109,6 +110,7 @@ export default function MyPage() {
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNickname(localStorage.getItem('moa_nickname') || '데모 사용자')
       return
     }
@@ -210,6 +212,7 @@ export default function MyPage() {
 
   const handleCashSave = () => {
     const currentAmount = Number(cashInput)
+    // eslint-disable-next-line no-useless-assignment
     let net = 0
     try {
         net = allTxns.reduce((s, t) => {
@@ -358,6 +361,7 @@ export default function MyPage() {
 
   const handleSaveAccount = () => {
     const origAcc = accounts.find(a => a.id === editingAccountId)
+    // eslint-disable-next-line no-useless-assignment
     let net = 0
     try {
       net = allTxns.reduce((s, t) => {
@@ -512,6 +516,7 @@ export default function MyPage() {
       return account.balance + net
     } catch { return account.balance }
   }
+  // eslint-disable-next-line no-unused-vars
   const getBalanceAtMonthEnd = (account, year, month) => {
     const lastDayStr = `${year}-${String(month).padStart(2,'0')}-${String(new Date(year, month, 0).getDate()).padStart(2,'0')}`
     try {
@@ -563,6 +568,7 @@ export default function MyPage() {
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
   }
+  // eslint-disable-next-line no-unused-vars
   const totalCardUsed = cards.reduce((s, card) => s + getCardUsed(card), 0)
   const totalAsset = accounts.reduce((s, a) => s + getAccountBalance(a), 0) + getCashBalance()
 
@@ -582,7 +588,7 @@ export default function MyPage() {
   ]
 
   return (
-    <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 80 }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+    <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {/* 헤더 */}
       <div style={{ background: t.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>
@@ -2114,7 +2120,7 @@ export default function MyPage() {
 
       {/* ── Undo Snackbar ───────────────────────── */}
       <div style={{
-        position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 900,
+        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 900,
         transform: undoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: undoSnackbar ? 1 : 0,
         transition: undoSnackbar

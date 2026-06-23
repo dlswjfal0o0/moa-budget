@@ -1,5 +1,5 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { CATEGORY_COLORS, getCategoryColors, DEFAULT_CATEGORIES } from '../styles/theme'
+import { PieChart, Pie, Cell, Tooltip } from 'recharts'
+import { getCategoryColors, DEFAULT_CATEGORIES } from '../styles/theme'
 import { useState, useEffect } from 'react'
 import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
@@ -35,7 +35,8 @@ function TipIcon({ type, color = '#3182F6' }) {
   }
 }
 
-function BudgetCard({ budget, spent, themeData, fmt }) {
+// eslint-disable-next-line no-unused-vars
+function _BudgetCard({ budget, spent, themeData, fmt }) {
   const pct = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0
   const remaining = Math.max(budget.amount - spent, 0)
   const color = pct >= 100 ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary
@@ -97,7 +98,8 @@ export default function Home() {
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
-      try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch {}
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch { /* ignore */ }
       setFixedExpenses([
         { id: 1,  title: '월세',             amount: 550000, dueDate: '2026-06-05', category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
         { id: 2,  title: '넷플릭스',         amount: 17000,  dueDate: '2026-06-03', category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
@@ -213,7 +215,8 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
     setLoadingInsightId(null)
   }
 
-  const getLocalInsight = (budget, spent) => {
+  // eslint-disable-next-line no-unused-vars
+  const _getLocalInsight = (budget, spent) => {
     const remaining = budget.amount - spent
     const daysLeft = Math.max(1, Math.ceil((new Date(budget.endDate) - new Date()) / 86400000))
     const pct = (spent / budget.amount) * 100
@@ -275,7 +278,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
   }
 
   return (
-    <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
       {/* 헤더 — Toss 스타일 컬러 배너 */}
       <div style={{ background: themeData.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff', ...stagger(0) }}>
         <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth()+1}월</p>
@@ -321,7 +324,8 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
               const exceeded = spent > b.amount
               const color = exceeded ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary
               const aiText = budgetInsights[b.id]
-              const arcLen = Math.PI * 34
+              // eslint-disable-next-line no-unused-vars
+              const _arcLen = Math.PI * 34
               return (
                 <div key={b.id} style={{ marginBottom: 12, background: themeData.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                   {/* 클릭 시 수정/삭제 토글 */}

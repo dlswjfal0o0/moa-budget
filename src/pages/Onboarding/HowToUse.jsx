@@ -458,7 +458,7 @@ function MyMockup() {
         {/* 계좌 */}
         <div style={{ background:'white', borderRadius:16, padding:'6px 8px', marginBottom:4, animation:'moaFadeUp 0.4s 0.5s ease both' }}>
           <div style={{ fontSize:7.5, fontWeight:600, color:'#111', marginBottom:3 }}>계좌</div>
-          {[['카카오뱅크','1,250,000원'],['토스뱅크','380,000원']].map(([bank,bal],i)=>(
+          {[['카카오뱅크','1,250,000원'],['토스뱅크','380,000원']].map(([bank,bal])=>(
             <div key={bank} style={{ display:'flex', justifyContent:'space-between', padding:'2px 0', borderBottom:'1px solid #f8f8f8' }}>
               <span style={{ fontSize:6.5, color:'#333' }}>{bank}</span>
               <span style={{ fontSize:6.5, fontWeight:600, color:'#111' }}>{bal}</span>
@@ -477,82 +477,21 @@ function MyMockup() {
   )
 }
 
-function LedgerSettingsMockup() {
-  return (
-    <div style={{ flex:1, background:'white', overflow:'hidden', padding:'7px 8px', display:'flex', flexDirection:'column' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
-        <span style={{ fontSize:9, fontWeight:700, color:'#111' }}>가계부 설정</span>
-        <span style={{ fontSize:13, color:'#bbb' }}>×</span>
-      </div>
-      <p style={{ fontSize:6.5, color:'#888', fontWeight:600, marginBottom:2 }}>주 시작 요일</p>
-      <div style={{ display:'flex', background:'#f0f0f0', borderRadius:9999, padding:3, marginBottom:5 }}>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, background:PRIMARY, textAlign:'center', fontSize:6.5, color:'white', fontWeight:600 }}>월요일부터</div>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, textAlign:'center', fontSize:6.5, color:'#888' }}>일요일부터</div>
-      </div>
-      <p style={{ fontSize:6.5, color:'#888', fontWeight:600, marginBottom:2 }}>정렬 순서</p>
-      <div style={{ display:'flex', background:'#f0f0f0', borderRadius:9999, padding:3, marginBottom:5 }}>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, background:PRIMARY, textAlign:'center', fontSize:6.5, color:'white', fontWeight:600 }}>↓ 최신순</div>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, textAlign:'center', fontSize:6.5, color:'#888' }}>↑ 오래된순</div>
-      </div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
-        <div>
-          <p style={{ fontSize:6.5, fontWeight:600, color:'#111' }}>잔여 예산 이월</p>
-          <p style={{ fontSize:5, color:'#888' }}>남은 예산을 다음 달로 이월</p>
-        </div>
-        <div style={{ width:22, height:12, borderRadius:9999, background:'#e0e0e0', position:'relative', flexShrink:0 }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:'white', position:'absolute', top:2, left:2 }}/>
-        </div>
-      </div>
-      <p style={{ fontSize:6.5, color:'#888', fontWeight:600, marginBottom:2 }}>카테고리 관리</p>
-      <div style={{ display:'flex', background:'#f0f0f0', borderRadius:9999, padding:3, marginBottom:4 }}>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, background:PRIMARY, textAlign:'center', fontSize:6.5, color:'white', fontWeight:600 }}>지출</div>
-        <div style={{ flex:1, padding:'3px', borderRadius:9999, textAlign:'center', fontSize:6.5, color:'#888' }}>수입</div>
-      </div>
-      <div style={{ display:'flex', flexWrap:'wrap', gap:3, marginBottom:5 }}>
-        {['🍽 식비','🚌 교통','🛍 쇼핑','🎬 문화','💊 의료'].map(c=>(
-          <span key={c} style={{ fontSize:5.5, background:'#f0f0f0', borderRadius:8, padding:'2px 5px', color:'#555' }}>{c} ×</span>
-        ))}
-      </div>
-      <div style={{ height:0.5, background:'#f0f0f0', marginBottom:5 }}/>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
-        <div>
-          <p style={{ fontSize:6.5, fontWeight:600, color:'#111' }}>카드 대금 표시</p>
-          <p style={{ fontSize:5, color:'#888' }}>대금은 회색, 지출 합계 제외</p>
-        </div>
-        <div style={{ width:22, height:12, borderRadius:9999, background:'#e0e0e0', position:'relative', flexShrink:0 }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:'white', position:'absolute', top:2, left:2 }}/>
-        </div>
-      </div>
-      <div style={{ height:0.5, background:'#f0f0f0', marginBottom:5 }}/>
-      <div style={{ background:'#EEF2FF', borderRadius:16, padding:'5px 7px', border:`1.5px solid ${PRIMARY}44` }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <div>
-            <p style={{ fontSize:7, fontWeight:700, color:PRIMARY, display:'flex', alignItems:'center', gap:2 }}><svg width="8" height="8" viewBox="0 0 24 24" fill={PRIMARY} stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>분석 공과금 탭</p>
-            <p style={{ fontSize:5, color:'#666', marginTop:1 }}>ON 시 공과금 전월 비교 & AI 분석 가능</p>
-          </div>
-          <div style={{ width:22, height:12, borderRadius:9999, background:PRIMARY, position:'relative', flexShrink:0 }}>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:'white', position:'absolute', top:2, right:2 }}/>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+function MIcon({children, bg}) {
+  return <div style={{ width:16, height:16, borderRadius:6, background:bg||PRIMARY, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{children}</div>
+}
+function SettingsRow({children, border}) {
+  return <div style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 7px', borderBottom:border?'1px solid #F2F4F6':'none' }}>{children}</div>
+}
+function SLabel({children}) {
+  return <p style={{ fontSize:5.5, fontWeight:600, color:'#8B95A1', padding:'6px 4px 3px', letterSpacing:0.3 }}>{children}</p>
+}
+function SettingsCard({children, mb}) {
+  return <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', marginBottom:mb||4, boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>{children}</div>
 }
 
 function MySettingsMockup() {
   const chevron = <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-  const MIcon = ({children, bg}) => (
-    <div style={{ width:16, height:16, borderRadius:6, background:bg||PRIMARY, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{children}</div>
-  )
-  const Row = ({children, border}) => (
-    <div style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 7px', borderBottom:border?'1px solid #F2F4F6':'none' }}>{children}</div>
-  )
-  const SLabel = ({children}) => (
-    <p style={{ fontSize:5.5, fontWeight:600, color:'#8B95A1', padding:'6px 4px 3px', letterSpacing:0.3 }}>{children}</p>
-  )
-  const Card = ({children, mb}) => (
-    <div style={{ background:'#fff', borderRadius:14, overflow:'hidden', marginBottom:mb||4, boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>{children}</div>
-  )
   return (
     <div style={{ flex:1, background:'#F7F8FA', overflow:'hidden', display:'flex', flexDirection:'column' }}>
       {/* 헤더 — 흰 배경 + 다크 텍스트 */}
@@ -563,82 +502,82 @@ function MySettingsMockup() {
       <div style={{ flex:1, overflow:'hidden', padding:'0 5px' }}>
         {/* 기능 */}
         <SLabel>기능</SLabel>
-        <Card>
+        <SettingsCard>
           {[
             { label:'홈', desc:'표시 옵션', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
             { label:'가계부', desc:'주 시작 요일, 정렬 순서', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
             { label:'분석', desc:'탭 구성 옵션', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
             { label:'MY', desc:'기능 관리', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
           ].map((item, i, arr) => (
-            <Row key={item.label} border={i < arr.length-1}>
+            <SettingsRow key={item.label} border={i < arr.length-1}>
               <MIcon><>{item.icon}</></MIcon>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>{item.label}</p>
                 <p style={{ fontSize:4.5, color:'#8B95A1' }}>{item.desc}</p>
               </div>
               {chevron}
-            </Row>
+            </SettingsRow>
           ))}
-        </Card>
-        <Card>
-          <Row>
+        </SettingsCard>
+        <SettingsCard>
+          <SettingsRow>
             <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></MIcon>
             <div style={{ flex:1 }}>
               <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>카테고리 관리</p>
               <p style={{ fontSize:4.5, color:'#8B95A1' }}>지출 · 수입 카테고리 편집</p>
             </div>
             {chevron}
-          </Row>
-        </Card>
+          </SettingsRow>
+        </SettingsCard>
         {/* 디스플레이 */}
         <SLabel>디스플레이</SLabel>
-        <Card>
-          <Row>
+        <SettingsCard>
+          <SettingsRow>
             <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="13.5" cy="6.5" r="1.3" fill="#fff" stroke="none"/><circle cx="17.5" cy="10.5" r="1.3" fill="#fff" stroke="none"/><circle cx="8.5" cy="7.5" r="1.3" fill="#fff" stroke="none"/><circle cx="6.5" cy="12.5" r="1.3" fill="#fff" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125A1.64 1.64 0 0 1 14.441 18h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke="#fff" fill="none"/></svg></MIcon>
             <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>테마</p>
             {chevron}
-          </Row>
-        </Card>
+          </SettingsRow>
+        </SettingsCard>
         {/* 데이터 */}
         <SLabel>데이터</SLabel>
-        <Card>
-          <Row>
+        <SettingsCard>
+          <SettingsRow>
             <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></MIcon>
             <div style={{ flex:1 }}>
               <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>데이터 내보내기</p>
               <p style={{ fontSize:4.5, color:'#8B95A1' }}>엑셀 · PDF 파일로 저장</p>
             </div>
             {chevron}
-          </Row>
-        </Card>
+          </SettingsRow>
+        </SettingsCard>
         {/* 앱 정보 */}
         <SLabel>앱 정보</SLabel>
-        <Card>
+        <SettingsCard>
           {[
             { label:'이용 방법', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> },
             { label:'업데이트 내용', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
             { label:'피드백 보내기', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
           ].map((item, i, arr) => (
-            <Row key={item.label} border={i < arr.length-1}>
+            <SettingsRow key={item.label} border={i < arr.length-1}>
               <MIcon>{item.icon}</MIcon>
               <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>{item.label}</p>
               {chevron}
-            </Row>
+            </SettingsRow>
           ))}
-        </Card>
+        </SettingsCard>
         {/* 계정 */}
         <SLabel>계정</SLabel>
-        <Card>
-          <Row border>
+        <SettingsCard>
+          <SettingsRow border>
             <MIcon bg="#6B7280"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></MIcon>
             <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>로그아웃</p>
-          </Row>
-          <Row>
+          </SettingsRow>
+          <SettingsRow>
             <MIcon bg="#EF4444"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></MIcon>
             <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#FF3B30' }}>계정 탈퇴</p>
             <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </Row>
-        </Card>
+          </SettingsRow>
+        </SettingsCard>
       </div>
     </div>
   )

@@ -9,6 +9,8 @@ const TEXT = '#111827'
 const TEXT2 = '#6B7280'
 
 export default function SplashScreen() {
+  const navigate = useNavigate()
+
   useEffect(() => {
     // 이전에 로그인한 적 있으면 즉시 홈으로
     if (localStorage.getItem('moa_logged_in') === 'true') {
@@ -24,8 +26,7 @@ export default function SplashScreen() {
         }
     })
     return unsub
-  }, [])
-  const navigate = useNavigate()
+  }, [navigate])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 32px 0', background: BG, position: 'relative', overflow: 'hidden' }}>

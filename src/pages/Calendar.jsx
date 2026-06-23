@@ -11,7 +11,7 @@ import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 
 export default function Calendar() {
-  const { themeData, themeName } = useTheme()
+  const { themeData } = useTheme()
   const { cards } = useCards()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
@@ -38,10 +38,13 @@ export default function Calendar() {
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
-      try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccounts(JSON.parse(a)) } catch {}
-      try { const c = localStorage.getItem('moa_cards'); if (c) setUserCards(JSON.parse(c)) } catch {}
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccounts(JSON.parse(a)) } catch { /* ignore */ }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      try { const c = localStorage.getItem('moa_cards'); if (c) setUserCards(JSON.parse(c)) } catch { /* ignore */ }
       const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-      try { const t = localStorage.getItem(`moa_txns_${monthStr}`); if (t) setTransactions(JSON.parse(t)) } catch {}
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      try { const t = localStorage.getItem(`moa_txns_${monthStr}`); if (t) setTransactions(JSON.parse(t)) } catch { /* ignore */ }
       setFixedExpenses([
         { id: 1,  title: '월세',             amount: 550000, dueDate: '2026-06-05', category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
         { id: 2,  title: '넷플릭스',         amount: 17000,  dueDate: '2026-06-03', category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },

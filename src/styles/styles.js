@@ -17,13 +17,13 @@ export const inputStyle = {
 export const pageWrapper = {
   background: COLORS.bgPage,
   minHeight: '100vh',
-  paddingBottom: 80,
+  paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
 }
 
 // 헤더
 export const headerStyle = {
   background: COLORS.bgCard,
-  padding: '48px 24px 16px',
+  padding: 'calc(env(safe-area-inset-top, 44px) + 12px) 24px 16px',
   borderBottom: `1px solid ${COLORS.borderLight}`,
 }
 
@@ -134,7 +134,7 @@ export const navBannerText = {
 export const bottomSheet = {
   background: COLORS.bgCard,
   borderRadius: '28px 28px 0 0',
-  padding: '28px 24px 40px',
+  padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)',
   width: '100%',
   maxWidth: 430,
   maxHeight: '88vh',
@@ -165,7 +165,7 @@ export const fullscreenForm = {
 export const fullscreenHeader = {
   display: 'flex',
   alignItems: 'center',
-  padding: '48px 24px 16px',
+  padding: 'calc(env(safe-area-inset-top, 44px) + 12px) 24px 16px',
   borderBottom: `1px solid ${COLORS.borderLight}`,
   background: COLORS.bgCard,
   position: 'sticky',
@@ -201,7 +201,7 @@ export const toggleThumb = (on) => ({
 // FAB (플로팅 추가 버튼) — radius 24px (floating element)
 export const fabStyle = {
   position: 'fixed',
-  bottom: 90,
+  bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))',
   right: 20,
   width: 56,
   height: 56,
