@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
@@ -90,7 +90,7 @@ export default function Calendar() {
             title: f.title, amount: f.amount,
             category: f.category || '기타', payment: f.payment || '현금',
             date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
-            isAutoRegistered: true, createdAt: new Date().toISOString()
+            isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
           }))
           return { ...f, autoRegisteredMonths: [...registeredMonths, nowMonthKey] }
         })
@@ -129,13 +129,40 @@ export default function Calendar() {
     setShowAddFixed(false)
   }
 
-  const handleToggleFixed = (id) => {
+  const handleToggleFixed = async (id) => {
     const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-    const updated = fixedExpenses.map(f => {
-      if (f.id !== id) return f
-      const doneMonths = f.doneMonths || []
-      const isDone = doneMonths.includes(monthKey)
-      return { ...f, doneMonths: isDone ? doneMonths.filter(m => m !== monthKey) : [...doneMonths, monthKey] }
+    const f = fixedExpenses.find(x => x.id === id)
+    if (!f || !user) return
+    const doneMonths = f.doneMonths || []
+    const isDone = doneMonths.includes(monthKey)
+
+    if (!isDone) {
+      // 체크 ON → 가계부에 내역 추가
+      const dueDay = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : 1
+      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(isNaN(dueDay) ? 1 : dueDay).padStart(2, '0')}`
+      await addDoc(collection(db, 'transactions'), {
+        uid: user.uid, month: monthKey, type: 'expense',
+        title: f.title, amount: f.amount,
+        category: f.category || '기타', payment: f.payment || '현금',
+        date: dateStr, time: '00:00', memo: '고정지출',
+        fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
+      })
+      setRefreshTrigger(t => t + 1)
+    } else {
+      // 체크 OFF → 가계부에서 해당 내역 삭제
+      const q = query(collection(db, 'transactions'),
+        where('uid', '==', user.uid),
+        where('month', '==', monthKey),
+        where('fixedExpenseId', '==', String(f.id))
+      )
+      const snap = await getDocs(q)
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'transactions', d.id))))
+      setRefreshTrigger(t => t + 1)
+    }
+
+    const updated = fixedExpenses.map(x => {
+      if (x.id !== id) return x
+      return { ...x, doneMonths: isDone ? doneMonths.filter(m => m !== monthKey) : [...doneMonths, monthKey] }
     })
     saveFixed(updated)
   }
