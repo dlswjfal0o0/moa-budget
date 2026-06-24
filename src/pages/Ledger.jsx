@@ -683,6 +683,10 @@ export default function Ledger() {
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>이체 정보</p>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>출금 계좌</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                  <button onClick={() => setForm(f => ({ ...f, payment: '현금' }))}
+                    style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                      background: form.payment === '현금' ? themeData.primary : '#F2F4F6',
+                      color: form.payment === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
                   {userAccountsList.length > 0 ? userAccountsList.map(a => (
                     <button key={a} onClick={() => setForm(f => ({ ...f, payment: a }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
@@ -695,6 +699,10 @@ export default function Ledger() {
                 </div>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 600 }}>입금 계좌</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  <button onClick={() => setForm(f => ({ ...f, toAccount: '현금' }))}
+                    style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
+                      background: form.toAccount === '현금' ? themeData.primary : '#F2F4F6',
+                      color: form.toAccount === '현금' ? '#fff' : '#8B95A1' }}>현금</button>
                   {userAccountsList.length > 0 ? userAccountsList.map(a => (
                     <button key={a} onClick={() => setForm(f => ({ ...f, toAccount: a }))}
                       style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13,
