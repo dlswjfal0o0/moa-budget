@@ -106,6 +106,37 @@ export default function MyPage() {
   const [selectedLoan, setSelectedLoan] = useState(null)
   const [loanDetailSort, setLoanDetailSort] = useState('desc')
   const [expandedLoanId, setExpandedLoanId] = useState(null)
+  const [loanRepaymentTxns, setLoanRepaymentTxns] = useState([])
+  const [loadingRepayments, setLoadingRepayments] = useState(false)
+
+  // selectedLoan이 열릴 때 Firestore에서 직접 상환 트랜잭션 불러오기
+  useEffect(() => {
+    if (!selectedLoan) { setLoanRepaymentTxns([]); return }
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (isDemo) {
+      const loan = loans.find(l => String(l.id) === String(selectedLoan.id)) || selectedLoan
+      setLoanRepaymentTxns((loan.repayments || []).map(r => ({ date: r.date, daysElapsed: r.daysElapsed, amount: r.amount })))
+      return
+    }
+    const loadTxns = async () => {
+      setLoadingRepayments(true)
+      try {
+        const auth_user = auth.currentUser
+        if (!auth_user) return
+        const q = query(
+          collection(db, 'transactions'),
+          where('uid', '==', auth_user.uid),
+          where('isLoan', '==', true),
+          where('loanId', '==', String(selectedLoan.id))
+        )
+        const snap = await getDocs(q)
+        const txns = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        setLoanRepaymentTxns(txns)
+      } catch (e) { console.error('상환 내역 불러오기 실패:', e) }
+      setLoadingRepayments(false)
+    }
+    loadTxns()
+  }, [selectedLoan]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
@@ -1986,9 +2017,17 @@ export default function MyPage() {
         const loan = loans.find(l => l.id === selectedLoan.id) || selectedLoan
         const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
         const totalWithInterest = loan.remainingPrincipal + (loan.rate ? monthlyInterest : 0)
-        const repaid = loan.principal - loan.remainingPrincipal
+        // 상환 내역: Firestore 트랜잭션에서 직접 계산 (단일 소스)
+        const sortedTxns = [...loanRepaymentTxns].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+        const repaymentsFromTxns = sortedTxns.map((r, i) => ({
+          date: r.date,
+          daysElapsed: r.daysElapsed != null ? r.daysElapsed : null,
+          amount: r.amount,
+          cumulativeAmount: sortedTxns.slice(0, i + 1).reduce((s, t) => s + (t.amount || 0), 0)
+        }))
+        const repaid = repaymentsFromTxns.reduce((s, r) => s + r.amount, 0)
         const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0
-        const repayments = [...(loan.repayments || [])].sort((a, b) => loanDetailSort === 'desc' ? (b.date || '').localeCompare(a.date || '') : (a.date || '').localeCompare(b.date || ''))
+        const repayments = loanDetailSort === 'desc' ? [...repaymentsFromTxns].reverse() : repaymentsFromTxns
 
         return (
           <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
@@ -2067,7 +2106,9 @@ export default function MyPage() {
                   </div>
                 </div>
 
-                {repayments.length === 0 ? (
+                {loadingRepayments ? (
+                  <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>불러오는 중...</p>
+                ) : repayments.length === 0 ? (
                   <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>아직 상환 내역이 없어요</p>
                 ) : (
                   <>

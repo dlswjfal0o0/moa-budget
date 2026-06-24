@@ -299,19 +299,8 @@ export default function Ledger() {
       savedId = ref.id
     }
     if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
-    if (form.type === 'expense' && form.isLoan && form.loanId && !editItem) {
-      try {
-        const targetLoan = loans.find(l => String(l.id) === String(form.loanId))
-        if (targetLoan) {
-          const prevRepayments = targetLoan.repayments || []
-          const cumulativeAmount = prevRepayments.reduce((s, r) => s + r.amount, 0) + Number(form.amount)
-          const newRepayment = { date: form.date, daysElapsed: form.daysElapsed ? Number(form.daysElapsed) : null, amount: Number(form.amount), cumulativeAmount, transactionId: savedId }
-          await setLoans(loans.map(l => String(l.id) === String(form.loanId) ? { ...targetLoan, repayments: [...prevRepayments, newRepayment] } : l))
-        }
-      } catch (e) {
-        console.error('대출 상환 연동 실패:', e)
-      }
-    }
+    // 대출 상환 연동: 트랜잭션에 isLoan/loanId/daysElapsed가 저장되므로
+    // MY 대출 페이지가 Firestore 트랜잭션을 직접 읽어 상환 내역을 표시합니다.
     clearTimeout(loadingTimer)
     setFormSaveState('success')
     haptic.success()
