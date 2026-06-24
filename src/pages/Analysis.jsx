@@ -249,8 +249,8 @@ export default function Analysis() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          system: '당신은 한국어로 응답하는 개인 재무 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요.',
-          messages: [{ role: 'user', content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:\n\n이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입\n지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출\n\n중요 규칙:\n- 모든 텍스트는 반드시 서술형으로 작성(~해요, ~있어요, ~됩니다). 명령형(~하세요, ~합시다, ~하라) 절대 금지.\n- tip 필드는 반드시 2문장 이상으로, 구체적이고 실질적인 도움이 되는 내용으로 작성.\n- save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지)\n- save는 해당 카테고리에서 절약 가능한 예상 금액 (0 이상)\n- 모든 숫자 필드는 정수만 허용\n\n응답 형식 (이 형식 그대로만):\n{"rating":"good","score":75,"summary":"2줄 서술형 요약","cuts":[{"category":"카테고리명","tip":"구체적 도움 조언 2문장 이상 (서술형)","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지 (서술형)"}` }]
+          system: '당신은 개인 재무 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
+          messages: [{ role: 'user', content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:\n\n이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입\n지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출\n\n중요 규칙:\n- 모든 텍스트는 반드시 한글 서술형으로 작성(~해요, ~있어요, ~됩니다). 명령형(~하세요, ~합시다, ~하라) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 예: '下', 'download', 'app' 같은 표현 금지. 대신 '내려받기', '앱' 같은 순한글 표현 사용.\n- tip 필드는 반드시 2문장 이상으로, 구체적이고 실질적인 도움이 되는 내용으로 작성.\n- save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지)\n- save는 해당 카테고리에서 절약 가능한 예상 금액 (0 이상)\n- 모든 숫자 필드는 정수만 허용\n\n응답 형식 (이 형식 그대로만):\n{"rating":"good","score":75,"summary":"2줄 서술형 요약","cuts":[{"category":"카테고리명","tip":"구체적 도움 조언 2문장 이상 (서술형)","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지 (서술형)"}` }]
         })
       })
       const data = await res.json()
@@ -286,8 +286,8 @@ export default function Analysis() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514', max_tokens: 600,
-          system: '당신은 한국어로 응답하는 공과금 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요.',
-          messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해 주세요.\n\n중요 규칙:\n- 모든 텍스트는 반드시 한국어 서술형(~해요, ~있어요, ~됩니다)으로 작성해 주세요. 영어 사용 금지.\n- 명령형(~하세요, ~합시다) 절대 금지.\n\n아래 JSON 형식으로만 응답해 주세요:\n{"items":[{"type":"관리비","status":"up","comment":"이모지 포함 친근한 한 줄 한국어 서술형 코멘트"}],"overall":"이모지 포함 전체 총평 한국어 서술형","tip":"이모지 포함 절약 팁 한 줄 한국어 서술형"}` }]
+          system: '당신은 공과금 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
+          messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해 주세요.\n\n중요 규칙:\n- 모든 텍스트는 반드시 한글 서술형(~해요, ~있어요, ~됩니다)으로 작성해 주세요.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n- 명령형(~하세요, ~합시다) 절대 금지.\n\n아래 JSON 형식으로만 응답해 주세요:\n{"items":[{"type":"관리비","status":"up","comment":"이모지 포함 친근한 한 줄 한국어 서술형 코멘트"}],"overall":"이모지 포함 전체 총평 한국어 서술형","tip":"이모지 포함 절약 팁 한 줄 한국어 서술형"}` }]
         })
       })
       const data = await res.json()

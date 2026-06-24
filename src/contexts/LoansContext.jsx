@@ -57,7 +57,12 @@ export function LoansProvider({ children }) {
   const setLoans = async (updated) => {
     setLoansState(updated)
     if (currentUser) {
-      await setDoc(doc(db, 'users', currentUser.uid), { loans: updated }, { merge: true })
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { loans: updated }, { merge: true })
+      } catch (e) {
+        console.error('대출 정보 저장 실패:', e)
+        throw e
+      }
     }
   }
 

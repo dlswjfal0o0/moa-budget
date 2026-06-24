@@ -300,12 +300,16 @@ export default function Ledger() {
     }
     if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
     if (form.type === 'expense' && form.isLoan && form.loanId && !editItem) {
-      const targetLoan = loans.find(l => l.id === Number(form.loanId))
-      if (targetLoan) {
-        const prevRepayments = targetLoan.repayments || []
-        const cumulativeAmount = prevRepayments.reduce((s, r) => s + r.amount, 0) + Number(form.amount)
-        const newRepayment = { date: form.date, daysElapsed: form.daysElapsed ? Number(form.daysElapsed) : null, amount: Number(form.amount), cumulativeAmount }
-        await setLoans(loans.map(l => l.id === targetLoan.id ? { ...targetLoan, repayments: [...prevRepayments, newRepayment] } : l))
+      try {
+        const targetLoan = loans.find(l => String(l.id) === String(form.loanId))
+        if (targetLoan) {
+          const prevRepayments = targetLoan.repayments || []
+          const cumulativeAmount = prevRepayments.reduce((s, r) => s + r.amount, 0) + Number(form.amount)
+          const newRepayment = { date: form.date, daysElapsed: form.daysElapsed ? Number(form.daysElapsed) : null, amount: Number(form.amount), cumulativeAmount, transactionId: savedId }
+          await setLoans(loans.map(l => String(l.id) === String(form.loanId) ? { ...targetLoan, repayments: [...prevRepayments, newRepayment] } : l))
+        }
+      } catch (e) {
+        console.error('대출 상환 연동 실패:', e)
       }
     }
     clearTimeout(loadingTimer)
@@ -597,7 +601,7 @@ export default function Ledger() {
       </div>
 
       {/* ── FAB ── */}
-      <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false }); setShowForm(true) }}
+      <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' }); setShowForm(true) }}
         style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
 
       {/* ── 내역 추가/수정 폼 ── */}
