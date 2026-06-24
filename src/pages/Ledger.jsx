@@ -837,7 +837,20 @@ export default function Ledger() {
               </div>
             )}
 
-            {/* 대출 / 상환 */}
+            {/* 대출 / 상환 - 수입 */}
+            {form.type === 'income' && showLoan && (
+              <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28', marginBottom: 3 }}>대출 / 상환</p>
+                    <p style={{ fontSize: 13, color: '#8B95A1' }}>합계에서 제외</p>
+                  </div>
+                  <Toggle on={form.isLoan || false} onChange={val => setForm(f => ({ ...f, isLoan: val }))} />
+                </div>
+              </div>
+            )}
+
+            {/* 대출 / 상환 - 지출 */}
             {form.type === 'expense' && showLoan && (
               <div style={{ background: '#fff', borderRadius: 20, padding: '16px 20px', marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
