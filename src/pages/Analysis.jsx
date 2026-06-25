@@ -201,12 +201,12 @@ export default function Analysis() {
     const card = getCreditCard(t.payment)
     return card?.creditTracking === 'billing'
   }
-  const expenses = transactions.filter(t => !t.mergedInto && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
-  const incomes = transactions.filter(t => !t.mergedInto && t.type === 'income' && (!showLoan || !t.isLoan))
+  const expenses = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
+  const incomes = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
-  const lastExpenses = lastMonthTx.filter(t => !t.mergedInto && t.type === 'expense')
-  const lastIncomes = lastMonthTx.filter(t => !t.mergedInto && t.type === 'income')
+  const lastExpenses = lastMonthTx.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense')
+  const lastIncomes = lastMonthTx.filter(t => !t.mergedInto && !t.isHidden && t.type === 'income')
   const lastTotalExpense = lastExpenses.reduce((s, t) => s + t.amount, 0)
   const lastTotalIncome = lastIncomes.reduce((s, t) => s + t.amount, 0)
   const expenseDiff = totalExpense - lastTotalExpense

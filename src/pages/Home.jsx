@@ -247,8 +247,8 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
     const card = getCreditCard(t.payment)
     return card?.creditTracking === 'billing'
   }
-  const expenses = transactions.filter(t => !t.mergedInto && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
-  const incomes = transactions.filter(t => !t.mergedInto && t.type === 'income' && (!showLoan || !t.isLoan))
+  const expenses = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
+  const incomes = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
   const totalIncome = incomes.reduce((s, t) => s + t.amount, 0)
   const expenseByCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
@@ -318,7 +318,7 @@ tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money,
             budgets.map(b => {
               const bCats = Array.isArray(b.categories) ? b.categories : []
               // 총 지출과 동일한 신용카드 필터 적용
-              const budgetTxns = transactions.filter(t => !t.mergedInto && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
+              const budgetTxns = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
               const spent = budgetTxns.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount

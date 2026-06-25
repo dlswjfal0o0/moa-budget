@@ -169,6 +169,13 @@ export default function Ledger() {
   // ────────────────────────────────────────────────
   const [userAccountsList, setUserAccountsList] = useState([])
 
+  // ── 검색 & 숨기기 state ─────────────────────────────
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchCategory, setSearchCategory] = useState(null)
+  const [showHiddenView, setShowHiddenView] = useState(false)
+  // ────────────────────────────────────────────────────
+
   // ── 선택 모드 state ──────────────────────────────────
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -250,7 +257,7 @@ export default function Ledger() {
   const nextMonth = () => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }
 
   const getFiltered = () => {
-    let filtered = [...transactions].filter(t => !t.mergedInto)
+    let filtered = [...transactions].filter(t => !t.mergedInto && !t.isHidden)
     if (period === '주간') {
       filtered = filtered.filter(t => t.date >= weekRange.start && t.date <= weekRange.end)
     } else if (period === '월간') {
@@ -262,6 +269,18 @@ export default function Ledger() {
     if (tab === '소비') filtered = filtered.filter(t => t.type === 'expense')
     if (tab === '수입') filtered = filtered.filter(t => t.type === 'income')
     if (tab === '이체') filtered = filtered.filter(t => t.type === 'transfer')
+    // 검색 필터
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      filtered = filtered.filter(t =>
+        t.title?.toLowerCase().includes(q) ||
+        t.memo?.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q)
+      )
+    }
+    if (searchCategory) {
+      filtered = filtered.filter(t => t.category === searchCategory)
+    }
     filtered.sort((a, b) => {
       const aKey = `${a.date} ${a.time || '00:00'}`
       const bKey = `${b.date} ${b.time || '00:00'}`
@@ -429,6 +448,22 @@ export default function Ledger() {
     }
   }
 
+  // ── 숨기기 핸들러 ────────────────────────────────────
+  const handleHide = async (id) => {
+    haptic.light()
+    setSelectedId(null)
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (!isDemo && user) await updateDoc(doc(db, 'transactions', id), { isHidden: true })
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, isHidden: true } : t))
+  }
+  const handleUnhide = async (id) => {
+    haptic.light()
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (!isDemo && user) await updateDoc(doc(db, 'transactions', id), { isHidden: null })
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, isHidden: null } : t))
+  }
+  // ────────────────────────────────────────────────────
+
   // ── 선택 모드 핸들러 ─────────────────────────────────
   const exitSelectionMode = () => { setSelectionMode(false); setSelectedIds(new Set()) }
   const handleSelectItem = (id) => {
@@ -521,6 +556,9 @@ export default function Ledger() {
   // ────────────────────────────────────────────────────
 
   const filtered = getFiltered()
+  const hiddenTransactions = transactions.filter(t => !t.mergedInto && t.isHidden)
+  const allSearchCategories = [...new Set([...categories.expense, ...categories.income])]
+
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => userCardsList.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
@@ -577,14 +615,74 @@ export default function Ledger() {
               {selectedIds.size === filtered.length ? '전체 취소' : '전체 선택'}
             </button>
           </div>
+        ) : showSearch ? (
+          /* ── 검색 모드 헤더 ── */
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <button onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#191F28', flexShrink: 0 }}>
+                <BackIcon />
+              </button>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#F2F4F6', borderRadius: 14, padding: '0 14px', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="내역 검색..."
+                  style={{ flex: 1, border: 'none', background: 'transparent', padding: '11px 0', fontSize: 15, outline: 'none', color: '#191F28' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+                )}
+              </div>
+            </div>
+            {/* 카테고리 칩 */}
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+              <button onClick={() => setSearchCategory(null)}
+                style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: searchCategory === null ? 700 : 500,
+                  background: searchCategory === null ? themeData.primary : '#F2F4F6',
+                  color: searchCategory === null ? '#fff' : '#8B95A1', transition: 'all 0.15s' }}>
+                전체
+              </button>
+              {allSearchCategories.map(cat => (
+                <button key={cat} onClick={() => setSearchCategory(searchCategory === cat ? null : cat)}
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: searchCategory === cat ? 700 : 500,
+                    background: searchCategory === cat ? themeData.primary : '#F2F4F6',
+                    color: searchCategory === cat ? '#fff' : '#8B95A1', transition: 'all 0.15s' }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hiddenTransactions.length > 0 && (
+                <button onClick={() => setShowHiddenView(true)}
+                  style={{ padding: '6px 12px', borderRadius: 9999, border: 'none', background: '#F2F4F6', color: '#8B95A1', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                  숨김 {hiddenTransactions.length}건
+                </button>
+              )}
+              <button onClick={() => setShowSearch(true)}
+                style={{ width: 36, height: 36, borderRadius: 12, border: 'none', background: '#F2F4F6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* 기간 탭 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {/* 기간 탭 - 검색 모드엔 숨김 */}
+        {showSearch ? null : <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           {['주간', '월간', '직접'].map(p => (
             <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
               style={{ padding: '8px 18px', borderRadius: 12, border: 'none', cursor: 'pointer',
@@ -593,17 +691,17 @@ export default function Ledger() {
                 fontSize: 14, fontWeight: period === p ? 700 : 500,
                 transition: 'all 0.2s' }}>{p}</button>
           ))}
-        </div>
+        </div>}
 
-        {/* 날짜 네비게이션 */}
-        {period === '주간' && (
+        {/* 날짜 네비게이션 - 검색 모드엔 숨김 */}
+        {!showSearch && period === '주간' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
             <button onClick={() => setWeekOffset(o => o-1)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
             <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatWeekLabel()}</p>
             <button onClick={() => setWeekOffset(o => o+1)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
           </div>
         )}
-        {period === '월간' && (
+        {!showSearch && period === '월간' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
             <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
             <p onClick={() => setShowYMPicker(true)} style={{ fontSize: 16, fontWeight: 700, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -612,7 +710,7 @@ export default function Ledger() {
             <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
           </div>
         )}
-        {period === '직접' && (
+        {!showSearch && period === '직접' && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
@@ -853,17 +951,25 @@ export default function Ledger() {
                       </p>
                     </div>
 
-                    {/* 수정/삭제 - 선택 모드가 아닐 때만 */}
+                    {/* 수정/숨기기/삭제 - 선택 모드가 아닐 때만 */}
                     {!selectionMode && selectedId === t.id && (
                       <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => handleEdit(t)}
-                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           수정
                         </button>
                         <div style={{ width: 1, background: '#F2F4F6' }} />
+                        <button onClick={() => handleHide(t.id)}
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                          </svg>
+                          숨기기
+                        </button>
+                        <div style={{ width: 1, background: '#F2F4F6' }} />
                         <button onClick={() => handleDelete(t.id)}
-                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                           삭제
                         </button>
@@ -1260,6 +1366,61 @@ export default function Ledger() {
           onConfirm={(y, m) => { setViewYear(y); setViewMonth(m) }}
           onClose={() => setShowYMPicker(false)}
         />
+      )}
+
+      {/* ── 숨긴 내역 보기 ── */}
+      {showHiddenView && (
+        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
+          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+          <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button onClick={() => setShowHiddenView(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>숨긴 내역</p>
+              <span style={{ marginLeft: 8, fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>{hiddenTransactions.length}건</span>
+            </div>
+          </div>
+
+          <div style={{ padding: '16px 24px 80px' }}>
+            {hiddenTransactions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>숨긴 내역이 없어요</div>
+            ) : (
+              hiddenTransactions
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map(t => {
+                  const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
+                  const iconColor = t.type === 'transfer' ? '#888' : getCategoryColor(t.category || '기타')
+                  return (
+                    <div key={t.id} style={{ borderRadius: 20, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10 }}>
+                      <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, minHeight: 68 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: iconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <CatIcon cat={iconKey} size={20} color={iconColor} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{t.title}</p>
+                          <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                            {t.date} · {t.type === 'transfer' ? `${t.payment} → ${t.toAccount}` : `${t.category} · ${t.payment || '현금'}`}
+                          </p>
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
+                          color: t.type === 'transfer' ? '#8B95A1' : t.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
+                          {t.type === 'transfer' ? '↔' : t.type === 'income' ? '+' : '-'}{fmt(t.amount)}원
+                        </p>
+                      </div>
+                      <div style={{ borderTop: '1px solid #F2F4F6' }}>
+                        <button onClick={() => handleUnhide(t.id)}
+                          style={{ width: '100%', padding: '13px', border: 'none', background: '#fff', color: themeData.primary, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                          </svg>
+                          숨김 해제
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+            )}
+          </div>
+        </div>
       )}
 
       {/* ── 합치기 모달 ── */}
