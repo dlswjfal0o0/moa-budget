@@ -153,6 +153,7 @@ export default function Ledger() {
   const [userPayments, setUserPayments] = useState(['현금'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
   const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
@@ -167,6 +168,18 @@ export default function Ledger() {
   const [newTxnId, setNewTxnId] = useState(null)
   // ────────────────────────────────────────────────
   const [userAccountsList, setUserAccountsList] = useState([])
+
+  // ── 선택 모드 state ──────────────────────────────────
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const longPressTimer = useRef(null)
+  const [showMergeModal, setShowMergeModal] = useState(false)
+  const [mergeTitle, setMergeTitle] = useState('')
+  const [expandedMergeId, setExpandedMergeId] = useState(null)
+  const [mergeUndoData, setMergeUndoData] = useState(null)
+  const [mergeUndoSnackbar, setMergeUndoSnackbar] = useState(false)
+  const mergeUndoTimerRef = useRef(null)
+  // ────────────────────────────────────────────────────
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
@@ -236,7 +249,7 @@ export default function Ledger() {
   const nextMonth = () => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }
 
   const getFiltered = () => {
-    let filtered = [...transactions]
+    let filtered = [...transactions].filter(t => !t.mergedInto)
     if (period === '주간') {
       filtered = filtered.filter(t => t.date >= weekRange.start && t.date <= weekRange.end)
     } else if (period === '월간') {
@@ -361,12 +374,124 @@ export default function Ledger() {
     setShowForm(true); setSelectedId(null)
   }
 
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
-  const handleTouchEnd = (e, id) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    if (dx < -60) setSwipedId(id)
-    else if (dx > 30) setSwipedId(null)
+  const handleItemTouchStart = (e, t) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    if (selectionMode) return
+    longPressTimer.current = setTimeout(() => {
+      haptic.light()
+      setSelectionMode(true)
+      setSelectedIds(new Set([t.id]))
+      setSwipedId(null)
+      longPressTimer.current = null
+    }, 500)
   }
+  const handleItemTouchMove = (e) => {
+    if (longPressTimer.current) {
+      const dx = Math.abs(e.touches[0].clientX - (touchStartX.current || 0))
+      const dy = Math.abs(e.touches[0].clientY - (touchStartY.current || 0))
+      if (dx > 8 || dy > 8) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    }
+  }
+  const handleItemTouchEnd = (e, id) => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    if (!selectionMode) {
+      const dx = e.changedTouches[0].clientX - (touchStartX.current || 0)
+      if (dx < -60) setSwipedId(id)
+      else if (dx > 30) setSwipedId(null)
+    }
+  }
+
+  // ── 선택 모드 핸들러 ─────────────────────────────────
+  const exitSelectionMode = () => { setSelectionMode(false); setSelectedIds(new Set()) }
+  const handleSelectItem = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+  const getSelectedTxns = () => filtered.filter(t => selectedIds.has(t.id))
+  const getMergedNet = () => {
+    let net = 0
+    for (const t of getSelectedTxns()) {
+      if (t.type === 'income') net += t.amount
+      else if (t.type === 'expense') net -= t.amount
+    }
+    return net
+  }
+  const handleMerge = async () => {
+    const selectedTxns = getSelectedTxns()
+    if (selectedTxns.length < 2) return
+    const title = mergeTitle.trim() || `합산 내역 (${selectedTxns.length}건)`
+    const net = getMergedNet()
+    let type, amount
+    if (net > 0) { type = 'income'; amount = net }
+    else if (net < 0) { type = 'expense'; amount = Math.abs(net) }
+    else { type = 'excluded'; amount = 0 }
+    const sortedItems = [...selectedTxns].sort((a, b) => b.date.localeCompare(a.date))
+    const date = sortedItems[0].date
+    const monthDate = new Date(date)
+    const month = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
+    const mergedData = {
+      uid: user?.uid,
+      isMerged: true,
+      title,
+      mergedItems: selectedTxns.map(t => ({ id: t.id, title: t.title, amount: t.amount, type: t.type, category: t.category, date: t.date, time: t.time })),
+      type,
+      amount,
+      date,
+      month,
+      category: '기타',
+      payment: '',
+      time: '12:00',
+      createdAt: new Date().toISOString()
+    }
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    let mergedId
+    const originalIds = selectedTxns.map(t => t.id)
+    if (!isDemo && user) {
+      const ref = await addDoc(collection(db, 'transactions'), mergedData)
+      mergedId = ref.id
+      for (const t of selectedTxns) {
+        await updateDoc(doc(db, 'transactions', t.id), { mergedInto: mergedId })
+      }
+    } else {
+      mergedId = `merged_${Date.now()}`
+    }
+    setTransactions(prev => {
+      const updated = prev.map(t => originalIds.includes(t.id) ? { ...t, mergedInto: mergedId } : t)
+      return [...updated, { ...mergedData, id: mergedId }]
+    })
+    setMergeUndoData({ mergedId, originalIds })
+    exitSelectionMode()
+    setShowMergeModal(false)
+    setMergeTitle('')
+    haptic.success()
+    if (mergeUndoTimerRef.current) clearTimeout(mergeUndoTimerRef.current)
+    setMergeUndoSnackbar(true)
+    mergeUndoTimerRef.current = setTimeout(() => { setMergeUndoSnackbar(false); setMergeUndoData(null) }, 5000)
+  }
+  const handleUndoMerge = async () => {
+    if (!mergeUndoData) return
+    const { mergedId, originalIds } = mergeUndoData
+    haptic.success()
+    if (mergeUndoTimerRef.current) clearTimeout(mergeUndoTimerRef.current)
+    setMergeUndoSnackbar(false)
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (!isDemo && user) {
+      await deleteDoc(doc(db, 'transactions', mergedId))
+      for (const id of originalIds) {
+        await updateDoc(doc(db, 'transactions', id), { mergedInto: null })
+      }
+    }
+    setTransactions(prev => {
+      const without = prev.filter(t => t.id !== mergedId)
+      return without.map(t => originalIds.includes(t.id) ? { ...t, mergedInto: null } : t)
+    })
+    setMergeUndoData(null)
+  }
+  // ────────────────────────────────────────────────────
 
   const filtered = getFiltered()
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
@@ -410,10 +535,26 @@ export default function Ledger() {
       {/* ── 헤더 ── */}
       <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0', borderBottom: '1px solid #F2F4F6' }}>
 
-        {/* 제목 */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
-        </div>
+        {/* 제목 / 선택 모드 헤더 */}
+        {selectionMode ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingTop: 2 }}>
+            <button onClick={exitSelectionMode}
+              style={{ background: 'none', border: 'none', fontSize: 15, color: '#191F28', cursor: 'pointer', fontWeight: 500, padding: '4px 0' }}>
+              취소
+            </button>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{selectedIds.size}개 선택됨</p>
+            <button onClick={() => {
+              if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+              else setSelectedIds(new Set(filtered.map(t => t.id)))
+            }} style={{ background: 'none', border: 'none', fontSize: 14, color: themeData.primary, cursor: 'pointer', fontWeight: 700, padding: '4px 0' }}>
+              {selectedIds.size === filtered.length ? '전체 취소' : '전체 선택'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
+          </div>
+        )}
 
         {/* 기간 탭 */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -486,8 +627,18 @@ export default function Ledger() {
         </div>
       </div>
 
+      {/* ── 선택 모드 힌트 배너 ── */}
+      {selectionMode && (
+        <div style={{ margin: '10px 24px 2px', background: `${themeData.primary}12`, borderRadius: 14, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          <p style={{ fontSize: 13, color: themeData.primary, fontWeight: 600 }}>합칠 내역을 선택하세요</p>
+        </div>
+      )}
+
       {/* ── 내역 리스트 ── */}
-      <div style={{ padding: '8px 24px' }}>
+      <div style={{ padding: '8px 24px', paddingBottom: selectionMode ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : undefined }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
         ) : (
@@ -514,16 +665,85 @@ export default function Ledger() {
               </div>
 
               {dateGroups[date].map(t => {
+                const isMerged = !!t.isMerged
+                const isSelected = selectedIds.has(t.id)
                 const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
-                const iconColor = t.type === 'transfer' ? '#888' : getCategoryColor(t.category || '기타')
+                const iconColor = t.type === 'transfer' ? '#888' : isMerged ? themeData.primary : getCategoryColor(t.category || '기타')
+                const isExpanded = expandedMergeId === t.id
+
+                // ── 합산 내역 아이템 ──────────────────────────
+                if (isMerged) {
+                  const amtColor = t.type === 'income' ? '#2ECC71' : t.type === 'expense' ? '#FF5A5F' : '#C9CDD4'
+                  const amtPrefix = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''
+                  const selBg = isSelected ? `${themeData.primary}15` : '#fff'
+                  return (
+                    <div key={t.id} style={{ borderRadius: 20, overflow: 'hidden', background: selBg, boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10,
+                      border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                      transition: 'border-color 0.15s, background 0.15s' }}>
+                      <div
+                        onClick={() => {
+                          if (selectionMode) { handleSelectItem(t.id) }
+                          else { setExpandedMergeId(isExpanded ? null : t.id) }
+                        }}
+                        onTouchStart={e => handleItemTouchStart(e, t)}
+                        onTouchMove={handleItemTouchMove}
+                        onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                        style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68 }}>
+                        {/* 선택 체크박스 */}
+                        {selectionMode && (
+                          <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                            {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                        )}
+                        {/* 합산 아이콘 */}
+                        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: themeData.primary + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: themeData.primary, background: themeData.primary + '15', borderRadius: 9999, padding: '2px 7px', whiteSpace: 'nowrap', flexShrink: 0 }}>합산</span>
+                          </div>
+                          <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
+                          {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
+                        </p>
+                      </div>
+                      {/* 합산 상세 내역 */}
+                      {!selectionMode && isExpanded && (
+                        <div style={{ borderTop: '1px solid #F2F4F6', padding: '8px 16px 12px', background: '#FAFBFC' }}>
+                          {(t.mergedItems || []).map((item, idx) => (
+                            <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: idx < t.mergedItems.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
+                              <div>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{item.title}</p>
+                                <p style={{ fontSize: 11, color: '#8B95A1' }}>{item.date} · {item.category || '-'}</p>
+                              </div>
+                              <p style={{ fontSize: 13, fontWeight: 700, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
+                                {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                // ── 일반 내역 아이템 ──────────────────────────
                 return (
-                  <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                  <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden',
+                    background: selectionMode && isSelected ? `${themeData.primary}12` : '#fff',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                    border: selectionMode && isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
                     marginBottom: txnExitId === t.id ? 0 : 10,
-                    maxHeight: txnExitId === t.id ? 0 : 200,
+                    maxHeight: txnExitId === t.id ? 0 : 300,
                     opacity: txnExitId === t.id ? 0 : 1,
-                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : 'none',
+                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : 'border-color 0.15s, background 0.15s',
                     animation: newTxnId === t.id ? 'fadeSlideUp 250ms ease forwards' : undefined }}>
-                    {swipedId === t.id && (
+                    {!selectionMode && swipedId === t.id && (
                       <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                         onClick={() => handleDelete(t.id)}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -533,13 +753,23 @@ export default function Ledger() {
                       </div>
                     )}
                     <div
-                      onTouchStart={handleTouchStart}
-                      onTouchEnd={e => handleTouchEnd(e, t.id)}
-                      onClick={() => { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }}
-                      style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
-                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : '#fff',
-                        transform: swipedId === t.id ? 'translateX(-70px)' : 'translateX(0)',
+                      onTouchStart={e => handleItemTouchStart(e, t)}
+                      onTouchMove={handleItemTouchMove}
+                      onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                      onClick={() => {
+                        if (selectionMode) { handleSelectItem(t.id) }
+                        else { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }
+                      }}
+                      style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
+                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
+                        transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
                         transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
+                      {/* 선택 체크박스 */}
+                      {selectionMode && (
+                        <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                          {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        </div>
+                      )}
                       {/* 카테고리 아이콘 */}
                       <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
                         background: iconColor + '15',
@@ -565,8 +795,8 @@ export default function Ledger() {
                       </p>
                     </div>
 
-                    {/* 수정/삭제 */}
-                    {selectedId === t.id && (
+                    {/* 수정/삭제 - 선택 모드가 아닐 때만 */}
+                    {!selectionMode && selectedId === t.id && (
                       <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => handleEdit(t)}
                           style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -589,9 +819,38 @@ export default function Ledger() {
         )}
       </div>
 
-      {/* ── FAB ── */}
-      <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' }); setShowForm(true) }}
-        style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+      {/* ── FAB (선택 모드 아닐 때만) ── */}
+      {!selectionMode && (
+        <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' }); setShowForm(true) }}
+          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+      )}
+
+      {/* ── 선택 모드 하단 액션 바 ── */}
+      {selectionMode && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #F2F4F6', padding: '14px 20px', paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', zIndex: 200, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 2 }}>선택 합산</p>
+            {(() => {
+              const net = getMergedNet()
+              return (
+                <p style={{ fontSize: 18, fontWeight: 700, color: net < 0 ? '#FF5A5F' : net > 0 ? '#2ECC71' : '#191F28' }}>
+                  {net > 0 ? '+' : ''}{net.toLocaleString()}원
+                </p>
+              )
+            })()}
+          </div>
+          <div style={{ flex: 1 }}>
+            <button
+              onClick={() => selectedIds.size >= 2 && setShowMergeModal(true)}
+              style={{ width: '100%', height: 52, borderRadius: 16, border: 'none', fontSize: 15, fontWeight: 700, cursor: selectedIds.size >= 2 ? 'pointer' : 'not-allowed',
+                background: selectedIds.size >= 2 ? themeData.primary : '#E5E8EB',
+                color: selectedIds.size >= 2 ? '#fff' : '#8B95A1',
+                transition: 'all 0.2s' }}>
+              {selectedIds.size < 2 ? '2개 이상 선택하세요' : `합치기 (${selectedIds.size}개)`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── 내역 추가/수정 폼 ── */}
       {showForm && (
@@ -945,6 +1204,58 @@ export default function Ledger() {
         />
       )}
 
+      {/* ── 합치기 모달 ── */}
+      {showMergeModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div onClick={() => setShowMergeModal(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
+            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+            zIndex: 1, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>내역 합치기</p>
+
+            {/* 선택 항목 목록 */}
+            <div style={{ background: '#F7F8FA', borderRadius: 16, padding: '4px 16px', marginBottom: 20 }}>
+              {getSelectedTxns().map((t, idx) => (
+                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0',
+                  borderBottom: idx < getSelectedTxns().length - 1 ? '1px solid #EDEEF0' : 'none' }}>
+                  <p style={{ fontSize: 14, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 12 }}>{t.title}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: t.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
+                    {t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()}원
+                  </p>
+                </div>
+              ))}
+              {(() => {
+                const net = getMergedNet()
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 0 2px' }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>합산</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: net < 0 ? '#FF5A5F' : net > 0 ? '#2ECC71' : '#8B95A1' }}>
+                      {net > 0 ? '+' : ''}{net.toLocaleString()}원{net === 0 ? ' (미포함)' : ''}
+                    </p>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* 합쳐질 이름 입력 */}
+            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>합쳐질 내역 이름</p>
+            <input
+              value={mergeTitle}
+              onChange={e => setMergeTitle(e.target.value)}
+              placeholder={`합산 내역 (${selectedIds.size}건)`}
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 16, border: `1.5px solid ${themeData.primary}40`, fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#191F28', marginBottom: 24 }}
+            />
+
+            <button onClick={handleMerge}
+              style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── 내역 삭제 확인 Bottom Sheet ── */}
       {deleteConfirmTxnId && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -968,6 +1279,29 @@ export default function Ledger() {
           </div>
         </div>
       )}
+
+      {/* ── 합치기 Undo Snackbar ── */}
+      <div style={{
+        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
+        transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
+        opacity: mergeUndoSnackbar ? 1 : 0,
+        transition: mergeUndoSnackbar
+          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
+          : 'transform 200ms ease-in, opacity 200ms ease-in',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: '#191F28', borderRadius: 16, padding: '14px 16px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+        pointerEvents: mergeUndoSnackbar ? 'auto' : 'none',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 합쳐졌습니다.</span>
+        </div>
+        <button onClick={handleUndoMerge}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
+          되돌리기
+        </button>
+      </div>
 
       {/* ── Undo Snackbar ── */}
       <div style={{
