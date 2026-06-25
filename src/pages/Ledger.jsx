@@ -176,6 +176,7 @@ export default function Ledger() {
   const [showMergeModal, setShowMergeModal] = useState(false)
   const [mergeTitle, setMergeTitle] = useState('')
   const [expandedMergeId, setExpandedMergeId] = useState(null)
+  const [selectedSubId, setSelectedSubId] = useState(null)
   const [mergeUndoData, setMergeUndoData] = useState(null)
   const [mergeUndoSnackbar, setMergeUndoSnackbar] = useState(false)
   const mergeUndoTimerRef = useRef(null)
@@ -312,6 +313,32 @@ export default function Ledger() {
       savedId = ref.id
     }
     if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+
+    // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
+    if (editItem) {
+      const mergedParent = transactions.find(tx => tx.isMerged && (tx.mergedItems || []).some(mi => mi.id === editItem.id))
+      if (mergedParent) {
+        const updatedMergedItems = mergedParent.mergedItems.map(mi =>
+          mi.id === editItem.id
+            ? { ...mi, title: form.title, amount: Number(form.amount), type: form.type, category: form.category, date: form.date, time: form.time }
+            : mi
+        )
+        let net = 0
+        for (const mi of updatedMergedItems) {
+          if (mi.type === 'income') net += mi.amount
+          else if (mi.type === 'expense') net -= mi.amount
+        }
+        let newType, newAmount
+        if (net > 0) { newType = 'income'; newAmount = net }
+        else if (net < 0) { newType = 'expense'; newAmount = Math.abs(net) }
+        else { newType = 'excluded'; newAmount = 0 }
+        const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+        if (!isDemo && user) {
+          await updateDoc(doc(db, 'transactions', mergedParent.id), { mergedItems: updatedMergedItems, type: newType, amount: newAmount })
+        }
+      }
+    }
+
     // 대출 상환 연동: 트랜잭션에 isLoan/loanId/daysElapsed가 저장되므로
     // MY 대출 페이지가 Firestore 트랜잭션을 직접 읽어 상환 내역을 표시합니다.
     clearTimeout(loadingTimer)
@@ -683,7 +710,7 @@ export default function Ledger() {
                       <div
                         onClick={() => {
                           if (selectionMode) { handleSelectItem(t.id) }
-                          else { setExpandedMergeId(isExpanded ? null : t.id) }
+                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null) }
                         }}
                         onTouchStart={e => handleItemTouchStart(e, t)}
                         onTouchMove={handleItemTouchMove}
@@ -712,20 +739,51 @@ export default function Ledger() {
                           {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
                         </p>
                       </div>
-                      {/* 합산 상세 내역 */}
+                      {/* 합산 상세 내역 - 일반 내역 스타일 */}
                       {!selectionMode && isExpanded && (
-                        <div style={{ borderTop: '1px solid #F2F4F6', padding: '8px 16px 12px', background: '#FAFBFC' }}>
-                          {(t.mergedItems || []).map((item, idx) => (
-                            <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: idx < t.mergedItems.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
-                              <div>
-                                <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{item.title}</p>
-                                <p style={{ fontSize: 11, color: '#8B95A1' }}>{item.date} · {item.category || '-'}</p>
+                        <div style={{ borderTop: '1px solid #F2F4F6', padding: '10px 12px 12px', background: '#F7F8FA' }}>
+                          {(t.mergedItems || []).map((item, idx) => {
+                            const subKey = `${t.id}_${item.id || idx}`
+                            const isSubSel = selectedSubId === subKey
+                            const subIconKey = item.type === 'transfer' ? 'transfer' : guessIconKey(item.category || '')
+                            const subIconColor = item.type === 'transfer' ? '#888' : getCategoryColor(item.category || '기타')
+                            return (
+                              <div key={subKey} style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', marginBottom: idx < t.mergedItems.length - 1 ? 8 : 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+                                <div
+                                  onClick={() => setSelectedSubId(isSubSel ? null : subKey)}
+                                  style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 60 }}>
+                                  <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: subIconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <CatIcon cat={subIconKey} size={18} color={subIconColor} />
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{item.title}</p>
+                                    <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                                      {item.time ? `${item.time} · ` : ''}{item.category || '-'}
+                                    </p>
+                                  </div>
+                                  <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
+                                    {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
+                                  </p>
+                                </div>
+                                {isSubSel && (
+                                  <div style={{ borderTop: '1px solid #F2F4F6' }}>
+                                    <button
+                                      onClick={() => {
+                                        const fullTxn = transactions.find(tx => tx.id === item.id)
+                                        if (fullTxn) { handleEdit(fullTxn); setSelectedSubId(null) }
+                                      }}
+                                      style={{ width: '100%', padding: '13px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                      </svg>
+                                      수정
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                              <p style={{ fontSize: 13, fontWeight: 700, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
-                                {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
-                              </p>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>
