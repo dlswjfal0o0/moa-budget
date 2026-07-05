@@ -16,6 +16,9 @@ const UTILITY_STYLES = {
   가스비: { bg: '#FFF7ED', color: '#F97316' },
 }
 
+// AI 캐시 버전. 모델/프롬프트를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
+const AI_CACHE_VERSION = 2
+
 // 입력 데이터로 안정적인 캐시 키를 만들기 위한 간단한 해시 (djb2)
 function hashStr(str) {
   let h = 5381
@@ -280,7 +283,7 @@ export default function Analysis() {
       lastExpenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
     ).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ') || '없음'
     // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashStr(JSON.stringify({ byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth }))
+    const sig = hashStr(JSON.stringify({ v: AI_CACHE_VERSION, byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth }))
     const cached = aiCache.consume?.[cacheMonthKey]
     if (cached && cached.sig === sig && cached.data) { setAiFeedbackData(cached.data); setAiFeedbackRaw(''); return }
     setLoadingAi(true); setAiFeedbackData(null); setAiFeedbackRaw('')
@@ -326,7 +329,7 @@ export default function Analysis() {
     }).filter(Boolean).join('\n')
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
     // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashStr(JSON.stringify({ summary, y: viewYear, m: viewMonth }))
+    const sig = hashStr(JSON.stringify({ v: AI_CACHE_VERSION, summary, y: viewYear, m: viewMonth }))
     const cached = aiCache.utility?.[cacheMonthKey]
     if (cached && cached.sig === sig && cached.data) { setUtilityAI(cached.data); return }
     setLoadingUtilityAI(true); setUtilityAI(null)
