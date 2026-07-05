@@ -100,15 +100,7 @@ export default function Home() {
     if (isDemo) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch { /* ignore */ }
-      setFixedExpenses([
-        { id: 1,  title: '월세',             amount: 550000, dueDate: '2026-06-05', category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 2,  title: '넷플릭스',         amount: 17000,  dueDate: '2026-06-03', category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 3,  title: '헬스장',           amount: 80000,  dueDate: '2026-06-11', category: '스포츠/레저', payment: 'KB국민 신용카드', autoRegister: false, doneMonths: [], autoRegisteredMonths: [] },
-        { id: 4,  title: '전세자금대출 이자', amount: 285000, dueDate: '2026-06-25', category: '금융',       payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 5,  title: '자동차 할부',       amount: 280000, dueDate: '2026-06-10', category: '교통',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 6,  title: '유튜브 프리미엄',   amount: 14900,  dueDate: '2026-06-18', category: '구독',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 7,  title: '실손보험',          amount: 32000,  dueDate: '2026-06-22', category: '의료/건강',  payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-      ])
+      try { const f = localStorage.getItem('moa_fixed_expenses'); setFixedExpenses(f ? JSON.parse(f) : []) } catch { setFixedExpenses([]) }
       setBudgetInsights({
         1: {
           status: 'warning',

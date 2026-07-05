@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStagger } from '../hooks/useStagger'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
 import { getCategoryColors } from '../styles/theme'
@@ -14,6 +14,13 @@ const UTILITY_STYLES = {
   수도세: { bg: '#EFF6FF', color: '#3B82F6' },
   전기세: { bg: '#FFFBEB', color: '#F59E0B' },
   가스비: { bg: '#FFF7ED', color: '#F97316' },
+}
+
+// 입력 데이터로 안정적인 캐시 키를 만들기 위한 간단한 해시 (djb2)
+function hashStr(str) {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0
+  return h.toString(36)
 }
 
 function UtilityIcon({ type, size = 20, color = '#888' }) {
@@ -85,39 +92,15 @@ export default function Analysis() {
   const [aiFeedbackData, setAiFeedbackData] = useState(null)
   const [aiFeedbackRaw, setAiFeedbackRaw] = useState('')
   const [loadingAi, setLoadingAi] = useState(false)
+  // AI 분석 캐시 (계정 기준 동기화). localStorage로 즉시 로드 후 Firestore로 덮어씀
+  const [aiCache, setAiCache] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('moa_ai_cache') || '{}') } catch { return {} }
+  })
   const now = new Date()
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [activeAnalysisTab, setActiveAnalysisTab] = useState('소비')
   const [utilities, setUtilities] = useState(() => {
-    if (localStorage.getItem('moa_demo_mode') === 'true') {
-      return [
-        { type: '전기세', year: 2026, month: 1, amount: 45000, day: 25 },
-        { type: '전기세', year: 2026, month: 2, amount: 52000, day: 25 },
-        { type: '전기세', year: 2026, month: 3, amount: 38000, day: 25 },
-        { type: '전기세', year: 2026, month: 4, amount: 32000, day: 25 },
-        { type: '전기세', year: 2026, month: 5, amount: 29000, day: 25 },
-        { type: '전기세', year: 2026, month: 6, amount: 33000, day: 25 },
-        { type: '수도세', year: 2026, month: 1, amount: 18000, day: 25 },
-        { type: '수도세', year: 2026, month: 2, amount: 15000, day: 25 },
-        { type: '수도세', year: 2026, month: 3, amount: 16000, day: 25 },
-        { type: '수도세', year: 2026, month: 4, amount: 14000, day: 25 },
-        { type: '수도세', year: 2026, month: 5, amount: 13000, day: 25 },
-        { type: '수도세', year: 2026, month: 6, amount: 15000, day: 25 },
-        { type: '가스비', year: 2026, month: 1, amount: 89000, day: 25 },
-        { type: '가스비', year: 2026, month: 2, amount: 76000, day: 25 },
-        { type: '가스비', year: 2026, month: 3, amount: 54000, day: 25 },
-        { type: '가스비', year: 2026, month: 4, amount: 32000, day: 25 },
-        { type: '가스비', year: 2026, month: 5, amount: 15000, day: 25 },
-        { type: '가스비', year: 2026, month: 6, amount: 12000, day: 25 },
-        { type: '관리비', year: 2026, month: 1, amount: 95000, day: 20 },
-        { type: '관리비', year: 2026, month: 2, amount: 98000, day: 20 },
-        { type: '관리비', year: 2026, month: 3, amount: 92000, day: 20 },
-        { type: '관리비', year: 2026, month: 4, amount: 88000, day: 20 },
-        { type: '관리비', year: 2026, month: 5, amount: 91000, day: 20 },
-        { type: '관리비', year: 2026, month: 6, amount: 94000, day: 20 },
-      ]
-    }
     try { return JSON.parse(localStorage.getItem('moa_utilities') || '[]') } catch { return [] }
   })
   const [showAddUtility, setShowAddUtility] = useState(false)
@@ -147,24 +130,24 @@ export default function Analysis() {
     setAiFeedbackData({
       score: 72,
       rating: 'warning',
-      summary: '이번 달 식비 지출이 지난달보다 18% 증가했어요. 배달음식 횟수를 줄이면 절약에 도움이 돼요.',
+      summary: '이번 달 식비 지출이 지난달보다 18% 증가했습니다. 배달음식 횟수를 줄이면 절약에 도움이 됩니다.',
       cuts: [
-        { category: '식비', save: 50000, tip: '배달음식을 주 2회로 줄이면 이번 달 약 5만원을 절약할 수 있어요.' },
-        { category: '쇼핑', save: 30000, tip: '충동 구매보다 위시리스트를 활용해 계획적으로 구매해보세요.' },
+        { category: '식비', save: 50000, tip: '배달음식을 주 2회로 줄여보는 건 어떨까요? 집에서 간단히 조리하는 습관을 들이면 약 5만원을 아낄 수 있으니 함께 시작해보는 게 어떨까요?' },
+        { category: '쇼핑', save: 30000, tip: '충동 구매 대신 위시리스트를 활용해보는 건 어떨까요? 하루 정도 고민한 뒤 구매하면 불필요한 지출을 줄일 수 있으니 한번 실천해보는 게 어떨까요?' },
       ],
-      unusual: ['배달음식 지출이 이번 달 2회로, 지난달 대비 2배 증가했어요.'],
+      unusual: ['배달음식 지출이 이번 달 2회로, 지난달 대비 2배 증가했습니다.'],
       saving_goal: 80000,
-      message: '조금만 더 노력하면 저축 목표를 달성할 수 있어요! 화이팅 💪',
+      message: '조금만 더 노력하면 저축 목표를 달성할 수 있습니다! 화이팅 💪',
     })
     setUtilityAI({
       items: [
-        { type: '전기세', status: 'up',   comment: '지난달보다 4,000원 증가했어요. 초여름 에어컨 사용이 늘어난 것 같아요.' },
-        { type: '수도세', status: 'same', comment: '지난달과 비슷한 수준으로 안정적으로 유지되고 있어요.' },
-        { type: '가스비', status: 'down', comment: '날씨가 따뜻해지면서 지난달보다 3,000원 줄었어요.' },
-        { type: '관리비', status: 'up',   comment: '지난달보다 3,000원 소폭 증가했어요. 계절별 공용부분 관리비 영향이에요.' },
+        { type: '전기세', status: 'up',   comment: '지난달보다 4,000원 증가했습니다. 초여름 에어컨 사용이 늘어난 것으로 보입니다. ⚡' },
+        { type: '수도세', status: 'same', comment: '지난달과 비슷한 수준으로 안정적으로 유지되고 있습니다. 💧' },
+        { type: '가스비', status: 'down', comment: '날씨가 따뜻해지면서 지난달보다 3,000원 줄었습니다. 🔥' },
+        { type: '관리비', status: 'up',   comment: '지난달보다 3,000원 소폭 증가했습니다. 계절별 공용부분 관리비 영향으로 보입니다. 🏠' },
       ],
-      overall: '전반적으로 공과금 지출이 안정적이에요. 여름철 전기세 관리에 집중해보세요.',
-      tip: '에어컨 설정 온도를 1°C 올리면 전기세를 약 7% 절약할 수 있어요!',
+      overall: '전반적으로 공과금 지출이 안정적입니다. 여름철 전기세 관리에 집중하는 것이 좋습니다. 😊',
+      tip: '에어컨 설정 온도를 1도 올려보는 건 어떨까요? 전기세를 약 7% 아낄 수 있으니 이번 여름에 함께 실천해보는 게 어떨까요?',
     })
   }
 
@@ -190,7 +173,34 @@ export default function Analysis() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (user) fetchData() }, [user, viewYear, viewMonth]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 계정 기준 AI 캐시 로드: 로그인 시 Firestore에서 저장된 분석 결과를 불러옴
+  useEffect(() => {
+    if (!user) return
+    getDoc(doc(db, 'users', user.uid)).then(snap => {
+      if (snap.exists() && snap.data().aiCache) {
+        const remote = snap.data().aiCache
+        setAiCache(remote)
+        try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+      }
+    }).catch(() => { /* ignore */ })
+  }, [user])
+
+  // AI 캐시 저장: 로컬 + 계정(Firestore) 동시 반영. kind='consume'|'utility', key='YYYY-M'
+  const persistAiCache = async (kind, key, sig, data) => {
+    setAiCache(prev => {
+      const next = { ...prev, [kind]: { ...(prev[kind] || {}), [key]: { sig, data } } }
+      try { localStorage.setItem('moa_ai_cache', JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+    if (user) {
+      try {
+        await setDoc(doc(db, 'users', user.uid), { aiCache: { [kind]: { [key]: { sig, data } } } }, { merge: true })
+      } catch { /* ignore */ }
+    }
+  }
+
   const fmt = n => n.toLocaleString('ko-KR')
+  const cacheMonthKey = `${viewYear}-${viewMonth + 1}`
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
@@ -239,24 +249,32 @@ export default function Analysis() {
 
   const getAiFeedback = async () => {
     if (expenses.length === 0) return alert('지출 내역이 없어요.')
-    setLoadingAi(true); setAiFeedbackData(null); setAiFeedbackRaw('')
     const byCat = Object.entries(byCategory).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ')
     const lastByCat = Object.entries(
       lastExpenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
     ).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ') || '없음'
+    // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+    const sig = hashStr(JSON.stringify({ byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth }))
+    const cached = aiCache.consume?.[cacheMonthKey]
+    if (cached && cached.sig === sig && cached.data) { setAiFeedbackData(cached.data); setAiFeedbackRaw(''); return }
+    setLoadingAi(true); setAiFeedbackData(null); setAiFeedbackRaw('')
     try {
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-20250514', max_tokens: 800, temperature: 0,
           system: '당신은 개인 재무 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:\n\n이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입\n지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출\n\n중요 규칙:\n- 모든 텍스트는 반드시 한글 서술형으로 작성(~해요, ~있어요, ~됩니다). 명령형(~하세요, ~합시다, ~하라) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 예: '下', 'download', 'app' 같은 표현 금지. 대신 '내려받기', '앱' 같은 순한글 표현 사용.\n- tip 필드는 반드시 2문장 이상으로, 구체적이고 실질적인 도움이 되는 내용으로 작성.\n- save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지)\n- save는 해당 카테고리에서 절약 가능한 예상 금액 (0 이상)\n- 모든 숫자 필드는 정수만 허용\n\n응답 형식 (이 형식 그대로만):\n{"rating":"good","score":75,"summary":"2줄 서술형 요약","cuts":[{"category":"카테고리명","tip":"구체적 도움 조언 2문장 이상 (서술형)","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지 (서술형)"}` }]
+          messages: [{ role: 'user', content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:\n\n이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입\n지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출\n\n중요 규칙(말투):\n- 평가/요약 필드(summary, unusual, message)는 반드시 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "증가했습니다".\n- 조언 필드(cuts의 tip)는 반드시 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?", "~해보시는 건 어떨까요?" 처럼 부드럽게 제안하는 말투로 끝내세요. 예: "배달음식을 줄여보는 건 어떨까요?".\n- 문어체(-다, -하였다, -되었다, -이다, -것이다) 절대 금지. 명령형(-하세요, -하십시오, -합시다, -해라) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 대신 '내려받기', '앱' 같은 순한글 표현 사용.\n- tip(조언)은 반드시 2문장 이상으로, 구체적이고 실질적이며 청유형으로 작성.\n- save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지, 0 이상)\n- 모든 숫자 필드는 정수만 허용\n\n응답 형식 (이 형식 그대로만):\n{"rating":"good","score":75,"summary":"2줄 구어체 요약 (-입니다/-습니다)","cuts":[{"category":"카테고리명","tip":"구체적 조언 2문장 이상 (청유형 -는 게 어떨까요?)","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지 (-입니다/-습니다)"}` }]
         })
       })
       const data = await res.json()
       const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
       if (!text) { setAiFeedbackRaw('응답이 비어있어요. 잠시 후 다시 시도해주세요.'); setLoadingAi(false); return }
-      try { setAiFeedbackData(JSON.parse(text)) } catch { setAiFeedbackRaw(text) }
+      try {
+        const parsed = JSON.parse(text)
+        setAiFeedbackData(parsed)
+        persistAiCache('consume', cacheMonthKey, sig, parsed)
+      } catch { setAiFeedbackRaw(text) }
     } catch { setAiFeedbackRaw('AI 분석을 불러오는 데 실패했어요.') }
     setLoadingAi(false)
   }
@@ -280,19 +298,27 @@ export default function Analysis() {
       return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
     }).filter(Boolean).join('\n')
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
+    // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+    const sig = hashStr(JSON.stringify({ summary, y: viewYear, m: viewMonth }))
+    const cached = aiCache.utility?.[cacheMonthKey]
+    if (cached && cached.sig === sig && cached.data) { setUtilityAI(cached.data); return }
     setLoadingUtilityAI(true); setUtilityAI(null)
     try {
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 600,
+          model: 'claude-sonnet-4-20250514', max_tokens: 600, temperature: 0,
           system: '당신은 공과금 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해 주세요.\n\n중요 규칙:\n- 모든 텍스트는 반드시 한글 서술형(~해요, ~있어요, ~됩니다)으로 작성해 주세요.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n- 명령형(~하세요, ~합시다) 절대 금지.\n\n아래 JSON 형식으로만 응답해 주세요:\n{"items":[{"type":"관리비","status":"up","comment":"이모지 포함 친근한 한 줄 한국어 서술형 코멘트"}],"overall":"이모지 포함 전체 총평 한국어 서술형","tip":"이모지 포함 절약 팁 한 줄 한국어 서술형"}` }]
+          messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해 주세요.\n\n중요 규칙(말투):\n- 분석/총평 필드(items의 comment, overall)는 반드시 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "줄었습니다".\n- 조언(절약 팁) 필드(tip)는 반드시 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 부드럽게 제안하는 말투로 끝내세요. 예: "사용량을 줄여보는 건 어떨까요?".\n- 문어체(-다, -하였다, -되었다, -이다) 절대 금지. 명령형(-하세요, -하십시오, -합시다) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 JSON 형식으로만 응답해 주세요:\n{"items":[{"type":"관리비","status":"up","comment":"이모지 포함 친근한 한 줄 구어체 코멘트 (-입니다/-습니다)"}],"overall":"이모지 포함 전체 총평 구어체 (-입니다/-습니다)","tip":"이모지 포함 절약 팁 한 줄 청유형 (-는 게 어떨까요?)"}` }]
         })
       })
       const data = await res.json()
       const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
-      try { setUtilityAI(JSON.parse(text)) } catch { setUtilityAI({ overall: text }) }
+      try {
+        const parsed = JSON.parse(text)
+        setUtilityAI(parsed)
+        persistAiCache('utility', cacheMonthKey, sig, parsed)
+      } catch { setUtilityAI({ overall: text }) }
     } catch { setUtilityAI({ overall: '분석에 실패했어요.' }) }
     setLoadingUtilityAI(false)
   }

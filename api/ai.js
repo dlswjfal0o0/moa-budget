@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ content: [{ text: 'GROQ_API_KEY가 없어요.' }] })
   }
 
-  const { messages, system } = req.body || {}
+  const { messages, system, temperature, max_tokens } = req.body || {}
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -21,8 +21,8 @@ export default async function handler(req, res) {
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: messages?.[0]?.content || '' }
         ],
-        max_tokens: 1024,
-        temperature: 0.7
+        max_tokens: max_tokens || 1024,
+        temperature: typeof temperature === 'number' ? temperature : 0.7
       })
     })
 

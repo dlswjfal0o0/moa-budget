@@ -12,6 +12,12 @@ import {
 import { auth, googleProvider } from '../../firebase/config'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 
+// App Store 심사용 데모 계정.
+// 이 이메일로 로그인하면 데모 데이터가 자동으로 로드됩니다(심사자 전용).
+// Firebase Authentication 콘솔에서 이 이메일 + 비밀번호로 계정을 미리 만들어 두세요.
+// 원하는 주소로 바꿔도 되며, 심사 메모(App Review Information)에 아이디/비번을 적어주면 됩니다.
+const DEMO_ACCOUNT_EMAIL = 'appreview@moa-budget.com'
+
 export default function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -67,6 +73,12 @@ export default function Auth() {
         await signInWithEmailAndPassword(auth, email, password)
       }
       localStorage.setItem('moa_logged_in', 'true')
+      // 심사용 데모 계정이면 데모 데이터 로드, 그 외 일반 유저는 데모 모드 해제
+      if (email.trim().toLowerCase() === DEMO_ACCOUNT_EMAIL) {
+        injectDemoData()
+      } else {
+        localStorage.removeItem('moa_demo_mode')
+      }
       navigate('/home', { replace: true })
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')
@@ -82,6 +94,7 @@ export default function Auth() {
     setLoading(true)
     try {
       await signInWithPopup(auth, googleProvider)
+      localStorage.removeItem('moa_demo_mode')
       navigate('/home', { replace: true })
     } catch {
       setError('Google 로그인에 실패했어요.')
@@ -102,6 +115,7 @@ export default function Auth() {
       const provider = new OAuthProvider('apple.com')
       const credential = provider.credential({ idToken: identityToken })
       await signInWithCredential(auth, credential)
+      localStorage.removeItem('moa_demo_mode')
       navigate('/home', { replace: true })
     } catch {
       setError('Apple 로그인에 실패했어요.')
@@ -302,20 +316,22 @@ export default function Auth() {
           {loading ? '처리 중...' : mode === 'signup' ? '이메일로 가입' : '로그인'}
         </button>
 
-        {/* 데모 체험 버튼 */}
-        <button
-          onClick={() => {
-            injectDemoData()
-            navigate('/home', { replace: true })
-          }}
-          style={{
-            width: '100%', padding: '12px', borderRadius: 14,
-            background: 'transparent', color: '#aaa',
-            border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
-            cursor: 'pointer', marginTop: 8
-          }}>
-          🛠 개발 로그인 (시뮬레이터 전용)
-        </button>
+        {/* 데모 체험 버튼 — 베타 빌드 또는 로컬 개발 환경에서만 노출 */}
+        {(import.meta.env.DEV || import.meta.env.VITE_BETA === 'true') && (
+          <button
+            onClick={() => {
+              injectDemoData()
+              navigate('/home', { replace: true })
+            }}
+            style={{
+              width: '100%', padding: '12px', borderRadius: 14,
+              background: 'transparent', color: '#aaa',
+              border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', marginTop: 8
+            }}>
+            🛠 개발 로그인 (시뮬레이터 전용)
+          </button>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
           <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />

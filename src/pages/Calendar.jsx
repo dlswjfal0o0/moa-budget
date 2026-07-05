@@ -45,15 +45,8 @@ export default function Calendar() {
       const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
       // eslint-disable-next-line react-hooks/set-state-in-effect
       try { const t = localStorage.getItem(`moa_txns_${monthStr}`); if (t) setTransactions(JSON.parse(t)) } catch { /* ignore */ }
-      setFixedExpenses([
-        { id: 1,  title: '월세',             amount: 550000, dueDate: '2026-06-05', category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 2,  title: '넷플릭스',         amount: 17000,  dueDate: '2026-06-03', category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 3,  title: '헬스장',           amount: 80000,  dueDate: '2026-06-11', category: '스포츠/레저', payment: 'KB국민 신용카드', autoRegister: false, doneMonths: [], autoRegisteredMonths: [] },
-        { id: 4,  title: '전세자금대출 이자', amount: 285000, dueDate: '2026-06-25', category: '금융',       payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 5,  title: '자동차 할부',       amount: 280000, dueDate: '2026-06-10', category: '교통',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 6,  title: '유튜브 프리미엄',   amount: 14900,  dueDate: '2026-06-18', category: '구독',       payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-        { id: 7,  title: '실손보험',          amount: 32000,  dueDate: '2026-06-22', category: '의료/건강',  payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-      ])
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      try { const f = localStorage.getItem('moa_fixed_expenses'); setFixedExpenses(f ? JSON.parse(f) : []) } catch { setFixedExpenses([]) }
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
@@ -92,7 +85,13 @@ export default function Calendar() {
             date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
             isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
           }))
-          return { ...f, autoRegisteredMonths: [...registeredMonths, nowMonthKey] }
+          // 자동 등록 시 체크박스도 '완료' 상태로 표시해 이중 등록을 방지
+          const doneMonths = f.doneMonths || []
+          return {
+            ...f,
+            autoRegisteredMonths: [...registeredMonths, nowMonthKey],
+            doneMonths: doneMonths.includes(nowMonthKey) ? doneMonths : [...doneMonths, nowMonthKey]
+          }
         })
         if (promises.length > 0) {
           await Promise.all(promises)
@@ -138,16 +137,25 @@ export default function Calendar() {
 
     if (!isDone) {
       // 체크 ON → 가계부에 내역 추가
-      const dueDay = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : 1
-      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(isNaN(dueDay) ? 1 : dueDay).padStart(2, '0')}`
-      await addDoc(collection(db, 'transactions'), {
-        uid: user.uid, month: monthKey, type: 'expense',
-        title: f.title, amount: f.amount,
-        category: f.category || '기타', payment: f.payment || '현금',
-        date: dateStr, time: '00:00', memo: '고정지출',
-        fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
-      })
-      setRefreshTrigger(t => t + 1)
+      // 자동 등록 등으로 이미 동일 고정지출 내역이 있으면 중복 추가하지 않음
+      const dupQ = query(collection(db, 'transactions'),
+        where('uid', '==', user.uid),
+        where('month', '==', monthKey),
+        where('fixedExpenseId', '==', String(f.id))
+      )
+      const dupSnap = await getDocs(dupQ)
+      if (dupSnap.empty) {
+        const dueDay = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : 1
+        const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(isNaN(dueDay) ? 1 : dueDay).padStart(2, '0')}`
+        await addDoc(collection(db, 'transactions'), {
+          uid: user.uid, month: monthKey, type: 'expense',
+          title: f.title, amount: f.amount,
+          category: f.category || '기타', payment: f.payment || '현금',
+          date: dateStr, time: '00:00', memo: '고정지출',
+          fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
+        })
+        setRefreshTrigger(t => t + 1)
+      }
     } else {
       // 체크 OFF → 가계부에서 해당 내역 삭제
       const q = query(collection(db, 'transactions'),
@@ -398,7 +406,11 @@ export default function Calendar() {
                         <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#C9CDD4' : '#191F28', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {f.title}
                         </p>
-                        {dayNum && <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>매월 {dayNum}일</p>}
+                        {(dayNum || f.payment) && (
+                          <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {[dayNum ? `매월 ${dayNum}일` : null, f.payment || null].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
                       </div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#C9CDD4' : '#FF5A5F', flexShrink: 0 }}>
                         -{fmt(f.amount)}원

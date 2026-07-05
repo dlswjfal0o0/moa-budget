@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:beta": "vite build --mode beta",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:beta": "vite preview"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",

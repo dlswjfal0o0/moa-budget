@@ -159,6 +159,7 @@ export default function Ledger() {
   const [showAccountSelector, setShowAccountSelector] = useState(false)
   // ── Ledger motion state ──────────────────────────
   const [formSaveState, setFormSaveState] = useState(null) // null | 'loading' | 'success'
+  const submittingRef = useRef(false) // 동기 가드: 연타 시 중복 저장 방지
   const [formBtnPressed, setFormBtnPressed] = useState(false)
   const [deleteConfirmTxnId, setDeleteConfirmTxnId] = useState(null)
   const [txnExitId, setTxnExitId] = useState(null)
@@ -194,7 +195,9 @@ export default function Ledger() {
     if (isDemo) {
       try {
         const allTxns = []
-        ;['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'].forEach(m => {
+        let demoMonths = []
+        try { demoMonths = JSON.parse(localStorage.getItem('moa_demo_months') || '[]') } catch { demoMonths = [] }
+        demoMonths.forEach(m => {
           const t = localStorage.getItem(`moa_txns_${m}`)
           if (t) allTxns.push(...JSON.parse(t))
         })
@@ -315,62 +318,74 @@ export default function Ledger() {
 
   const handleSubmit = async () => {
     if (!form.title || !form.amount) { haptic.warning(); return }
+    // 이미 저장이 진행 중이면 무시 (추가하기 버튼 연타로 인한 중복 생성 방지)
+    if (submittingRef.current) return
+    submittingRef.current = true
     haptic.light()
     setFormBtnPressed(true)
     setTimeout(() => setFormBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
-    const monthDate = new Date(form.date)
-    const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
-    const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
-    let savedId
-    if (editItem) {
-      await updateDoc(doc(db, 'transactions', editItem.id), data)
-      savedId = editItem.id
-    } else {
-      const ref = await addDoc(collection(db, 'transactions'), data)
-      savedId = ref.id
-    }
-    if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+    try {
+      const monthDate = new Date(form.date)
+      const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
+      const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
+      let savedId
+      if (editItem) {
+        await updateDoc(doc(db, 'transactions', editItem.id), data)
+        savedId = editItem.id
+      } else {
+        const ref = await addDoc(collection(db, 'transactions'), data)
+        savedId = ref.id
+      }
+      if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
 
-    // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
-    if (editItem) {
-      const mergedParent = transactions.find(tx => tx.isMerged && (tx.mergedItems || []).some(mi => mi.id === editItem.id))
-      if (mergedParent) {
-        const updatedMergedItems = mergedParent.mergedItems.map(mi =>
-          mi.id === editItem.id
-            ? { ...mi, title: form.title, amount: Number(form.amount), type: form.type, category: form.category, date: form.date, time: form.time }
-            : mi
-        )
-        let net = 0
-        for (const mi of updatedMergedItems) {
-          if (mi.type === 'income') net += mi.amount
-          else if (mi.type === 'expense') net -= mi.amount
-        }
-        let newType, newAmount
-        if (net > 0) { newType = 'income'; newAmount = net }
-        else if (net < 0) { newType = 'expense'; newAmount = Math.abs(net) }
-        else { newType = 'excluded'; newAmount = 0 }
-        const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
-        if (!isDemo && user) {
-          await updateDoc(doc(db, 'transactions', mergedParent.id), { mergedItems: updatedMergedItems, type: newType, amount: newAmount })
+      // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
+      if (editItem) {
+        const mergedParent = transactions.find(tx => tx.isMerged && (tx.mergedItems || []).some(mi => mi.id === editItem.id))
+        if (mergedParent) {
+          const updatedMergedItems = mergedParent.mergedItems.map(mi =>
+            mi.id === editItem.id
+              ? { ...mi, title: form.title, amount: Number(form.amount), type: form.type, category: form.category, date: form.date, time: form.time }
+              : mi
+          )
+          let net = 0
+          for (const mi of updatedMergedItems) {
+            if (mi.type === 'income') net += mi.amount
+            else if (mi.type === 'expense') net -= mi.amount
+          }
+          let newType, newAmount
+          if (net > 0) { newType = 'income'; newAmount = net }
+          else if (net < 0) { newType = 'expense'; newAmount = Math.abs(net) }
+          else { newType = 'excluded'; newAmount = 0 }
+          const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+          if (!isDemo && user) {
+            await updateDoc(doc(db, 'transactions', mergedParent.id), { mergedItems: updatedMergedItems, type: newType, amount: newAmount })
+          }
         }
       }
-    }
 
-    // 대출 상환 연동: 트랜잭션에 isLoan/loanId/daysElapsed가 저장되므로
-    // MY 대출 페이지가 Firestore 트랜잭션을 직접 읽어 상환 내역을 표시합니다.
-    clearTimeout(loadingTimer)
-    setFormSaveState('success')
-    haptic.success()
-    await new Promise(r => setTimeout(r, 500))
-    setFormSaveState(null)
-    setShowForm(false)
-    setEditItem(null)
-    setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
-    if (savedId && !editItem) setNewTxnId(savedId)
-    await fetchTransactions()
-    setTimeout(() => setNewTxnId(null), 1000)
+      // 대출 상환 연동: 트랜잭션에 isLoan/loanId/daysElapsed가 저장되므로
+      // MY 대출 페이지가 Firestore 트랜잭션을 직접 읽어 상환 내역을 표시합니다.
+      clearTimeout(loadingTimer)
+      setFormSaveState('success')
+      haptic.success()
+      await new Promise(r => setTimeout(r, 500))
+      setFormSaveState(null)
+      setShowForm(false)
+      setEditItem(null)
+      setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
+      if (savedId && !editItem) setNewTxnId(savedId)
+      await fetchTransactions()
+      setTimeout(() => setNewTxnId(null), 1000)
+    } catch {
+      clearTimeout(loadingTimer)
+      setFormSaveState(null)
+      haptic.warning()
+      alert('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
+    } finally {
+      submittingRef.current = false
+    }
   }
 
   const handleDelete = (id) => {
