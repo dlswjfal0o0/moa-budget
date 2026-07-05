@@ -16,7 +16,8 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        // 한국어 품질/지시 준수가 좋은 대형 모델로 교체 (기존 8B는 한자·깨진 글자 문제)
+        model: 'openai/gpt-oss-120b',
         messages: [
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: messages?.[0]?.content || '' }

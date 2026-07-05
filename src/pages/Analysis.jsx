@@ -23,6 +23,32 @@ function hashStr(str) {
   return h.toString(36)
 }
 
+// AI 응답에서 순수 JSON만 추출 (앞뒤 설명/코드블록/추론 텍스트 제거)
+function extractJson(text) {
+  const stripped = text.replace(/```json\n?|```/g, '').trim()
+  const start = stripped.indexOf('{')
+  const end = stripped.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) return stripped.slice(start, end + 1)
+  return stripped
+}
+
+// 한자(CJK) 등 한글 이외 잘못된 문자를 제거하는 안전망 (모델이 실수로 뱉는 깨진 글자 방지)
+function stripHanja(s) {
+  return typeof s === 'string'
+    ? s.replace(/[㐀-鿿豈-﫿぀-ヿ]/g, '').replace(/[ \t]{2,}/g, ' ').trim()
+    : s
+}
+function sanitizeDeep(obj) {
+  if (typeof obj === 'string') return stripHanja(obj)
+  if (Array.isArray(obj)) return obj.map(sanitizeDeep)
+  if (obj && typeof obj === 'object') {
+    const o = {}
+    for (const k in obj) o[k] = sanitizeDeep(obj[k])
+    return o
+  }
+  return obj
+}
+
 function UtilityIcon({ type, size = 20, color = '#888' }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   if (type === '관리비') return <svg {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -262,19 +288,20 @@ export default function Analysis() {
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800, temperature: 0,
+          max_tokens: 1200, temperature: 0.3,
           system: '당신은 개인 재무 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `소비 데이터를 분석하고 JSON으로만 응답해주세요:\n\n이번 달: ${byCat} / 총 ${fmt(totalExpense)}원 지출, ${fmt(totalIncome)}원 수입\n지난 달: ${lastByCat} / 총 ${fmt(lastTotalExpense)}원 지출\n\n중요 규칙(말투):\n- 평가/요약 필드(summary, unusual, message)는 반드시 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "증가했습니다".\n- 조언 필드(cuts의 tip)는 반드시 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?", "~해보시는 건 어떨까요?" 처럼 부드럽게 제안하는 말투로 끝내세요. 예: "배달음식을 줄여보는 건 어떨까요?".\n- 문어체(-다, -하였다, -되었다, -이다, -것이다) 절대 금지. 명령형(-하세요, -하십시오, -합시다, -해라) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 대신 '내려받기', '앱' 같은 순한글 표현 사용.\n- tip(조언)은 반드시 2문장 이상으로, 구체적이고 실질적이며 청유형으로 작성.\n- save는 반드시 순수 정수 숫자만 (계산식, 수식 절대 금지, 0 이상)\n- 모든 숫자 필드는 정수만 허용\n\n응답 형식 (이 형식 그대로만):\n{"rating":"good","score":75,"summary":"2줄 구어체 요약 (-입니다/-습니다)","cuts":[{"category":"카테고리명","tip":"구체적 조언 2문장 이상 (청유형 -는 게 어떨까요?)","save":50000}],"unusual":[],"saving_goal":100000,"message":"이모지 포함 응원 메시지 (-입니다/-습니다)"}` }]
+          messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[내용 규칙 — 가장 중요]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.\n- cuts는 지출 상위 카테고리 위주로 2~4개 작성하세요. 각 조언(tip)은 서로 내용이 겹치지 않게, 해당 카테고리에 딱 맞는 서로 다른 구체적 방법을 제시하세요.\n- "OO을 줄이면 지출을 줄일 수 있습니다"처럼 뻔하고 반복되는 문장, 같은 문장 반복은 절대 금지합니다. 각 tip은 실행 가능한 구체적 행동(예: 특정 습관, 대체 방법, 목표 횟수/금액)을 담으세요.\n- save는 각 카테고리 지출액을 고려한 현실적인 정수 금액으로, 카테고리마다 다르게 산정하세요.\n\n[말투 규칙]\n- 평가/요약 필드(summary, unusual, message)는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 조언 필드(cuts의 tip)는 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 제안하는 말투로 끝내세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 명령형(-하세요, -합시다) 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 어색한 번역어 대신 자연스러운 한국어만 사용하세요.\n- tip은 2문장 이상, 구체적이고 청유형으로 작성.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약 (-입니다/-습니다)","cuts":[{"category":"카테고리명","tip":"카테고리별로 서로 다른 구체적 조언 2문장 (청유형)","save":정수}],"unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"saving_goal":정수,"message":"이모지 포함 응원 메시지 (-입니다/-습니다)"}` }]
         })
       })
       const data = await res.json()
-      const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
+      const raw = data.content?.[0]?.text || ''
+      const text = extractJson(raw)
       if (!text) { setAiFeedbackRaw('응답이 비어있어요. 잠시 후 다시 시도해주세요.'); setLoadingAi(false); return }
       try {
-        const parsed = JSON.parse(text)
+        const parsed = sanitizeDeep(JSON.parse(text))
         setAiFeedbackData(parsed)
         persistAiCache('consume', cacheMonthKey, sig, parsed)
-      } catch { setAiFeedbackRaw(text) }
+      } catch { setAiFeedbackRaw(stripHanja(text)) }
     } catch { setAiFeedbackRaw('AI 분석을 불러오는 데 실패했어요.') }
     setLoadingAi(false)
   }
@@ -307,18 +334,18 @@ export default function Analysis() {
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 600, temperature: 0,
+          max_tokens: 900, temperature: 0.3,
           system: '당신은 공과금 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `공과금 현황:\n${summary}\n\n각 항목을 친근하게 분석해 주세요.\n\n중요 규칙(말투):\n- 분석/총평 필드(items의 comment, overall)는 반드시 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "줄었습니다".\n- 조언(절약 팁) 필드(tip)는 반드시 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 부드럽게 제안하는 말투로 끝내세요. 예: "사용량을 줄여보는 건 어떨까요?".\n- 문어체(-다, -하였다, -되었다, -이다) 절대 금지. 명령형(-하세요, -하십시오, -합시다) 절대 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 JSON 형식으로만 응답해 주세요:\n{"items":[{"type":"관리비","status":"up","comment":"이모지 포함 친근한 한 줄 구어체 코멘트 (-입니다/-습니다)"}],"overall":"이모지 포함 전체 총평 구어체 (-입니다/-습니다)","tip":"이모지 포함 절약 팁 한 줄 청유형 (-는 게 어떨까요?)"}` }]
+          messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[내용 규칙 — 가장 중요]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n- overall은 전체 공과금 흐름을 요약하고, tip은 이번 데이터에서 가장 아낄 여지가 큰 항목을 골라 구체적 절약 방법을 제안하세요.\n\n[말투 규칙]\n- 분석/총평 필드(items의 comment, overall)는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 조언(tip)은 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 제안하는 말투로 끝내세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 명령형(-하세요, -합시다) 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"이모지 포함, 데이터 근거의 서로 다른 구체적 한두 줄 (-입니다/-습니다)"}],"overall":"이모지 포함 전체 총평 (-입니다/-습니다)","tip":"이모지 포함 구체적 절약 제안 (청유형 -는 게 어떨까요?)"}` }]
         })
       })
       const data = await res.json()
-      const text = data.content[0].text.replace(/```json\n?|```/g, '').trim()
+      const text = extractJson(data.content?.[0]?.text || '')
       try {
-        const parsed = JSON.parse(text)
+        const parsed = sanitizeDeep(JSON.parse(text))
         setUtilityAI(parsed)
         persistAiCache('utility', cacheMonthKey, sig, parsed)
-      } catch { setUtilityAI({ overall: text }) }
+      } catch { setUtilityAI({ overall: stripHanja(text) }) }
     } catch { setUtilityAI({ overall: '분석에 실패했어요.' }) }
     setLoadingUtilityAI(false)
   }
