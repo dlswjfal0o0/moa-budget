@@ -16,8 +16,9 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
-        // 한국어 품질/지시 준수가 좋은 대형 모델로 교체 (기존 8B는 한자·깨진 글자 문제)
-        model: 'openai/gpt-oss-120b',
+        // 한국어 품질/지시 준수가 좋은 대형 모델 (비추론 → content가 바로 채워짐).
+        // gpt-oss 계열은 추론 모델이라 토큰 소진 시 content가 비어 오류가 났음.
+        model: 'llama-3.3-70b-versatile',
         messages: [
           ...(system ? [{ role: 'system', content: system }] : []),
           { role: 'user', content: messages?.[0]?.content || '' }
@@ -28,10 +29,13 @@ export default async function handler(req, res) {
     })
 
     const data = await response.json()
-    const text = data.choices?.[0]?.message?.content || ''
+    const msg = data.choices?.[0]?.message || {}
+    // content 우선, 비어 있으면 reasoning 필드로 폴백 (추론 모델 대비)
+    const text = (msg.content || msg.reasoning || '').trim()
 
     if (!text) {
-      return res.status(200).json({ content: [{ text: `Groq 오류: ${JSON.stringify(data).slice(0, 100)}` }] })
+      const reason = data.error?.message || JSON.stringify(data).slice(0, 200)
+      return res.status(200).json({ content: [{ text: `Groq 오류: ${reason}` }] })
     }
 
     res.status(200).json({ content: [{ text }] })
