@@ -10,6 +10,10 @@ import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { getSystemPrompt, getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
+
+// AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
+const AI_CACHE_VERSION = 1
 
 function CustomPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -72,7 +76,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { themeData } = useTheme()
   const { cards } = useCards()
-  const { categories } = useSettings()
+  const { categories, aiAnalysisStyle, aiShowAdvice } = useSettings()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState(() => {
     try {
@@ -87,6 +91,10 @@ export default function Home() {
   const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
   const [budgetInsights, setBudgetInsights] = useState({})
   const [loadingInsightId, setLoadingInsightId] = useState(null)
+  // AI 인사이트 캐시 (계정 기준 동기화). localStorage로 즉시 로드 후 Firestore로 덮어씀. 소비/공과금 분석과 동일한 저장소를 공유.
+  const [aiCache, setAiCache] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('moa_ai_cache') || '{}') } catch { return {} }
+  })
   const [expandedBudgetEditId, setExpandedBudgetEditId] = useState(null)
   const [expandedTipIds, setExpandedTipIds] = useState({})
   const [editingBudgetId, setEditingBudgetId] = useState(null)
@@ -130,6 +138,11 @@ export default function Home() {
         const snap = await getDoc(doc(db, 'users', u.uid))
         if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
         if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
+        if (snap.exists() && snap.data().aiCache) {
+          const remote = snap.data().aiCache
+          setAiCache(remote)
+          try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+        }
       }
     })
     return unsub
@@ -150,6 +163,20 @@ export default function Home() {
     if (user) await setDoc(doc(db, 'users', user.uid), { budgets: updated }, { merge: true })
   }
 
+  // AI 캐시 저장: 로컬 + 계정(Firestore) 동시 반영. kind='budget', key=budget.id
+  const persistAiCache = async (kind, key, sig, data) => {
+    setAiCache(prev => {
+      const next = { ...prev, [kind]: { ...(prev[kind] || {}), [key]: { sig, data } } }
+      try { localStorage.setItem('moa_ai_cache', JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+    if (user) {
+      try {
+        await setDoc(doc(db, 'users', user.uid), { aiCache: { [kind]: { [key]: { sig, data } } } }, { merge: true })
+      } catch { /* ignore */ }
+    }
+  }
+
   const handleAddBudget = () => {
     if (!newBudget.label || !newBudget.startDate || !newBudget.endDate || !newBudget.amount) return alert('모든 항목을 입력해주세요.')
     saveBudgets([...budgets, { id: Date.now(), ...newBudget, amount: Number(newBudget.amount) }])
@@ -167,37 +194,35 @@ export default function Home() {
     const daysLeft = Math.max(0, Math.ceil((new Date(budget.endDate) - new Date()) / 86400000))
     const remaining = budget.amount - spent
     const pct = Math.round((spent / budget.amount) * 100)
+    const status = pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'
+    // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 캐시된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+    const sig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, label: budget.label, amount: budget.amount, spent, daysLeft, style: aiAnalysisStyle, advice: aiShowAdvice }))
+    const cacheKey = String(budget.id)
+    const cached = aiCache.budget?.[cacheKey]
+    if (cached && cached.sig === sig && cached.data) { setBudgetInsights(prev => ({ ...prev, [budget.id]: cached.data })); return }
     setLoadingInsightId(budget.id)
     try {
+        const schema = aiShowAdvice
+          ? `{"status":"${status}","summary":"2문장 이내 현황 요약","tips":[{"icon":"food|chart|adjust|money|calendar|target 중 하나","title":"조언 제목","detail":"구체적이고 실행 가능한 설명 (청유형)"}]}`
+          : `{"status":"${status}","summary":"2문장 이내 현황 요약"}`
         const res = await fetch('/api/ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 600,
+                max_tokens: 600, ...getDeterminismParams(),
+                system: getSystemPrompt({ domain: '예산 인사이트', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
                 messages: [{ role: 'user', content:
-                    `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.
-
-모든 내용은 반드시 한국어로만 작성해. 문체는 반드시 서술형(~해요, ~있어요, ~됩니다)으로 작성하고, 명령형(~하세요, ~하라, ~합시다)은 절대 사용하지 마. 아래 JSON 형식으로만 응답해. 마크다운, 코드블록, 설명 없이 JSON 객체만:
-{
-  "status": "${pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'}",
-  "summary": "2문장 이내 현황 요약. 친근한 서술형 말투로 작성해요.",
-  "tips": [
-    { "icon": "food", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." },
-    { "icon": "chart", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." },
-    { "icon": "adjust", "title": "조언 제목", "detail": "구체적이고 도움이 되는 2문장 설명. 서술형 말투 사용." }
-  ]
-}
-tips 배열은 정확히 3개여야 해. icon 값은 food, chart, adjust, money, calendar, target 중 하나여야 해.`
+                    `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.\n\nJSON으로만 응답하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. tips는 서로 다른 내용으로 작성하세요.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}`
                 }]
             })
         })
         const data = await res.json()
-        const raw = data.content[0].text
+        const raw = data.content?.[0]?.text || ''
         try {
             const jsonMatch = raw.match(/\{[\s\S]*\}/)
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw)
             setBudgetInsights(prev => ({ ...prev, [budget.id]: parsed }))
+            persistAiCache('budget', cacheKey, sig, parsed)
         } catch {
             setBudgetInsights(prev => ({ ...prev, [budget.id]: { status: 'good', summary: raw, tips: [] } }))
         }
