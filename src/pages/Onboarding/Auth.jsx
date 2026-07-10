@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithCredential,
+  getAdditionalUserInfo,
   OAuthProvider,
   sendPasswordResetEmail
 } from 'firebase/auth'
@@ -73,13 +74,19 @@ export default function Auth() {
         await signInWithEmailAndPassword(auth, email, password)
       }
       localStorage.setItem('moa_logged_in', 'true')
+      const isDemoAccount = email.trim().toLowerCase() === DEMO_ACCOUNT_EMAIL
       // 심사용 데모 계정이면 데모 데이터 로드, 그 외 일반 유저는 데모 모드 해제
-      if (email.trim().toLowerCase() === DEMO_ACCOUNT_EMAIL) {
+      if (isDemoAccount) {
         injectDemoData()
       } else {
         localStorage.removeItem('moa_demo_mode')
       }
-      navigate('/home', { replace: true })
+      // 신규 가입자는 AI 분석 스타일 온보딩으로, 기존 로그인은 바로 홈으로
+      if (mode === 'signup' && !isDemoAccount) {
+        navigate('/onboarding/ai-style', { replace: true })
+      } else {
+        navigate('/home', { replace: true })
+      }
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')
       else if (e.code === 'auth/user-not-found') setError('등록되지 않은 이메일이에요.')
@@ -93,9 +100,10 @@ export default function Auth() {
     setError('')
     setLoading(true)
     try {
-      await signInWithPopup(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
       localStorage.removeItem('moa_demo_mode')
-      navigate('/home', { replace: true })
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+      navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch {
       setError('Google 로그인에 실패했어요.')
     }
@@ -114,9 +122,10 @@ export default function Auth() {
       const { identityToken } = result.response
       const provider = new OAuthProvider('apple.com')
       const credential = provider.credential({ idToken: identityToken })
-      await signInWithCredential(auth, credential)
+      const signInResult = await signInWithCredential(auth, credential)
       localStorage.removeItem('moa_demo_mode')
-      navigate('/home', { replace: true })
+      const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser
+      navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch {
       setError('Apple 로그인에 실패했어요.')
     }

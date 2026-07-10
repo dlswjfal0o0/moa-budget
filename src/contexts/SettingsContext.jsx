@@ -23,12 +23,18 @@ export function SettingsProvider({ children }) {
   const [showLoan, setShowLoanState] = useState(
     () => localStorage.getItem('moa_showLoan') === 'true'
   )
+  const [aiAnalysisStyle, setAiAnalysisStyleState] = useState(() => {
+    const v = localStorage.getItem('moa_aiAnalysisStyle')
+    return v !== null ? Number(v) : 3
+  })
+  const [aiShowAdvice, setAiShowAdviceState] = useState(() => {
+    const v = localStorage.getItem('moa_aiShowAdvice')
+    return v !== null ? v === 'true' : true
+  })
   const [categories, setCategoriesState] = useState(DEFAULT_CATEGORIES)
-  const [currentUser, setCurrentUser] = useState(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user)
       if (!user) return
       const snap = await getDoc(doc(db, 'users', user.uid))
       if (!snap.exists()) return
@@ -53,6 +59,14 @@ export function SettingsProvider({ children }) {
         setShowLoanState(data.showLoan)
         localStorage.setItem('moa_showLoan', String(data.showLoan))
       }
+      if (data.aiAnalysisStyle !== undefined) {
+        setAiAnalysisStyleState(data.aiAnalysisStyle)
+        localStorage.setItem('moa_aiAnalysisStyle', String(data.aiAnalysisStyle))
+      }
+      if (data.aiShowAdvice !== undefined) {
+        setAiShowAdviceState(data.aiShowAdvice)
+        localStorage.setItem('moa_aiShowAdvice', String(data.aiShowAdvice))
+      }
       if (data.categories) {
         setCategoriesState({ ...DEFAULT_CATEGORIES, ...data.categories })
       }
@@ -61,8 +75,11 @@ export function SettingsProvider({ children }) {
   }, [])
 
   const save = async (updates) => {
-    if (!currentUser) return
-    await setDoc(doc(db, 'users', currentUser.uid), updates, { merge: true })
+    // currentUser(state)는 로그인 직후 비동기로 반영되므로, 가입 직후 온보딩처럼
+    // 즉시 저장이 필요한 화면에서는 Firebase SDK가 동기적으로 채워주는 auth.currentUser를 사용한다.
+    const uid = auth.currentUser?.uid
+    if (!uid) return
+    await setDoc(doc(db, 'users', uid), updates, { merge: true })
   }
 
   const setWeekStartDay = (val) => {
@@ -90,6 +107,16 @@ export function SettingsProvider({ children }) {
     localStorage.setItem('moa_showLoan', String(val))
     save({ showLoan: val })
   }
+  const setAiAnalysisStyle = (val) => {
+    setAiAnalysisStyleState(val)
+    localStorage.setItem('moa_aiAnalysisStyle', String(val))
+    save({ aiAnalysisStyle: val })
+  }
+  const setAiShowAdvice = (val) => {
+    setAiShowAdviceState(val)
+    localStorage.setItem('moa_aiShowAdvice', String(val))
+    save({ aiShowAdvice: val })
+  }
   const setCategories = (val) => {
     setCategoriesState(val)
     save({ categories: val })
@@ -102,6 +129,8 @@ export function SettingsProvider({ children }) {
       showCardBilling, setShowCardBilling,
       rolloverBudget, setRolloverBudget,
       showLoan, setShowLoan,
+      aiAnalysisStyle, setAiAnalysisStyle,
+      aiShowAdvice, setAiShowAdvice,
       categories, setCategories,
     }}>
       {children}

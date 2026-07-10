@@ -8,6 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import BottomNav from '../components/BottomNav'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
+import { getSystemPrompt, getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 
 const UTILITY_STYLES = {
   관리비: { bg: '#F3F4F6', color: '#6B7280' },
@@ -17,14 +19,7 @@ const UTILITY_STYLES = {
 }
 
 // AI 캐시 버전. 모델/프롬프트를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
-const AI_CACHE_VERSION = 2
-
-// 입력 데이터로 안정적인 캐시 키를 만들기 위한 간단한 해시 (djb2)
-function hashStr(str) {
-  let h = 5381
-  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0
-  return h.toString(36)
-}
+const AI_CACHE_VERSION = 3
 
 // AI 응답에서 순수 JSON만 추출 (앞뒤 설명/코드블록/추론 텍스트 제거)
 function extractJson(text) {
@@ -115,6 +110,7 @@ function CustomPieTooltip({ active, payload }) {
 export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const { cards } = useCards()
+  const { aiAnalysisStyle, aiShowAdvice } = useSettings()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [lastMonthTx, setLastMonthTx] = useState([])
@@ -282,18 +278,24 @@ export default function Analysis() {
     const lastByCat = Object.entries(
       lastExpenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
     ).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ') || '없음'
-    // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashStr(JSON.stringify({ v: AI_CACHE_VERSION, byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth }))
+    // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+    const sig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
     const cached = aiCache.consume?.[cacheMonthKey]
     if (cached && cached.sig === sig && cached.data) { setAiFeedbackData(cached.data); setAiFeedbackRaw(''); return }
     setLoadingAi(true); setAiFeedbackData(null); setAiFeedbackRaw('')
     try {
+      const adviceContentRule = aiShowAdvice
+        ? '\n- cuts는 지출 상위 카테고리 위주로 최소 1개, 최대 3개 작성하세요. 각 조언(tip)은 서로 내용이 겹치지 않게, 해당 카테고리에 딱 맞는 서로 다른 구체적 방법을 제시하세요.\n- save는 각 카테고리 지출액을 고려한 현실적인 정수 금액으로, 카테고리마다 다르게 산정하세요.\n- saving_goal은 이번 달 소비 패턴을 바탕으로 현실적인 절감 목표 금액을 제시하세요.'
+        : ''
+      const schema = aiShowAdvice
+        ? '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","cuts":[{"category":"카테고리명","tip":"카테고리별로 서로 다른 구체적 조언 (청유형)","save":정수}],"unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"saving_goal":정수,"message":"응원 메시지"}'
+        : '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"message":"응원 메시지"}'
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          max_tokens: 1200, temperature: 0.3,
-          system: '당신은 개인 재무 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[내용 규칙 — 가장 중요]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.\n- cuts는 지출 상위 카테고리 위주로 2~4개 작성하세요. 각 조언(tip)은 서로 내용이 겹치지 않게, 해당 카테고리에 딱 맞는 서로 다른 구체적 방법을 제시하세요.\n- "OO을 줄이면 지출을 줄일 수 있습니다"처럼 뻔하고 반복되는 문장, 같은 문장 반복은 절대 금지합니다. 각 tip은 실행 가능한 구체적 행동(예: 특정 습관, 대체 방법, 목표 횟수/금액)을 담으세요.\n- save는 각 카테고리 지출액을 고려한 현실적인 정수 금액으로, 카테고리마다 다르게 산정하세요.\n\n[말투 규칙]\n- 평가/요약 필드(summary, unusual, message)는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 조언 필드(cuts의 tip)는 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 제안하는 말투로 끝내세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 명령형(-하세요, -합시다) 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지. 어색한 번역어 대신 자연스러운 한국어만 사용하세요.\n- tip은 2문장 이상, 구체적이고 청유형으로 작성.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약 (-입니다/-습니다)","cuts":[{"category":"카테고리명","tip":"카테고리별로 서로 다른 구체적 조언 2문장 (청유형)","save":정수}],"unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"saving_goal":정수,"message":"이모지 포함 응원 메시지 (-입니다/-습니다)"}` }]
+          max_tokens: 1200, ...getDeterminismParams(),
+          system: getSystemPrompt({ domain: '소비 분석', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
+          messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[JSON 필드 규칙]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.${adviceContentRule}\n- summary, unusual, message는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}` }]
         })
       })
       const data = await res.json()
@@ -328,18 +330,24 @@ export default function Analysis() {
       return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
     }).filter(Boolean).join('\n')
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
-    // 데이터 시그니처: 동일 데이터면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashStr(JSON.stringify({ v: AI_CACHE_VERSION, summary, y: viewYear, m: viewMonth }))
+    // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+    const sig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, summary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
     const cached = aiCache.utility?.[cacheMonthKey]
     if (cached && cached.sig === sig && cached.data) { setUtilityAI(cached.data); return }
     setLoadingUtilityAI(true); setUtilityAI(null)
     try {
+      const adviceOverallRule = aiShowAdvice
+        ? ' overall은 전체 공과금 흐름을 요약하고, tip은 이번 데이터에서 가장 아낄 여지가 큰 항목을 골라 구체적 절약 방법을 제안하세요.'
+        : ' overall은 전체 공과금 흐름을 요약하세요.'
+      const schema = aiShowAdvice
+        ? '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평","tip":"구체적 절약 제안 (청유형)"}'
+        : '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평"}'
       const res = await fetch('/api/ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          max_tokens: 900, temperature: 0.3,
-          system: '당신은 공과금 분석 AI입니다. 반드시 유효한 JSON만 출력하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. 모든 텍스트 값은 반드시 순수한 한국어(한글)로만 작성하세요. 한자, 영어, 일본어 등 한글 이외의 문자는 절대 사용하지 마세요.',
-          messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[내용 규칙 — 가장 중요]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n- overall은 전체 공과금 흐름을 요약하고, tip은 이번 데이터에서 가장 아낄 여지가 큰 항목을 골라 구체적 절약 방법을 제안하세요.\n\n[말투 규칙]\n- 분석/총평 필드(items의 comment, overall)는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 조언(tip)은 청유형으로 작성하세요. "~는 게 어떨까요?", "~해보는 건 어떨까요?" 처럼 제안하는 말투로 끝내세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 명령형(-하세요, -합시다) 금지.\n- 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"이모지 포함, 데이터 근거의 서로 다른 구체적 한두 줄 (-입니다/-습니다)"}],"overall":"이모지 포함 전체 총평 (-입니다/-습니다)","tip":"이모지 포함 구체적 절약 제안 (청유형 -는 게 어떨까요?)"}` }]
+          max_tokens: 900, ...getDeterminismParams(),
+          system: getSystemPrompt({ domain: '공과금 분석', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
+          messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[JSON 필드 규칙]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n-${adviceOverallRule}\n- items의 comment, overall은 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n${schema}` }]
         })
       })
       const data = await res.json()

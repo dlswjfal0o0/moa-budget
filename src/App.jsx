@@ -6,6 +6,7 @@ import { LoansProvider } from './contexts/LoansContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
+import AIStyleSetup from './pages/Onboarding/AIStyleSetup'
 import Home from './pages/Home'
 import Ledger from './pages/Ledger'
 import Calendar from './pages/Calendar'
@@ -28,6 +29,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<SplashScreen />} />
         <Route path="/how-to-use" element={<HowToUse />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/onboarding/ai-style" element={<AIStyleSetup />} />
         <Route path="/home" element={<Home />} />
         <Route path="/ledger" element={<Ledger />} />
         <Route path="/calendar" element={<Calendar />} />
