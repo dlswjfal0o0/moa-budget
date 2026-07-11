@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import ErrorBoundary from './components/ErrorBoundary'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider } from './contexts/SettingsContext'
@@ -25,17 +26,19 @@ function AnimatedRoutes() {
       key={location.pathname}
       style={isTab ? { animation: 'pageEnter 220ms ease forwards' } : undefined}
     >
-      <Routes location={location}>
-        <Route path="/" element={<SplashScreen />} />
-        <Route path="/how-to-use" element={<HowToUse />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/onboarding/ai-style" element={<AIStyleSetup />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/ledger" element={<Ledger />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/analysis" element={<Analysis />} />
-        <Route path="/my" element={<MyPage />} />
-      </Routes>
+      <ErrorBoundary key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<SplashScreen />} />
+          <Route path="/how-to-use" element={<HowToUse />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding/ai-style" element={<AIStyleSetup />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/ledger" element={<Ledger />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/analysis" element={<Analysis />} />
+          <Route path="/my" element={<MyPage />} />
+        </Routes>
+      </ErrorBoundary>
     </div>
   )
 }
