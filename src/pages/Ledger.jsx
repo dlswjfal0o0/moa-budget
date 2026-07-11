@@ -10,6 +10,7 @@ import {
   getDoc, setDoc
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
@@ -138,6 +139,7 @@ export default function Ledger() {
   const navigate = useNavigate()
   const now = new Date()
   const [user, setUser] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [tab, setTab] = useState('전체')
   const [period, setPeriod] = useState('월간')
@@ -230,13 +232,21 @@ export default function Ledger() {
         setUserAccountsList(accounts)
         setUserPayments(['현금'])
       }
+    }).catch(err => {
+      console.error('[Ledger] 계좌 정보 로딩 실패', err)
+      setLoadError('계좌 정보를 불러오지 못했어요.')
     })
   }, [user])
 
   async function fetchTransactions() {
-    const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), orderBy('date', 'desc'))
-    const snap = await getDocs(q)
-    setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    try {
+      const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), orderBy('date', 'desc'))
+      const snap = await getDocs(q)
+      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    } catch (err) {
+      console.error('[Ledger] 거래내역 로딩 실패', err)
+      setLoadError('거래내역을 불러오지 못했어요.')
+    }
   }
 
   const getWeekRange = () => {
@@ -611,6 +621,12 @@ export default function Ledger() {
 
   return (
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
+
+      {loadError && (
+        <div style={{ padding: '12px 20px 0' }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
 
       {/* ── 헤더 ── */}
       <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0', borderBottom: '1px solid #F2F4F6' }}>

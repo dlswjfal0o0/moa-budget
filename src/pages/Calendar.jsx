@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
 import { DEFAULT_CATEGORIES } from '../styles/theme'
@@ -34,6 +35,7 @@ export default function Calendar() {
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [selectedDate, setSelectedDate] = useState(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
+  const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
@@ -53,52 +55,57 @@ export default function Calendar() {
       if (!u) navigate('/auth', { replace: true })
       else {
         setUser(u)
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        const data = snap.exists() ? snap.data() : {}
+        try {
+          const snap = await getDoc(doc(db, 'users', u.uid))
+          const data = snap.exists() ? snap.data() : {}
 
-        // Load categories
-        if (data.categories?.expense?.length > 0) setCategories(data.categories.expense)
+          // Load categories
+          if (data.categories?.expense?.length > 0) setCategories(data.categories.expense)
 
-        // Load cards
-        if (data.cards?.length > 0) setUserCards(data.cards)
+          // Load cards
+          if (data.cards?.length > 0) setUserCards(data.cards)
 
-        // Load accounts (same source as MyPage: data.accounts array with `name` field)
-        if (data.accounts?.length > 0) setUserAccounts(data.accounts)
+          // Load accounts (same source as MyPage: data.accounts array with `name` field)
+          if (data.accounts?.length > 0) setUserAccounts(data.accounts)
 
-        // Auto-register fixed expenses for the current real month
-        const fixedList = data.fixedExpenses || []
-        const nowDate = new Date()
-        const todayDay = nowDate.getDate()
-        const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
-        const promises = []
-        const processed = fixedList.map(f => {
-          if (!f.autoRegister || !f.dueDate) return f
-          const dueDay = parseInt(f.dueDate.split('-')[2])
-          if (isNaN(dueDay) || todayDay < dueDay) return f
-          const registeredMonths = f.autoRegisteredMonths || []
-          if (registeredMonths.includes(nowMonthKey)) return f
-          const dueDateStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
-          promises.push(addDoc(collection(db, 'transactions'), {
-            uid: u.uid, month: nowMonthKey, type: 'expense',
-            title: f.title, amount: f.amount,
-            category: f.category || '기타', payment: f.payment || '현금',
-            date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
-            isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
-          }))
-          // 자동 등록 시 체크박스도 '완료' 상태로 표시해 이중 등록을 방지
-          const doneMonths = f.doneMonths || []
-          return {
-            ...f,
-            autoRegisteredMonths: [...registeredMonths, nowMonthKey],
-            doneMonths: doneMonths.includes(nowMonthKey) ? doneMonths : [...doneMonths, nowMonthKey]
+          // Auto-register fixed expenses for the current real month
+          const fixedList = data.fixedExpenses || []
+          const nowDate = new Date()
+          const todayDay = nowDate.getDate()
+          const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
+          const promises = []
+          const processed = fixedList.map(f => {
+            if (!f.autoRegister || !f.dueDate) return f
+            const dueDay = parseInt(f.dueDate.split('-')[2])
+            if (isNaN(dueDay) || todayDay < dueDay) return f
+            const registeredMonths = f.autoRegisteredMonths || []
+            if (registeredMonths.includes(nowMonthKey)) return f
+            const dueDateStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
+            promises.push(addDoc(collection(db, 'transactions'), {
+              uid: u.uid, month: nowMonthKey, type: 'expense',
+              title: f.title, amount: f.amount,
+              category: f.category || '기타', payment: f.payment || '현금',
+              date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
+              isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
+            }))
+            // 자동 등록 시 체크박스도 '완료' 상태로 표시해 이중 등록을 방지
+            const doneMonths = f.doneMonths || []
+            return {
+              ...f,
+              autoRegisteredMonths: [...registeredMonths, nowMonthKey],
+              doneMonths: doneMonths.includes(nowMonthKey) ? doneMonths : [...doneMonths, nowMonthKey]
+            }
+          })
+          if (promises.length > 0) {
+            await Promise.all(promises)
+            await setDoc(doc(db, 'users', u.uid), { fixedExpenses: processed }, { merge: true })
+            setRefreshTrigger(t => t + 1)
           }
-        })
-        if (promises.length > 0) {
-          await Promise.all(promises)
-          await setDoc(doc(db, 'users', u.uid), { fixedExpenses: processed }, { merge: true })
-          setRefreshTrigger(t => t + 1)
+          setFixedExpenses(processed)
+        } catch (err) {
+          console.error('[Calendar] 사용자 데이터 로딩 실패', err)
+          setLoadError('데이터를 불러오지 못했어요.')
         }
-        setFixedExpenses(processed)
       }
     })
     return unsub
@@ -109,6 +116,10 @@ export default function Calendar() {
     const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr))
     getDocs(q).then(snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(err => {
+        console.error('[Calendar] 거래내역 로딩 실패', err)
+        setLoadError('거래내역을 불러오지 못했어요.')
+      })
   }, [user, viewYear, viewMonth, refreshTrigger])
 
   const saveFixed = async (updated) => {
@@ -249,6 +260,12 @@ export default function Calendar() {
       overflow: 'hidden',
       background: themeData.bg
     }}>
+
+      {loadError && (
+        <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
 
       {/* ── 고정: 캘린더만 ── */}
       <div style={{ flexShrink: 0, background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 24px 12px', borderBottom: '1px solid #F2F4F6' }}>

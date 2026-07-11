@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
+import LoadError from '../components/LoadError'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -113,6 +114,7 @@ export default function Analysis() {
   const { cards } = useCards()
   const { aiAnalysisStyle, aiShowAdvice } = useSettings()
   const [user, setUser] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [lastMonthTx, setLastMonthTx] = useState([])
   const [aiFeedbackData, setAiFeedbackData] = useState(null)
@@ -178,14 +180,19 @@ export default function Analysis() {
   }
 
   async function fetchData() {
-    const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-    const snap1 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr)))
-    setTransactions(snap1.docs.map(d => ({ id: d.id, ...d.data() })))
-    const lm = viewMonth === 0 ? 11 : viewMonth - 1
-    const ly = viewMonth === 0 ? viewYear - 1 : viewYear
-    const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
-    const snap2 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', lastStr)))
-    setLastMonthTx(snap2.docs.map(d => ({ id: d.id, ...d.data() })))
+    try {
+      const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+      const snap1 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', monthStr)))
+      setTransactions(snap1.docs.map(d => ({ id: d.id, ...d.data() })))
+      const lm = viewMonth === 0 ? 11 : viewMonth - 1
+      const ly = viewMonth === 0 ? viewYear - 1 : viewYear
+      const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
+      const snap2 = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', lastStr)))
+      setLastMonthTx(snap2.docs.map(d => ({ id: d.id, ...d.data() })))
+    } catch (err) {
+      console.error('[Analysis] 거래내역 로딩 실패', err)
+      setLoadError('거래내역을 불러오지 못했어요.')
+    }
   }
 
   useEffect(() => {
@@ -365,6 +372,12 @@ export default function Analysis() {
 
   return (
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+
+      {loadError && (
+        <div style={{ padding: '12px 20px 0' }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
 
       {/* 헤더 */}
       <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6' }}>

@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import LoadError from '../components/LoadError'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -102,6 +103,7 @@ export default function MyPage() {
   const [expandedLoanId, setExpandedLoanId] = useState(null)
   const [loanRepaymentTxns, setLoanRepaymentTxns] = useState([])
   const [loadingRepayments, setLoadingRepayments] = useState(false)
+  const [loadError, setLoadError] = useState(null)
 
   // selectedLoan이 열릴 때 Firestore에서 직접 상환 트랜잭션 불러오기
   useEffect(() => {
@@ -151,29 +153,34 @@ export default function MyPage() {
             localStorage.setItem('moa_profileImg', u.photoURL)
         }
 
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists()) {
-            const data = snap.data()
-            if (data.theme) setThemeName(data.theme)
-            if (data.cards) {
-                setCards(data.cards)
-            }
-            if (data.accounts) {
-                setAccounts(data.accounts)
-                localStorage.setItem('moa_accounts', JSON.stringify(data.accounts))
-            }
-            if (data.cash !== undefined) {
-                setCash(data.cash)
-                setCashInput(String(data.cash))
-                localStorage.setItem('moa_cash', String(data.cash))
-            }
-            if (data.profileImg) {
-                setProfileImg(data.profileImg)
-                localStorage.setItem('moa_profileImg', data.profileImg)
-            }
-            // 전체 거래내역 fetch (계좌 잔액 자동 연동)
-            const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', u.uid)))
-            setAllTxns(txSnap.docs.map(d => d.data()))
+        try {
+          const snap = await getDoc(doc(db, 'users', u.uid))
+          if (snap.exists()) {
+              const data = snap.data()
+              if (data.theme) setThemeName(data.theme)
+              if (data.cards) {
+                  setCards(data.cards)
+              }
+              if (data.accounts) {
+                  setAccounts(data.accounts)
+                  localStorage.setItem('moa_accounts', JSON.stringify(data.accounts))
+              }
+              if (data.cash !== undefined) {
+                  setCash(data.cash)
+                  setCashInput(String(data.cash))
+                  localStorage.setItem('moa_cash', String(data.cash))
+              }
+              if (data.profileImg) {
+                  setProfileImg(data.profileImg)
+                  localStorage.setItem('moa_profileImg', data.profileImg)
+              }
+              // 전체 거래내역 fetch (계좌 잔액 자동 연동)
+              const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', u.uid)))
+              setAllTxns(txSnap.docs.map(d => d.data()))
+          }
+        } catch (err) {
+          console.error('[MyPage] 사용자 데이터 로딩 실패', err)
+          setLoadError('내 정보를 불러오지 못했어요.')
         }
       }
     })
@@ -615,6 +622,12 @@ export default function MyPage() {
 
   return (
     <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+
+      {loadError && (
+        <div style={{ padding: '12px 20px 0' }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
 
       {/* 헤더 */}
       <div style={{ background: t.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>

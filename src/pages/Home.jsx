@@ -8,6 +8,7 @@ import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import LoadError from '../components/LoadError'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -98,6 +99,7 @@ export default function Home() {
   })
   const [expandedBudgetEditId, setExpandedBudgetEditId] = useState(null)
   const [expandedTipIds, setExpandedTipIds] = useState({})
+  const [loadError, setLoadError] = useState(null)
   const [editingBudgetId, setEditingBudgetId] = useState(null)
   const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
   const now = new Date()
@@ -136,13 +138,18 @@ export default function Home() {
       if (!u) navigate('/auth', { replace: true })
       else {
         setUser(u)
-        const snap = await getDoc(doc(db, 'users', u.uid))
-        if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
-        if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
-        if (snap.exists() && snap.data().aiCache) {
-          const remote = snap.data().aiCache
-          setAiCache(remote)
-          try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+        try {
+          const snap = await getDoc(doc(db, 'users', u.uid))
+          if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
+          if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
+          if (snap.exists() && snap.data().aiCache) {
+            const remote = snap.data().aiCache
+            setAiCache(remote)
+            try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+          }
+        } catch (err) {
+          console.error('[Home] 사용자 데이터 로딩 실패', err)
+          setLoadError('예산 정보를 불러오지 못했어요.')
         }
       }
     })
@@ -156,6 +163,9 @@ export default function Home() {
         const txns = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         setTransactions(txns)
         localStorage.setItem(`moa_txns_${monthStr}`, JSON.stringify(txns))
+    }).catch(err => {
+        console.error('[Home] 거래내역 로딩 실패', err)
+        setLoadError('거래내역을 불러오지 못했어요.')
     })
   }, [user])
 
@@ -292,6 +302,11 @@ export default function Home() {
 
   return (
     <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      {loadError && (
+        <div style={{ padding: '12px 20px 0' }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
       {/* 헤더 — Toss 스타일 컬러 배너 */}
       <div style={{ background: themeData.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff', ...stagger(0) }}>
         <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth()+1}월</p>
