@@ -33,7 +33,7 @@ export default function MyPage() {
   const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
-  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories } = useSettings()
+  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale } = useSettings()
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
@@ -609,7 +609,7 @@ export default function MyPage() {
   )
 
   const settingsChevron = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', categories: '카테고리 관리', theme: '테마', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
+  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', categories: '카테고리 관리', theme: '테마', 'font-size': '글자 크기', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
   const updatesList = [
     { version: 'v1.6.0', date: '2026.07.11', changes: ['[ MY - 설정 ] AI 분석 탭 추가 — 분석 스타일(공감형~이성형), 조언 표시 설정', '[ 온보딩 ] 회원가입 후 AI 분석 스타일 선택 화면 추가', '[ 분석 ] AI 소비·공과금 분석에 사용자 설정 스타일/조언 반영'] },
     { version: 'v1.5.0', date: '2026.06.22', changes: ['[ MY - 설정 ] 설정 통합 및 계정 관리 기능 개선', '[ MY - 카드 ] 신용카드 추적 방식 로직 수정', '[ MY - 카드 ] 변경사항 자동 반영'] },
@@ -1345,11 +1345,20 @@ export default function MyPage() {
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>디스플레이</p>
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                     <button onClick={() => setSettingsPage('theme')}
-                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg={t.primary}><SI><circle cx="13.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/><circle cx="17.5" cy="10.5" r="1.5" fill="#fff" stroke="none"/><circle cx="8.5" cy="7.5" r="1.5" fill="#fff" stroke="none"/><circle cx="6.5" cy="12.5" r="1.5" fill="#fff" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke="#fff" fill="none"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>테마</p>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 색상 테마 변경</p>
+                      </div>
+                      {settingsChevron}
+                    </button>
+                    <button onClick={() => setSettingsPage('font-size')}
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <SIcon bg={t.primary}><SI><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></SI></SIcon>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>글자 크기</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 전체 글자 크기 조절</p>
                       </div>
                       {settingsChevron}
                     </button>
@@ -1576,6 +1585,27 @@ export default function MyPage() {
                           {themeName === key && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                         </div>
                         <p style={{ fontSize: 12, fontWeight: 600, color: themeName === key ? val.primary : '#555' }}>{val.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── 글자 크기 ── */}
+              {settingsPage === 'font-size' && (
+                <div style={{ padding: '0 20px' }}>
+                  <p style={{ fontSize: 12, color: '#8B95A1', padding: '20px 4px 12px' }}>화면 확대는 앱 특성상 지원하지 않아, 대신 글자 크기를 조절할 수 있어요.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      { label: '작게', value: 0.9 },
+                      { label: '보통', value: 1 },
+                      { label: '크게', value: 1.15 },
+                      { label: '아주 크게', value: 1.3 },
+                    ].map((opt) => (
+                      <button key={opt.value} onClick={() => setFontScale(opt.value)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderRadius: 16, cursor: 'pointer', border: fontScale === opt.value ? `2px solid ${t.primary}` : '2px solid #f0f0f0', background: fontScale === opt.value ? t.primary + '10' : '#fff' }}>
+                        <span style={{ fontSize: 15 * opt.value, fontWeight: 600, color: fontScale === opt.value ? t.primary : '#191F28' }}>{opt.label}</span>
+                        {fontScale === opt.value && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.primary} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                       </button>
                     ))}
                   </div>

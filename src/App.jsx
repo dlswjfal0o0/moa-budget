@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
-import { SettingsProvider } from './contexts/SettingsContext'
+import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { LoansProvider } from './contexts/LoansContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
@@ -20,11 +20,15 @@ const TAB_PATHS = ['/home', '/ledger', '/calendar', '/analysis', '/my']
 function AnimatedRoutes() {
   const location = useLocation()
   const isTab = TAB_PATHS.includes(location.pathname)
+  const { fontScale } = useSettings()
 
   return (
     <div
       key={location.pathname}
-      style={isTab ? { animation: 'pageEnter 220ms ease forwards' } : undefined}
+      style={{
+        zoom: fontScale,
+        ...(isTab ? { animation: 'pageEnter 220ms ease forwards' } : undefined),
+      }}
     >
       <ErrorBoundary key={location.pathname}>
         <Routes location={location}>

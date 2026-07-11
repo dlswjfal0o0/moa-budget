@@ -32,6 +32,10 @@ export function SettingsProvider({ children }) {
     return v !== null ? v === 'true' : true
   })
   const [categories, setCategoriesState] = useState(DEFAULT_CATEGORIES)
+  const [fontScale, setFontScaleState] = useState(() => {
+    const v = localStorage.getItem('moa_fontScale')
+    return v !== null ? Number(v) : 1
+  })
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -69,6 +73,10 @@ export function SettingsProvider({ children }) {
       }
       if (data.categories) {
         setCategoriesState({ ...DEFAULT_CATEGORIES, ...data.categories })
+      }
+      if (data.fontScale !== undefined) {
+        setFontScaleState(data.fontScale)
+        localStorage.setItem('moa_fontScale', String(data.fontScale))
       }
     })
     return unsub
@@ -121,6 +129,11 @@ export function SettingsProvider({ children }) {
     setCategoriesState(val)
     save({ categories: val })
   }
+  const setFontScale = (val) => {
+    setFontScaleState(val)
+    localStorage.setItem('moa_fontScale', String(val))
+    save({ fontScale: val })
+  }
 
   return (
     <SettingsContext.Provider value={{
@@ -132,6 +145,7 @@ export function SettingsProvider({ children }) {
       aiAnalysisStyle, setAiAnalysisStyle,
       aiShowAdvice, setAiShowAdvice,
       categories, setCategories,
+      fontScale, setFontScale,
     }}>
       {children}
     </SettingsContext.Provider>
