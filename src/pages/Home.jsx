@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
+import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
-import { getSystemPrompt, getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
+import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -205,18 +206,13 @@ export default function Home() {
         const schema = aiShowAdvice
           ? `{"status":"${status}","summary":"2문장 이내 현황 요약","tips":[{"icon":"food|chart|adjust|money|calendar|target 중 하나","title":"조언 제목","detail":"구체적이고 실행 가능한 설명 (청유형)"}]}`
           : `{"status":"${status}","summary":"2문장 이내 현황 요약"}`
-        const res = await fetch('/api/ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                max_tokens: 600, ...getDeterminismParams(),
-                system: getSystemPrompt({ domain: '예산 인사이트', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
-                messages: [{ role: 'user', content:
-                    `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.\n\nJSON으로만 응답하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. tips는 서로 다른 내용으로 작성하세요.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}`
-                }]
-            })
+        const data = await callAI({
+            max_tokens: 600, ...getDeterminismParams(),
+            domain: 'budget', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
+            messages: [{ role: 'user', content:
+                `예산 분석 요청. 예산명: "${budget.label}", 목표: ${fmt(budget.amount)}원, 사용: ${fmt(spent)}원 (${pct}%), 잔여: ${fmt(remaining)}원, 남은 기간: ${daysLeft}일.\n\nJSON으로만 응답하세요. 마크다운, 코드블록, 설명 없이 순수 JSON만 출력하세요. tips는 서로 다른 내용으로 작성하세요.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}`
+            }]
         })
-        const data = await res.json()
         const raw = data.content?.[0]?.text || ''
         try {
             const jsonMatch = raw.match(/\{[\s\S]*\}/)

@@ -9,7 +9,8 @@ import BottomNav from '../components/BottomNav'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
-import { getSystemPrompt, getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
+import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
+import { callAI } from '../utils/aiClient'
 
 const UTILITY_STYLES = {
   관리비: { bg: '#F3F4F6', color: '#6B7280' },
@@ -290,15 +291,11 @@ export default function Analysis() {
       const schema = aiShowAdvice
         ? '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","cuts":[{"category":"카테고리명","tip":"카테고리별로 서로 다른 구체적 조언 (청유형)","save":정수}],"unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"saving_goal":정수,"message":"응원 메시지"}'
         : '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"message":"응원 메시지"}'
-      const res = await fetch('/api/ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          max_tokens: 1200, ...getDeterminismParams(),
-          system: getSystemPrompt({ domain: '소비 분석', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
-          messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[JSON 필드 규칙]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.${adviceContentRule}\n- summary, unusual, message는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}` }]
-        })
+      const data = await callAI({
+        max_tokens: 1200, ...getDeterminismParams(),
+        domain: 'consumption', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
+        messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[JSON 필드 규칙]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.${adviceContentRule}\n- summary, unusual, message는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}` }]
       })
-      const data = await res.json()
       const raw = data.content?.[0]?.text || ''
       const text = extractJson(raw)
       if (!text) { setAiFeedbackRaw('응답이 비어있어요. 잠시 후 다시 시도해주세요.'); setLoadingAi(false); return }
@@ -342,15 +339,11 @@ export default function Analysis() {
       const schema = aiShowAdvice
         ? '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평","tip":"구체적 절약 제안 (청유형)"}'
         : '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평"}'
-      const res = await fetch('/api/ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          max_tokens: 900, ...getDeterminismParams(),
-          system: getSystemPrompt({ domain: '공과금 분석', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice }),
-          messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[JSON 필드 규칙]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n-${adviceOverallRule}\n- items의 comment, overall은 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n${schema}` }]
-        })
+      const data = await callAI({
+        max_tokens: 900, ...getDeterminismParams(),
+        domain: 'utility', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
+        messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[JSON 필드 규칙]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n-${adviceOverallRule}\n- items의 comment, overall은 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n${schema}` }]
       })
-      const data = await res.json()
       const text = extractJson(data.content?.[0]?.text || '')
       try {
         const parsed = sanitizeDeep(JSON.parse(text))
