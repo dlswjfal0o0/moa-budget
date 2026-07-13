@@ -6,9 +6,6 @@ import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import LoadError from '../components/LoadError'
-import * as XLSX from 'xlsx'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import { THEMES } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
 import { useTheme } from '../contexts/ThemeContext'
@@ -422,6 +419,7 @@ export default function MyPage() {
     if (!user) return
     setExporting(true)
     try {
+      const XLSX = await import('xlsx')
       const q = query(collection(db, 'transactions'), where('uid', '==', user.uid))
       const snap = await getDocs(q)
       const txs = snap.docs.map(d => d.data()).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
@@ -445,6 +443,10 @@ export default function MyPage() {
     if (!user) return
     setExporting(true)
     try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ])
       const q = query(collection(db, 'transactions'), where('uid', '==', user.uid))
       const snap = await getDocs(q)
       const txs = snap.docs.map(d => d.data()).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
