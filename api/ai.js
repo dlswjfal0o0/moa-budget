@@ -53,7 +53,14 @@ async function checkAndBumpDailyUsage(uid, idToken) {
     }
   }
 
-  if (count >= AI_DAILY_LIMIT) return false
+  // 남용 탐지용 로그. Vercel 함수 로그에서 uid로 검색해 특정 사용자가
+  // 비정상적으로 많이 호출하는지(=count가 리셋되며 반복 급증) 확인할 수 있다.
+  console.log(`[ai-usage] uid=${uid} date=${today} count=${count}`)
+
+  if (count >= AI_DAILY_LIMIT) {
+    console.warn(`[ai-usage-blocked] uid=${uid} date=${today} count=${count} limit=${AI_DAILY_LIMIT}`)
+    return false
+  }
 
   await fetch(`${docUrl}?updateMask.fieldPaths=aiUsage`, {
     method: 'PATCH',
