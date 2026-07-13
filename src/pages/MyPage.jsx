@@ -16,6 +16,11 @@ import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
 
+// PDF 내보내기에서 거래 제목/카테고리를 innerHTML에 안전하게 삽입하기 위한 이스케이프
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+))
+
 // 설정 화면용 아이콘 (Apple Settings 스타일)
 const SIcon = ({ bg, children }) => (
   <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -198,16 +203,41 @@ export default function MyPage() {
     setEditingNick(false)
   }
 
-  const handleProfileImg = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+  // Firestore 문서 1MB 한도를 넘지 않도록 업로드 전 정사각형으로 리사이즈·압축한다.
+  const resizeImage = (file, maxSize = 480, quality = 0.85) => new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = async (ev) => {
-      const base64 = ev.target.result
-      setProfileImg(base64)
-      await saveToFirestore({ profileImg: base64 })
+    reader.onerror = () => reject(new Error('파일을 읽지 못했어요.'))
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('이미지를 처리하지 못했어요.'))
+      img.onload = () => {
+        const side = Math.min(img.width, img.height)
+        const sx = (img.width - side) / 2
+        const sy = (img.height - side) / 2
+        const size = Math.min(maxSize, side)
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, size, size)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.src = ev.target.result
     }
     reader.readAsDataURL(file)
+  })
+
+  const handleProfileImg = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const prevImg = profileImg
+    try {
+      const base64 = await resizeImage(file)
+      setProfileImg(base64)
+      await saveToFirestore({ profileImg: base64 })
+    } catch (err) {
+      setProfileImg(prevImg)
+      alert('프로필 사진 저장에 실패했어요: ' + err.message)
+    }
   }
 
   const handleThemeChange = (name) => {
@@ -219,10 +249,14 @@ export default function MyPage() {
     if (!user || deletingAccount) return
     setDeletingAccount(true)
     try {
-      const batch = writeBatch(db)
+      // Firestore writeBatch는 최대 500개 쓰기 제한이 있어 500건씩 나눠서 커밋한다.
       const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid)))
-      txSnap.docs.forEach(d => batch.delete(d.ref))
-      await batch.commit()
+      const refs = txSnap.docs.map(d => d.ref)
+      for (let i = 0; i < refs.length; i += 500) {
+        const batch = writeBatch(db)
+        refs.slice(i, i + 500).forEach(ref => batch.delete(ref))
+        await batch.commit()
+      }
       await deleteDoc(doc(db, 'users', user.uid))
       localStorage.clear()
       await deleteUser(user)
@@ -442,6 +476,7 @@ export default function MyPage() {
   const exportToPDF = async () => {
     if (!user) return
     setExporting(true)
+    let div = null
     try {
       const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
         import('jspdf'),
@@ -451,11 +486,11 @@ export default function MyPage() {
       const snap = await getDocs(q)
       const txs = snap.docs.map(d => d.data()).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
 
-      const div = document.createElement('div')
+      div = document.createElement('div')
       div.style.cssText = 'padding:24px;background:#fff;font-family:sans-serif;width:720px;position:fixed;top:-9999px;left:-9999px;'
       div.innerHTML = `
         <h2 style="margin-bottom:4px;font-size:20px">모아 가계부</h2>
-        <p style="color:#888;font-size:12px;margin-bottom:16px">${user.email} · 총 ${txs.length}건</p>
+        <p style="color:#888;font-size:12px;margin-bottom:16px">${escapeHtml(user.email)} · 총 ${txs.length}건</p>
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
             <tr style="background:#f0f0f0">
@@ -468,9 +503,9 @@ export default function MyPage() {
           <tbody>
             ${txs.map(tx => `
               <tr>
-                <td style="padding:7px 8px;border:1px solid #eee">${tx.date || ''}</td>
-                <td style="padding:7px 8px;border:1px solid #eee">${tx.title || ''}</td>
-                <td style="padding:7px 8px;border:1px solid #eee">${tx.category || ''}</td>
+                <td style="padding:7px 8px;border:1px solid #eee">${escapeHtml(tx.date || '')}</td>
+                <td style="padding:7px 8px;border:1px solid #eee">${escapeHtml(tx.title || '')}</td>
+                <td style="padding:7px 8px;border:1px solid #eee">${escapeHtml(tx.category || '')}</td>
                 <td style="padding:7px 8px;border:1px solid #eee;text-align:right;color:${tx.type === 'expense' ? '#ef4444' : '#22c55e'};font-weight:600">
                   ${tx.type === 'expense' ? '-' : '+'}${(tx.amount || 0).toLocaleString()}원
                 </td>
@@ -482,6 +517,7 @@ export default function MyPage() {
       document.body.appendChild(div)
       const canvas = await html2canvas(div, { scale: 2, useCORS: true })
       document.body.removeChild(div)
+      div = null
 
       const pdf = new jsPDF('p', 'mm', 'a4')
       const pdfW = pdf.internal.pageSize.getWidth()
@@ -497,8 +533,12 @@ export default function MyPage() {
         remaining -= pdfH
       }
       pdf.save('moa_가계부.pdf')
-    } catch (e) { alert('PDF 내보내기 실패: ' + e.message) }
-    setExporting(false)
+    } catch (e) {
+      alert('PDF 내보내기 실패: ' + e.message)
+    } finally {
+      if (div && div.parentNode) div.parentNode.removeChild(div)
+      setExporting(false)
+    }
   }
 
   const fmt = n => Number(n).toLocaleString('ko-KR')
