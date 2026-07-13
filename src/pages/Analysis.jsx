@@ -1,5 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStagger } from '../hooks/useStagger'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -110,6 +111,7 @@ function CustomPieTooltip({ active, payload }) {
 }
 
 export default function Analysis() {
+  const navigate = useNavigate()
   const { themeData, themeName, showUtilities } = useTheme()
   const { cards } = useCards()
   const { aiAnalysisStyle, aiShowAdvice } = useSettings()
@@ -199,7 +201,10 @@ export default function Analysis() {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isDemo) { fetchDemoData(); return }
-    const unsub = onAuthStateChanged(auth, u => { setUser(u) })
+    const unsub = onAuthStateChanged(auth, u => {
+      if (!u) navigate('/auth', { replace: true })
+      else setUser(u)
+    })
     return unsub
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
