@@ -1,5 +1,8 @@
 {
   "appId": "com.moa.budget",
   "appName": "MOA Budget",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "iosScheme": "https"
+  }
 }
