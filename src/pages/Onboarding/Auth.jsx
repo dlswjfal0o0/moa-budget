@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth'
 import { auth, googleProvider } from '../../firebase/config'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
+import { Sentry } from '../../utils/sentry'
 
 // App Store 심사용 데모 계정.
 // 이 이메일로 로그인하면 데모 데이터가 자동으로 로드됩니다(심사자 전용).
@@ -88,6 +89,8 @@ export default function Auth() {
         navigate('/home', { replace: true })
       }
     } catch (e) {
+      console.error('[Auth] 이메일 로그인/가입 실패:', e.code, e.message)
+      Sentry.captureException(e)
       if (e.code === 'auth/email-already-in-use') setError('이미 사용 중인 이메일이에요.')
       else if (e.code === 'auth/user-not-found') setError('등록되지 않은 이메일이에요.')
       else if (e.code === 'auth/wrong-password') setError('비밀번호가 틀렸어요.')
@@ -104,7 +107,9 @@ export default function Auth() {
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
-    } catch {
+    } catch (e) {
+      console.error('[Auth] Google 로그인 실패:', e.code, e.message)
+      Sentry.captureException(e)
       setError('Google 로그인에 실패했어요.')
     }
     setLoading(false)
@@ -126,7 +131,9 @@ export default function Auth() {
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
-    } catch {
+    } catch (e) {
+      console.error('[Auth] Apple 로그인 실패:', e.code || e.message, e)
+      Sentry.captureException(e)
       setError('Apple 로그인에 실패했어요.')
     }
     setLoading(false)
