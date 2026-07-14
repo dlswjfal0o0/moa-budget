@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app"
-import { initializeAuth, GoogleAuthProvider } from "firebase/auth"
+import { initializeAuth } from "firebase/auth"
 import { initializeFirestore } from "firebase/firestore"
 
 // App Check(reCAPTCHA v3)는 시도했다가 되돌렸다 — Capacitor iOS의 WKWebView 안에서
@@ -63,7 +63,8 @@ class LocalStorageAuthPersistence {
 // 미리 로드하려고 시도한다(네트워크 탭에 계속 보였던 cb=gapi.loaded_*,
 // apis.google.com/api.js가 이것). 이 자동 초기화 자체가 행잉의 또 다른 원인일 수 있어
 // 명시적으로 꺼둔다. 대가로 signInWithPopup(Google 로그인)은 이 웹뷰에서 동작하지
-// 않는다 — 네이티브 Google Sign-In 플러그인으로 별도 처리해야 한다.
+// 않는다 — Google 로그인은 @capacitor-firebase/authentication으로 네이티브 처리한다
+// (Auth.jsx의 handleGoogle 참고).
 // SDK가 내부적으로 `new`를 호출해 인스턴스화하므로 인스턴스가 아니라 클래스 자체를
 // 넘긴다 — 인스턴스를 넘기면 "INTERNAL ASSERTION FAILED: Expected a class definition"
 // 에러가 난다.
@@ -79,4 +80,3 @@ export const auth = initializeAuth(app, {
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 })
-export const googleProvider = new GoogleAuthProvider()

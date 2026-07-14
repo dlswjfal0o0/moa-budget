@@ -4,13 +4,14 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signInWithCredential,
   getAdditionalUserInfo,
+  GoogleAuthProvider,
   OAuthProvider,
   sendPasswordResetEmail
 } from 'firebase/auth'
-import { auth, googleProvider } from '../../firebase/config'
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
+import { auth } from '../../firebase/config'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
 
@@ -103,7 +104,15 @@ export default function Auth() {
     setError('')
     setLoading(true)
     try {
-      const result = await signInWithPopup(auth, googleProvider)
+      // signInWithPopup은 이 웹뷰에서 동작하지 않아(popupRedirectResolver를 꺼둔 상태 —
+      // firebase/config.js 참고) 네이티브 Google 로그인 UI로 자격증명만 받아오고,
+      // skipNativeAuth: true 설정 덕에 네이티브 SDK 자체는 로그인 상태를 커밋하지 않는다.
+      // 실제 로그인 상태는 signInWithCredential로 웹 SDK(=Firestore가 쓰는 그 auth)에만
+      // 반영해서, 인증 상태의 진실 소스를 웹 SDK 하나로 유지한다.
+      const { credential } = await FirebaseAuthentication.signInWithGoogle()
+      if (!credential?.idToken) throw new Error('Google 인증 토큰을 받지 못했어요.')
+      const authCredential = GoogleAuthProvider.credential(credential.idToken)
+      const result = await signInWithCredential(auth, authCredential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
