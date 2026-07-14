@@ -1455,9 +1455,14 @@ export default function MyPage() {
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '12px 4px 8px', letterSpacing: 0.3 }}>계정</p>
                   <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                     <button onClick={() => {
-                      localStorage.removeItem('moa_demo_mode')
-                      localStorage.removeItem('moa_logged_in')
-                      signOut(auth).finally(() => { setSettingsPage(null); navigate('/', { replace: true }) })
+                      // moa_* 캐시(카드/예산/닉네임 등)를 전부 지워야 Context에 남아있는
+                      // 이전 계정·데모 데이터가 다음 로그인에 그대로 보이는 걸 막을 수 있다.
+                      // Context state는 앱이 처음 마운트될 때만 localStorage를 읽어오므로,
+                      // 완전한 초기화를 위해 하드 리로드로 앱을 통째로 재시작시킨다.
+                      Object.keys(localStorage)
+                        .filter(k => k.startsWith('moa_'))
+                        .forEach(k => localStorage.removeItem(k))
+                      signOut(auth).finally(() => { window.location.href = '/' })
                     }}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg="#6B7280"><SI><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></SI></SIcon>
