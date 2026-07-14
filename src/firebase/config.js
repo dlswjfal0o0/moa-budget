@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { initializeAuth, GoogleAuthProvider, browserSessionPersistence } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { initializeFirestore } from "firebase/firestore"
 
 // App Check(reCAPTCHA v3)는 시도했다가 되돌렸다 — Capacitor iOS의 WKWebView 안에서
 // reCAPTCHA 챌린지/토큰 교환이 네트워크 단에서 실패했고(auth/network-request-failed),
@@ -38,5 +38,12 @@ export const auth = initializeAuth(app, {
   persistence: browserSessionPersistence,
   popupRedirectResolver: undefined,
 })
-export const db = getFirestore(app)
+
+// Firestore의 기본 연결 방식(WebChannel 스트리밍)이 이 앱의 Capacitor iOS WKWebView에서
+// 안정적으로 유지되지 않고 "channel" 요청이 계속 끊겼다 재연결되기를 반복해서(실시간
+// 리스너를 하나도 안 쓰는데도) 화면 데이터 로딩이 눈에 띄게 느려지는 문제가 있었다.
+// long-polling으로 강제 전환하면 이 스트리밍 연결 자체를 안 쓰게 되어 우회된다.
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+})
 export const googleProvider = new GoogleAuthProvider()
