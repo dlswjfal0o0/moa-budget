@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app"
-import { initializeAuth, GoogleAuthProvider, browserSessionPersistence } from "firebase/auth"
+import { initializeAuth, GoogleAuthProvider } from "firebase/auth"
 import { initializeFirestore } from "firebase/firestore"
 
 // App Check(reCAPTCHA v3)는 시도했다가 되돌렸다 — Capacitor iOS의 WKWebView 안에서
@@ -20,22 +20,55 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 
-// getAuth(app) 대신 initializeAuth를 직접 써서 두 가지를 명시적으로 제어한다:
-//
-// 1. persistence: browserSessionPersistence(sessionStorage)만 사용 — 기본값인
-//    browserLocalPersistence는 내부적으로 IndexedDB를 쓰는데, 이 앱의 Capacitor iOS
-//    WKWebView(https://localhost 커스텀 스킴)에서 IndexedDB 호출이 응답 없이 멈춰버려서
-//    (Promise가 영원히 pending) 로그인 자체가 끝나지 않는 문제가 있었다. 앱을 완전히
-//    종료(kill)하면 재로그인이 필요해지는 트레이드오프가 있지만, 로그인이 아예 안 되는
-//    것보다는 낫다.
-// 2. popupRedirectResolver: undefined — getAuth(app)는 이걸 자동으로 채워서 초기화
-//    시점에 iframe/gapi.js를 미리 로드하려고 시도한다(네트워크 탭에 계속 보였던
-//    cb=gapi.loaded_*, apis.google.com/api.js가 이것). 이 자동 초기화 자체가 행잉의
-//    또 다른 원인일 수 있어 명시적으로 꺼둔다. 대가로 signInWithPopup(Google 로그인)은
-//    이 웹뷰에서 동작하지 않을 가능성이 높다 — Apple 로그인은 별도 네이티브 플러그인이라
-//    무관하고, Google도 필요하면 나중에 네이티브 Google Sign-In 플러그인으로 옮겨야 한다.
+// Firebase가 기본 제공하는 LOCAL persistence(browserLocalPersistence)는 IndexedDB를
+// 쓰는데, 이 앱의 Capacitor iOS WKWebView(https://localhost 커스텀 스킴)에서 IndexedDB
+// 호출이 응답 없이 멈춰버려서(Promise가 영원히 pending) 로그인 자체가 끝나지 않는
+// 문제가 있었다. 반면 plain localStorage는 같은 환경에서 문제없이 동작한다(디버깅 내내
+// 확인됨). Firebase Auth의 Persistence 인터페이스(_isAvailable/_set/_get/_remove/
+// _addListener/_removeListener)를 직접 구현해서 IndexedDB를 완전히 우회하면서도
+// localStorage 특성상 앱을 완전히 종료해도 세션이 유지된다(sessionStorage와 달리).
+// 탭이 여러 개인 일반 브라우저가 아니라 웹뷰 하나뿐이라 addListener/removeListener는
+// 다른 탭과의 동기화가 필요 없어 no-op으로 둬도 된다.
+// Firebase 내부적으로 persistence 객체가 "클래스 정의"일 것을 기대해서(plain object
+// literal을 넘기면 "INTERNAL ASSERTION FAILED: Expected a class definition" 에러 발생),
+// object literal이 아니라 class로 정의한다.
+class LocalStorageAuthPersistence {
+  type = 'LOCAL'
+  async _isAvailable() {
+    try {
+      const key = '__firebase_auth_persistence_test__'
+      localStorage.setItem(key, '1')
+      localStorage.removeItem(key)
+      return true
+    } catch {
+      return false
+    }
+  }
+  async _set(key, value) {
+    localStorage.setItem(key, JSON.stringify(value))
+  }
+  async _get(key) {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  }
+  async _remove(key) {
+    localStorage.removeItem(key)
+  }
+  _addListener() {}
+  _removeListener() {}
+}
+
+// getAuth(app) 대신 initializeAuth를 직접 써서 popupRedirectResolver를 명시적으로
+// undefined로 둔다 — getAuth(app)는 이걸 자동으로 채워서 초기화 시점에 iframe/gapi.js를
+// 미리 로드하려고 시도한다(네트워크 탭에 계속 보였던 cb=gapi.loaded_*,
+// apis.google.com/api.js가 이것). 이 자동 초기화 자체가 행잉의 또 다른 원인일 수 있어
+// 명시적으로 꺼둔다. 대가로 signInWithPopup(Google 로그인)은 이 웹뷰에서 동작하지
+// 않는다 — 네이티브 Google Sign-In 플러그인으로 별도 처리해야 한다.
+// SDK가 내부적으로 `new`를 호출해 인스턴스화하므로 인스턴스가 아니라 클래스 자체를
+// 넘긴다 — 인스턴스를 넘기면 "INTERNAL ASSERTION FAILED: Expected a class definition"
+// 에러가 난다.
 export const auth = initializeAuth(app, {
-  persistence: browserSessionPersistence,
+  persistence: LocalStorageAuthPersistence,
   popupRedirectResolver: undefined,
 })
 
