@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { Sentry } from '../utils/sentry'
 
 // 화면 렌더링 중 예외가 하나라도 터지면 앱 전체가 흰 화면으로 멈추는 걸 막는 최후의 안전망.
 // App.jsx에서 라우트가 바뀔 때마다 key로 리마운트되므로, 다른 탭으로 이동하면 에러 상태가 자동으로 풀린다.
@@ -11,6 +12,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info)
+    Sentry.captureException(error, { extra: { componentStack: info.componentStack } })
   }
 
   handleRetry = () => {

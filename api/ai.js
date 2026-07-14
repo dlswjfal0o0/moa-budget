@@ -1,4 +1,11 @@
+import * as Sentry from '@sentry/node'
 import { getSystemPrompt } from '../src/utils/aiPrompt.js'
+
+// SENTRY_DSN이 없으면(기본 상태) 아무 것도 하지 않는다 — Vercel 환경변수에
+// SENTRY_DSN만 추가하면 이 함수의 예외가 바로 Sentry로 올라간다.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.VERCEL_ENV || 'development' })
+}
 
 // Firebase 프로젝트의 공개 Web API Key/프로젝트 ID. 비밀값이 아니며 src/firebase/config.js와 동일한 값.
 // ID 토큰 검증(accounts:lookup)과 사용량 기록(Firestore REST)에만 사용하고, 검증/제한은 반드시 서버(여기)에서 수행한다.
@@ -99,64 +106,76 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).end()
 
-  const authHeader = req.headers.authorization
-  const idToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-  const uid = await verifyFirebaseIdToken(authHeader)
-  if (!uid || !idToken) {
-    return res.status(401).json({ content: [{ text: '로그인이 필요해요.' }] })
-  }
-
-  const withinLimit = await checkAndBumpDailyUsage(uid, idToken)
-  if (!withinLimit) {
-    return res.status(429).json({ content: [{ text: '오늘 AI 분석 사용 횟수를 다 썼어요. 내일 다시 시도해주세요.' }] })
-  }
-
-  const key = process.env.ANTHROPIC_API_KEY
-  if (!key) {
-    return res.status(200).json({ content: [{ text: 'ANTHROPIC_API_KEY가 없어요.' }] })
-  }
-
-  const { messages, domain, styleLevel, showAdvice, temperature, max_tokens } = req.body || {}
-
-  const domainLabel = DOMAIN_LABELS[domain]
-  if (!domainLabel) {
-    return res.status(400).json({ content: [{ text: '잘못된 요청이에요.' }] })
-  }
-  const safeStyleLevel = Number.isInteger(styleLevel) && styleLevel >= 1 && styleLevel <= 5 ? styleLevel : 3
-  const safeShowAdvice = showAdvice === true
-  const system = getSystemPrompt({ domain: domainLabel, styleLevel: safeStyleLevel, showAdvice: safeShowAdvice })
-  const safeMaxTokens = Math.min(Number(max_tokens) || 1024, 2000)
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        // 빠르고 저렴하면서도 한국어 품질이 우수한 모델. ANTHROPIC_MODEL 환경변수로 교체 가능.
-        model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001',
-        system,
-        messages: [
-          { role: 'user', content: messages?.[0]?.content || '' }
-        ],
-        max_tokens: safeMaxTokens,
-        temperature: typeof temperature === 'number' ? temperature : 0.7
-      })
-    })
-
-    const data = await response.json()
-    const text = (data.content?.[0]?.text || '').trim()
-
-    if (!text) {
-      const reason = data.error?.message || JSON.stringify(data).slice(0, 200)
-      return res.status(200).json({ content: [{ text: `Claude 오류: ${reason}` }] })
+    const authHeader = req.headers.authorization
+    const idToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+    const uid = await verifyFirebaseIdToken(authHeader)
+    if (!uid || !idToken) {
+      return res.status(401).json({ content: [{ text: '로그인이 필요해요.' }] })
     }
 
-    res.status(200).json({ content: [{ text }] })
+    const withinLimit = await checkAndBumpDailyUsage(uid, idToken)
+    if (!withinLimit) {
+      return res.status(429).json({ content: [{ text: '오늘 AI 분석 사용 횟수를 다 썼어요. 내일 다시 시도해주세요.' }] })
+    }
+
+    const key = process.env.ANTHROPIC_API_KEY
+    if (!key) {
+      return res.status(200).json({ content: [{ text: 'ANTHROPIC_API_KEY가 없어요.' }] })
+    }
+
+    const { messages, domain, styleLevel, showAdvice, temperature, max_tokens } = req.body || {}
+
+    const domainLabel = DOMAIN_LABELS[domain]
+    if (!domainLabel) {
+      return res.status(400).json({ content: [{ text: '잘못된 요청이에요.' }] })
+    }
+    const safeStyleLevel = Number.isInteger(styleLevel) && styleLevel >= 1 && styleLevel <= 5 ? styleLevel : 3
+    const safeShowAdvice = showAdvice === true
+    const system = getSystemPrompt({ domain: domainLabel, styleLevel: safeStyleLevel, showAdvice: safeShowAdvice })
+    const safeMaxTokens = Math.min(Number(max_tokens) || 1024, 2000)
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          // 빠르고 저렴하면서도 한국어 품질이 우수한 모델. ANTHROPIC_MODEL 환경변수로 교체 가능.
+          model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001',
+          system,
+          messages: [
+            { role: 'user', content: messages?.[0]?.content || '' }
+          ],
+          max_tokens: safeMaxTokens,
+          temperature: typeof temperature === 'number' ? temperature : 0.7
+        })
+      })
+
+      const data = await response.json()
+      const text = (data.content?.[0]?.text || '').trim()
+
+      if (!text) {
+        const reason = data.error?.message || JSON.stringify(data).slice(0, 200)
+        Sentry.captureMessage(`Claude 응답 비어있음: ${reason}`, 'warning')
+        await Sentry.flush(2000)
+        return res.status(200).json({ content: [{ text: `Claude 오류: ${reason}` }] })
+      }
+
+      res.status(200).json({ content: [{ text }] })
+    } catch (err) {
+      Sentry.captureException(err)
+      await Sentry.flush(2000)
+      res.status(200).json({ content: [{ text: `연결 오류: ${err.message}` }] })
+    }
   } catch (err) {
-    res.status(200).json({ content: [{ text: `연결 오류: ${err.message}` }] })
+    // 로그인 검증/사용량 체크 등 예상치 못한 실패 — 위의 의도된 401/429/400 응답은
+    // 여기로 오지 않고 그대로 반환된다.
+    Sentry.captureException(err)
+    await Sentry.flush(2000)
+    res.status(500).json({ content: [{ text: '서버 오류가 발생했어요.' }] })
   }
 }
