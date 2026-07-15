@@ -11,9 +11,16 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
-import { auth } from '../../firebase/config'
+import { auth, db } from '../../firebase/config'
+import { doc, setDoc } from 'firebase/firestore'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
+
+// 신규 가입 시 1개월 무료체험 시작 기록 + 전체화면 안내 팝업 1회 노출 플래그
+const startFreeTrial = async (uid) => {
+  await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
+  localStorage.setItem('moa_show_trial_popup', 'true')
+}
 
 // App Store 심사용 데모 계정.
 // 이 이메일로 로그인하면 데모 데이터가 자동으로 로드됩니다(심사자 전용).
@@ -87,6 +94,7 @@ export default function Auth() {
       }
       // 신규 가입자는 AI 분석 스타일 온보딩으로, 기존 로그인은 바로 홈으로
       if (mode === 'signup' && !isDemoAccount) {
+        await startFreeTrial(auth.currentUser.uid)
         navigate('/onboarding/ai-style', { replace: true })
       } else {
         navigate('/home', { replace: true })
@@ -118,6 +126,7 @@ export default function Auth() {
       const result = await signInWithCredential(auth, authCredential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+      if (isNewUser) await startFreeTrial(result.user.uid)
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch (e) {
       console.error('[Auth] Google 로그인 실패:', e.code, e.message)
@@ -143,6 +152,7 @@ export default function Auth() {
       const signInResult = await signInWithCredential(auth, credential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser
+      if (isNewUser) await startFreeTrial(signInResult.user.uid)
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch (e) {
       console.error('[Auth] Apple 로그인 실패:', e.code || e.message, e)

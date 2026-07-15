@@ -15,6 +15,10 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import LockedFeature, { ProBadge } from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
+import { usePurchases } from '../contexts/PurchasesContext'
+import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 
 // PDF 내보내기에서 거래 제목/카테고리를 innerHTML에 안전하게 삽입하기 위한 이스케이프
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
@@ -35,7 +39,10 @@ export default function MyPage() {
   const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
-  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale } = useSettings()
+  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
+  const { isPro, isSubscribed, isTrialActive, trialDaysLeft } = usePurchases()
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [notifyPermissionError, setNotifyPermissionError] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
@@ -651,7 +658,7 @@ export default function MyPage() {
   )
 
   const settingsChevron = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', categories: '카테고리 관리', theme: '테마', 'font-size': '글자 크기', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
+  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', notifications: '알림', categories: '카테고리 관리', theme: '테마', 'font-size': '글자 크기', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
   const updatesList = [
     { version: 'v1.6.0', date: '2026.07.11', changes: ['[ MY - 설정 ] AI 분석 탭 추가 — 분석 스타일(공감형~이성형), 조언 표시 설정', '[ 온보딩 ] 회원가입 후 AI 분석 스타일 선택 화면 추가', '[ 분석 ] AI 소비·공과금 분석에 사용자 설정 스타일/조언 반영'] },
     { version: 'v1.5.0', date: '2026.06.22', changes: ['[ MY - 설정 ] 설정 통합 및 계정 관리 기능 개선', '[ MY - 카드 ] 신용카드 추적 방식 로직 수정', '[ MY - 카드 ] 변경사항 자동 반영'] },
@@ -697,6 +704,11 @@ export default function MyPage() {
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                  {isSubscribed && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.25)', borderRadius: 9999, padding: '3px 9px' }}>
+                      ✨ Pro 구독자
+                    </span>
+                  )}
                   <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
                 </div>
               )}
@@ -718,6 +730,22 @@ export default function MyPage() {
       </div>
 
       <div style={{ padding: '16px 24px' }}>
+
+        {/* 무료체험 종료 임박 배너 */}
+        {isTrialActive && trialDaysLeft <= 3 && (
+          <div style={{ background: t.card, borderRadius: 20, padding: '16px 18px', marginBottom: 16, border: `1.5px solid ${t.primary}`, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#191F28' }}>
+                무료체험 종료까지 {trialDaysLeft}일 남았습니다.
+              </p>
+              <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>구독하면 Pro 기능을 계속 이용할 수 있어요.</p>
+            </div>
+            <button onClick={() => setShowPaywall(true)}
+              style={{ background: t.primary, border: 'none', borderRadius: 12, padding: '9px 16px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+              구독하기
+            </button>
+          </div>
+        )}
 
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
@@ -809,17 +837,23 @@ export default function MyPage() {
                   )}
                   <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
                   <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
-                    {card.limit > 0 && (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
-                        {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
-                  </div>
+                  {isPro ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
+                        {card.limit > 0 && (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
+                            {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                      </div>
+                    </>
+                  ) : (
+                    <LockedFeature variant="compact" title="목표 달성 현황 보기" onPress={(e) => { e.stopPropagation(); setShowPaywall(true) }} />
+                  )}
                 </div>
                 {/* 수정/삭제 펼침 행 */}
                 {expandedCardId === card.id && (
@@ -957,9 +991,10 @@ export default function MyPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {TRACKING_OPTS.map(opt => {
                         const sel = data.creditTracking === opt.val
+                        const locked = opt.val === 'billing' && !isPro
                         return (
                           <button key={opt.val}
-                            onClick={() => setData(c => ({ ...c, creditTracking: opt.val }))}
+                            onClick={() => locked ? setShowPaywall(true) : setData(c => ({ ...c, creditTracking: opt.val }))}
                             style={{ width: '100%', textAlign: 'left', padding: '18px 16px', borderRadius: 22,
                               border: `2px solid ${sel ? t.primary : '#E5E8EB'}`,
                               background: sel ? `${t.primary}0D` : '#fff',
@@ -977,7 +1012,10 @@ export default function MyPage() {
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 {/* 제목 + 라디오 */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                  <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms', lineHeight: 1.4 }}>{opt.titleNode(sel, t.primary)}</p>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms', lineHeight: 1.4 }}>{opt.titleNode(sel, t.primary)}</p>
+                                    {locked && <ProBadge />}
+                                  </div>
                                   <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginLeft: 10,
                                     border: `2px solid ${sel ? t.primary : '#D1D6DB'}`,
                                     background: sel ? t.primary : 'transparent',
@@ -1268,12 +1306,19 @@ export default function MyPage() {
                   <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
                 <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>대출</p>
-                {loans.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
+                {isPro && loans.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
               </div>
-              {smallBtn(() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }, '+ 추가', t.primary, '#fff')}
+              {isPro && smallBtn(() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }, '+ 추가', t.primary, '#fff')}
             </div>
-            {loans.length === 0 && <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
-            {loans.map(loan => {
+            {!isPro && (
+              <LockedFeature
+                title="대출 / 상환 관리"
+                description="대출 원금, 이자, 상환 일정을 한 곳에서 관리해보세요."
+                onPress={() => setShowPaywall(true)}
+              />
+            )}
+            {isPro && loans.length === 0 && <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
+            {isPro && loans.map(loan => {
               const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
               const repaid = loan.principal - loan.remainingPrincipal
               const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0
@@ -1359,6 +1404,7 @@ export default function MyPage() {
                       { label: '분석', desc: '탭 구성 옵션', page: 'analysis', bg: t.primary, icon: <SI><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></SI> },
                       { label: 'MY', desc: '기능 관리', page: 'my', bg: t.primary, icon: <SI><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SI> },
                       { label: 'AI 분석', desc: '분석 스타일, 조언 표시', page: 'ai', bg: t.primary, icon: <SI><path d="M12 2a5 5 0 0 0-5 5c0 1.6.8 3 2 3.87V13a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.13c1.2-.87 2-2.27 2-3.87a5 5 0 0 0-5-5z"/><line x1="9" y1="19" x2="15" y2="19"/><line x1="10" y1="22" x2="14" y2="22"/></SI> },
+                      { label: '알림', desc: '다가오는 결제 알림', page: 'notifications', bg: t.primary, icon: <SI><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></SI> },
                     ].map((item, i, arr) => (
                       <button key={item.page} onClick={() => setSettingsPage(item.page)}
                         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
@@ -1586,6 +1632,62 @@ export default function MyPage() {
                 </div>
               )}
 
+              {/* ── 알림 설정 ── */}
+              {settingsPage === 'notifications' && (
+                <div style={{ padding: '0 20px' }}>
+                  {!isPro ? (
+                    <div style={{ padding: '20px 4px' }}>
+                      <LockedFeature
+                        title="다가오는 결제 알림"
+                        description="고정지출 결제일 전날, 기기 알림으로 미리 알려드려요."
+                        onPress={() => setShowPaywall(true)}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '20px 4px 8px', letterSpacing: 0.3 }}>다가오는 결제 알림</p>
+                      <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
+                          <div style={{ flex: 1, paddingRight: 16 }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>결제 알림 받기</p>
+                            <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>고정지출 결제일 전날 알림을 보내드려요</p>
+                          </div>
+                          <SToggle on={notifyPaymentEnabled} onChange={async (val) => {
+                            setNotifyPermissionError('')
+                            if (val) {
+                              const granted = await requestPaymentNotificationPermission()
+                              if (!granted) { setNotifyPermissionError('기기 설정에서 알림 권한을 허용해주세요.'); return }
+                            }
+                            setNotifyPaymentEnabled(val)
+                          }} primary={t.primary} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', opacity: notifyPaymentEnabled ? 1 : 0.4 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>알림 시각</p>
+                          <input type="time" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
+                            onChange={e => setNotifyPaymentTime(e.target.value)}
+                            style={{ border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '8px 10px', fontSize: 14, color: '#191F28', background: '#F7F8FA' }} />
+                        </div>
+                      </div>
+                      {notifyPermissionError && (
+                        <p style={{ fontSize: 12, color: '#ef4444', padding: '0 4px 12px' }}>{notifyPermissionError}</p>
+                      )}
+                      <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '0 4px 8px', letterSpacing: 0.3 }}>심야시간 알림 동의</p>
+                      <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px' }}>
+                          <div style={{ flex: 1, paddingRight: 16 }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>심야시간(21시~08시) 알림 수신 동의</p>
+                            <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2, lineHeight: 1.5 }}>
+                              정보통신망법에 따라 심야시간 알림 발송에는 별도 동의가 필요해요. 동의하지 않으면 다음날 오전 8시에 보내드려요.
+                            </p>
+                          </div>
+                          <SToggle on={notifyNightConsent} onChange={setNotifyNightConsent} primary={t.primary} />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* ── 카테고리 관리 ── */}
               {settingsPage === 'categories' && (
                 <div style={{ padding: '0 20px' }}>
@@ -1669,7 +1771,7 @@ export default function MyPage() {
               {settingsPage === 'export' && (
                 <div style={{ padding: '20px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <button onClick={exportToExcel} disabled={exporting}
+                    <button onClick={() => isPro ? exportToExcel() : setShowPaywall(true)} disabled={exporting}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1678,12 +1780,15 @@ export default function MyPage() {
                         </svg>
                       </div>
                       <div style={{ textAlign: 'left', flex: 1 }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                          {!isPro && <ProBadge />}
+                        </div>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .xlsx 파일로 저장</p>
                       </div>
                       {settingsChevron}
                     </button>
-                    <button onClick={exportToPDF} disabled={exporting}
+                    <button onClick={() => isPro ? exportToPDF() : setShowPaywall(true)} disabled={exporting}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1692,7 +1797,10 @@ export default function MyPage() {
                         </svg>
                       </div>
                       <div style={{ textAlign: 'left', flex: 1 }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                          {!isPro && <ProBadge />}
+                        </div>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .pdf 파일로 저장</p>
                       </div>
                       {settingsChevron}
@@ -2298,6 +2406,7 @@ export default function MyPage() {
         </button>
       </div>
 
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <BottomNav />
     </div>
   )

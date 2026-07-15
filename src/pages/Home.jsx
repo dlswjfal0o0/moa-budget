@@ -9,9 +9,13 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
 import LoadError from '../components/LoadError'
+import LockedFeature from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
+import TrialWelcomeModal from '../components/TrialWelcomeModal'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useIsPro } from '../contexts/PurchasesContext'
 import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
@@ -79,6 +83,11 @@ export default function Home() {
   const { themeData } = useTheme()
   const { cards } = useCards()
   const { categories, aiAnalysisStyle, aiShowAdvice } = useSettings()
+  const isPro = useIsPro()
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [showTrialWelcome, setShowTrialWelcome] = useState(
+    () => localStorage.getItem('moa_show_trial_popup') === 'true'
+  )
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState(() => {
     try {
@@ -261,6 +270,7 @@ export default function Home() {
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       // 대금 납부: billing 모드에서는 지출로 집계
       const card = getCreditCard(t.payment)
@@ -460,7 +470,16 @@ export default function Home() {
         </div>
 
         {/* 다가오는 결제 */}
-        {upcomingPayments.length > 0 && (
+        {!isPro ? (
+          <div style={{ marginBottom: 32, ...stagger(2) }}>
+            <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 16 }}>다가오는 결제</p>
+            <LockedFeature
+              title="다가오는 결제"
+              description="고정지출을 등록하면 결제일이 다가올 때 미리 알려드려요."
+              onPress={() => setShowPaywall(true)}
+            />
+          </div>
+        ) : upcomingPayments.length > 0 && (
           <div style={{ marginBottom: 32, ...stagger(2) }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 16 }}>다가오는 결제</p>
             <div style={{ background: themeData.card || '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -565,6 +584,11 @@ export default function Home() {
         </div>
       </div>
       <BottomNav />
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      <TrialWelcomeModal open={showTrialWelcome} onClose={() => {
+        localStorage.removeItem('moa_show_trial_popup')
+        setShowTrialWelcome(false)
+      }} />
 
       {/* 예산 추가 bottom sheet */}
       {showAddBudget && (

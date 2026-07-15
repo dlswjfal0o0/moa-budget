@@ -36,6 +36,15 @@ export function SettingsProvider({ children }) {
     const v = localStorage.getItem('moa_fontScale')
     return v !== null ? Number(v) : 1
   })
+  const [notifyPaymentEnabled, setNotifyPaymentEnabledState] = useState(
+    () => localStorage.getItem('moa_notifyPaymentEnabled') === 'true'
+  )
+  const [notifyPaymentTime, setNotifyPaymentTimeState] = useState(
+    () => localStorage.getItem('moa_notifyPaymentTime') || '09:00'
+  )
+  const [notifyNightConsent, setNotifyNightConsentState] = useState(
+    () => localStorage.getItem('moa_notifyNightConsent') === 'true'
+  )
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -77,6 +86,18 @@ export function SettingsProvider({ children }) {
       if (data.fontScale !== undefined) {
         setFontScaleState(data.fontScale)
         localStorage.setItem('moa_fontScale', String(data.fontScale))
+      }
+      if (data.notifyPaymentEnabled !== undefined) {
+        setNotifyPaymentEnabledState(data.notifyPaymentEnabled)
+        localStorage.setItem('moa_notifyPaymentEnabled', String(data.notifyPaymentEnabled))
+      }
+      if (data.notifyPaymentTime) {
+        setNotifyPaymentTimeState(data.notifyPaymentTime)
+        localStorage.setItem('moa_notifyPaymentTime', data.notifyPaymentTime)
+      }
+      if (data.notifyNightConsent !== undefined) {
+        setNotifyNightConsentState(data.notifyNightConsent)
+        localStorage.setItem('moa_notifyNightConsent', String(data.notifyNightConsent))
       }
     })
     return unsub
@@ -134,6 +155,21 @@ export function SettingsProvider({ children }) {
     localStorage.setItem('moa_fontScale', String(val))
     save({ fontScale: val })
   }
+  const setNotifyPaymentEnabled = (val) => {
+    setNotifyPaymentEnabledState(val)
+    localStorage.setItem('moa_notifyPaymentEnabled', String(val))
+    save({ notifyPaymentEnabled: val })
+  }
+  const setNotifyPaymentTime = (val) => {
+    setNotifyPaymentTimeState(val)
+    localStorage.setItem('moa_notifyPaymentTime', val)
+    save({ notifyPaymentTime: val })
+  }
+  const setNotifyNightConsent = (val) => {
+    setNotifyNightConsentState(val)
+    localStorage.setItem('moa_notifyNightConsent', String(val))
+    save({ notifyNightConsent: val })
+  }
 
   return (
     <SettingsContext.Provider value={{
@@ -146,6 +182,9 @@ export function SettingsProvider({ children }) {
       aiShowAdvice, setAiShowAdvice,
       categories, setCategories,
       fontScale, setFontScale,
+      notifyPaymentEnabled, setNotifyPaymentEnabled,
+      notifyPaymentTime, setNotifyPaymentTime,
+      notifyNightConsent, setNotifyNightConsent,
     }}>
       {children}
     </SettingsContext.Provider>

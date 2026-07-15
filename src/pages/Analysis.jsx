@@ -11,6 +11,9 @@ import LoadError from '../components/LoadError'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useIsPro } from '../contexts/PurchasesContext'
+import { ProBadge } from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
 import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 import { callAI } from '../utils/aiClient'
 
@@ -115,6 +118,8 @@ export default function Analysis() {
   const { themeData, themeName, showUtilities } = useTheme()
   const { cards } = useCards()
   const { aiAnalysisStyle, aiShowAdvice } = useSettings()
+  const isPro = useIsPro()
+  const [showPaywall, setShowPaywall] = useState(false)
   const [user, setUser] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -242,6 +247,7 @@ export default function Analysis() {
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       const card = getCreditCard(t.payment)
       return card?.creditTracking !== 'billing'
@@ -403,14 +409,16 @@ export default function Analysis() {
         <div style={{ padding: '12px 20px 0' }}>
           <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 3 }}>
             {['소비', '공과금'].map(tab => (
-              <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
+              <button key={tab} onClick={() => (tab === '공과금' && !isPro) ? setShowPaywall(true) : setActiveAnalysisTab(tab)}
                 style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                   fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
                   background: activeAnalysisTab === tab ? primary : 'transparent',
                   color: activeAnalysisTab === tab ? '#fff' : '#8B95A1',
                   boxShadow: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   transition: 'all 0.15s' }}>
                 {tab}
+                {tab === '공과금' && !isPro && <ProBadge />}
               </button>
             ))}
           </div>
@@ -722,7 +730,7 @@ export default function Analysis() {
       )}
 
       {/* ── 공과금 탭 ── */}
-      {showUtilities && activeAnalysisTab === '공과금' && (
+      {showUtilities && isPro && activeAnalysisTab === '공과금' && (
         <div style={{ padding: '16px 20px 100px' }}>
 
           {/* 총합 배너 - 항상 표시 */}
@@ -937,6 +945,7 @@ export default function Analysis() {
         </div>
       )}
 
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <BottomNav />
     </div>
   )

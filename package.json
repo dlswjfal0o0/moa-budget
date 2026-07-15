@@ -18,6 +18,8 @@
     "@capacitor/core": "^8.4.1",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.4.1",
+    "@capacitor/local-notifications": "^8.2.0",
+    "@revenuecat/purchases-capacitor": "^13.2.2",
     "@sentry/node": "^10.65.0",
     "@sentry/react": "^10.65.0",
     "firebase": "^12.14.0",
