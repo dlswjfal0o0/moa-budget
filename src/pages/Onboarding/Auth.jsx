@@ -40,6 +40,7 @@ export default function Auth() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [touchedEmail, setTouchedEmail] = useState(false)
   const [touchedConfirm, setTouchedConfirm] = useState(false)
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
 
   // 비밀번호 강도
   const getStrength = (pw) => {
@@ -64,6 +65,7 @@ export default function Auth() {
 
   const handleEmail = async () => {
     setError('')
+    if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
     if (!email || !password) return setError('이메일과 비밀번호를 입력해주세요.')
     if (mode === 'signup' && password !== confirm) return setError('비밀번호가 일치하지 않아요.')
     if (password.length < 6) return setError('비밀번호는 6자 이상이어야 해요.')
@@ -102,6 +104,7 @@ export default function Auth() {
 
   const handleGoogle = async () => {
     setError('')
+    if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
     setLoading(true)
     try {
       // signInWithPopup은 이 웹뷰에서 동작하지 않아(popupRedirectResolver를 꺼둔 상태 —
@@ -126,6 +129,7 @@ export default function Auth() {
 
   const handleApple = async () => {
     setError('')
+    if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
     setLoading(true)
     try {
       const result = await SignInWithApple.authorize({
@@ -321,6 +325,19 @@ export default function Auth() {
                 <p style={{ fontSize: 12, color: '#10b981', marginTop: 4 }}>비밀번호가 일치합니다</p>
               )}
             </div>
+          )}
+
+          {/* 연령 확인 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
+          {mode === 'signup' && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={e => setAgeConfirmed(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 13, color: '#666' }}>만 14세 이상입니다</span>
+            </label>
           )}
 
         </div>
