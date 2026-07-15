@@ -1436,7 +1436,7 @@ export default function MyPage() {
                       <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v1.5.0</span>
                       {settingsChevron}
                     </button>
-                    <button onClick={() => window.location.href = 'mailto:0o0moa030@gmail.com?subject=모아 앱 피드백'}
+                    <button onClick={() => window.location.href = 'mailto:moa.studio030@gmail.com?subject=모아 앱 피드백'}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
                       <SIcon bg={t.primary}><SI><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>피드백 보내기</p>
