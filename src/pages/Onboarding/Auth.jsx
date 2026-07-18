@@ -368,6 +368,24 @@ export default function Auth() {
           {loading ? '처리 중...' : mode === 'signup' ? '이메일로 가입' : '로그인'}
         </button>
 
+        {/* 베타 테스트 로그인 — npm run build:beta(VITE_BETA=true)로 만든 TestFlight용 빌드와
+            로컬 개발 서버에서만 노출된다. 앱스토어 심사/배포용 빌드(npm run build)에는 절대 포함되지 않음. */}
+        {(import.meta.env.DEV || import.meta.env.VITE_BETA === 'true') && (
+          <button
+            onClick={() => {
+              injectDemoData()
+              navigate('/home', { replace: true })
+            }}
+            style={{
+              width: '100%', padding: '12px', borderRadius: 14,
+              background: 'transparent', color: '#aaa',
+              border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', marginTop: 8
+            }}>
+            🛠 베타 테스트 로그인
+          </button>
+        )}
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
           <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
           <span style={{ fontSize: 12, color: '#bbb' }}>또는</span>
