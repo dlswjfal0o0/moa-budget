@@ -49,9 +49,14 @@ export default function TrialWelcomeModal({ open, onClose }) {
         </button>
 
         <p style={{ fontSize: 12, fontWeight: 700, color: '#8B95A1', marginBottom: 10 }}>바로 구독하고 싶다면</p>
-        <SubscriptionPlanList primary={primary} onPurchased={onClose} />
+        <SubscriptionPlanList onPurchased={onClose} />
 
-        <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, marginTop: 20 }}>
+        <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', lineHeight: 1.6, marginTop: 20 }}>
+          🔒 체험이 끝나도 그동안 만든 Pro 데이터는 삭제되지 않아요.<br />
+          나중에 다시 구독하면 그대로 이어서 쓸 수 있어요.
+        </p>
+
+        <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, marginTop: 8 }}>
           구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.{' '}
           <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: '#8B95A1' }}>이용약관</a>
           {' · '}

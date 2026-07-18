@@ -1,17 +1,13 @@
 import { useState } from 'react'
-import { useTheme } from '../contexts/ThemeContext'
 import { usePurchases } from '../contexts/PurchasesContext'
 import SubscriptionPlanList from './SubscriptionPlans'
 
 export default function PaywallModal({ open, onClose }) {
-  const { themeData: t } = useTheme() || {}
   const purchases = usePurchases()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   if (!open) return null
-
-  const primary = t?.primary || '#3182F6'
 
   const handleRestore = async () => {
     setBusy(true)
@@ -40,7 +36,7 @@ export default function PaywallModal({ open, onClose }) {
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 24px 8px', WebkitOverflowScrolling: 'touch' }}>
-          <SubscriptionPlanList primary={primary} onPurchased={onClose} />
+          <SubscriptionPlanList onPurchased={onClose} />
 
           {error && <p style={{ fontSize: 13, color: '#ef4444', marginTop: 4 }}>{error}</p>}
 
@@ -48,6 +44,11 @@ export default function PaywallModal({ open, onClose }) {
             style={{ width: '100%', background: 'none', border: 'none', padding: '14px 0', fontSize: 14, fontWeight: 600, color: '#8B95A1', cursor: busy ? 'not-allowed' : 'pointer' }}>
             {busy ? '복원하는 중...' : '이전 구매 복원하기'}
           </button>
+
+          <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', lineHeight: 1.6, padding: '0 8px 12px' }}>
+            🔒 구독을 해지하거나 체험이 끝나도 Pro 데이터는 삭제되지 않아요.<br />
+            다시 구독하면 그대로 이어서 사용할 수 있어요.
+          </p>
 
           <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, padding: '4px 0 20px' }}>
             구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.{' '}
