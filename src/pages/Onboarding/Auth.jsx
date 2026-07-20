@@ -16,8 +16,14 @@ import { doc, setDoc } from 'firebase/firestore'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
 
-// 신규 가입 시 1개월 무료체험 시작 기록 + 전체화면 안내 팝업 1회 노출 플래그
+const isNative = () => {
+  try { return window.Capacitor?.isNativePlatform?.() ?? false } catch { return false }
+}
+
+// 신규 가입 시 1개월 무료체험 시작 기록 + 전체화면 안내 팝업 1회 노출 플래그.
+// Pro 게이팅은 네이티브 앱에서만 적용되므로(웹은 항상 무료), 웹 가입에서는 건너뛴다.
 const startFreeTrial = async (uid) => {
+  if (!isNative()) return
   await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
   localStorage.setItem('moa_show_trial_popup', 'true')
 }

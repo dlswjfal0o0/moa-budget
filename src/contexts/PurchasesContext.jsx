@@ -120,7 +120,8 @@ export function PurchasesProvider({ children }) {
   const now = new Date()
   const isTrialActive = !isSubscribed && !!trialEndsAt && now < trialEndsAt
   const trialDaysLeft = isTrialActive ? Math.max(0, Math.ceil((trialEndsAt - now) / 86400000)) : 0
-  const isPro = isSubscribed || isTrialActive
+  // 웹에는 결제 수단이 없고 기존 웹 사용자는 이미 전체 무료로 써왔으므로, Pro 게이팅은 네이티브 앱에서만 적용한다.
+  const isPro = !isNative() || isSubscribed || isTrialActive
 
   return (
     <PurchasesContext.Provider value={{
