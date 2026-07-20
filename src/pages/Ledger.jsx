@@ -153,7 +153,7 @@ export default function Ledger() {
   const [swipedId, setSwipedId] = useState(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const [userPayments, setUserPayments] = useState(['현금'])
-  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
+  const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
   const touchStartX = useRef(null)
   const touchStartY = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
@@ -339,7 +339,9 @@ export default function Ledger() {
     try {
       const monthDate = new Date(form.date)
       const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
-      const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString() }
+      const isInstallmentEligible = form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit')
+      const installmentMonths = isInstallmentEligible && form.installmentMonths ? Number(form.installmentMonths) : null
+      const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString(), installmentMonths }
       let savedId
       if (editItem) {
         await updateDoc(doc(db, 'transactions', editItem.id), data)
@@ -384,7 +386,7 @@ export default function Ledger() {
       setFormSaveState(null)
       setShowForm(false)
       setEditItem(null)
-      setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' })
+      setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
       if (savedId && !editItem) setNewTxnId(savedId)
       await fetchTransactions()
       setTimeout(() => setNewTxnId(null), 1000)
@@ -441,7 +443,8 @@ export default function Ledger() {
       date: t.date, time: t.time || '12:00', memo: t.memo || '',
       payment: t.payment || '카드', cardBilling: t.cardBilling || false, isLoan: t.isLoan || false,
       creditCardBilling: t.creditCardBilling || false, toAccount: t.toAccount || '',
-      loanId: t.loanId || '', daysElapsed: t.daysElapsed != null ? String(t.daysElapsed) : '' })
+      loanId: t.loanId || '', daysElapsed: t.daysElapsed != null ? String(t.daysElapsed) : '',
+      installmentMonths: t.installmentMonths ? String(t.installmentMonths) : '' })
     setShowForm(true); setSelectedId(null)
   }
 
@@ -1016,7 +1019,7 @@ export default function Ledger() {
 
       {/* ── FAB (선택 모드 아닐 때만) ── */}
       {!selectionMode && (
-        <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '' }); setShowForm(true) }}
+        <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' }); setShowForm(true) }}
           style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
       )}
 
@@ -1259,6 +1262,20 @@ export default function Ledger() {
                   </div>
                 )}
 
+              </div>
+            )}
+
+            {/* 할부 개월 — 신용카드 결제 시에만 노출 */}
+            {form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit') && (
+              <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
+                <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>할부 개월</p>
+                <select value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
+                  style={inputStyle}>
+                  <option value="">일시불</option>
+                  {Array.from({ length: 35 }, (_, i) => i + 2).map(m => (
+                    <option key={m} value={m}>{m}개월</option>
+                  ))}
+                </select>
               </div>
             )}
 

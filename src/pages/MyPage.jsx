@@ -1818,7 +1818,7 @@ export default function MyPage() {
 
                 {/* 혜택/내역 탭 */}
                 <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
-                    {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }].map(tab => (
+                    {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }, ...(selectedCard.cardType === 'credit' ? [{ key: 'installment', label: '할부' }] : [])].map(tab => (
                         <button key={tab.key} onClick={() => setCardDetailTab(tab.key)}
                             style={{ flex: 1, padding: '14px', border: 'none', background: 'none', cursor: 'pointer',
                                 fontSize: 14, fontWeight: cardDetailTab === tab.key ? 600 : 400,
@@ -1847,6 +1847,33 @@ export default function MyPage() {
                                     }} style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 16 }}>✕</button>
                                 </div>
                             ))}
+                        </div>
+                    ) : cardDetailTab === 'installment' ? (
+                        <div>
+                            {(() => {
+                                const installmentTxns = cardTransactions
+                                    .filter(tx => tx.type === 'expense' && Number(tx.installmentMonths) >= 2)
+                                    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+                                if (installmentTxns.length === 0) {
+                                    return <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>할부로 결제한 내역이 없어요</p>
+                                }
+                                return installmentTxns.map(tx => {
+                                    const months = Number(tx.installmentMonths)
+                                    const monthlyAmount = Math.round((tx.amount || 0) / months)
+                                    return (
+                                        <div key={tx.id} style={{ padding: '14px 0', borderBottom: '1px solid #f8f8f8' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{tx.title}</p>
+                                                <p style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>{tx.date}</p>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <p style={{ fontSize: 12, color: '#8B95A1' }}>전체 {fmt(tx.amount || 0)}원 · {months}개월</p>
+                                                <p style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', flexShrink: 0 }}>월 {fmt(monthlyAmount)}원</p>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            })()}
                         </div>
                     ) : (
                         <div>
