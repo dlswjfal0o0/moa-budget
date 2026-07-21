@@ -26,3 +26,6 @@ dist_*
 *.sw?
 .vercel
 .env*
+
+# fastlane build output (ios/App/fastlane/Fastfile's build_app output_directory)
+ios/App/build
