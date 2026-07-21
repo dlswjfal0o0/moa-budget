@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app"
 import { initializeAuth } from "firebase/auth"
 import { initializeFirestore } from "firebase/firestore"
+import { Sentry } from "../utils/sentry"
 
 // App Check(reCAPTCHA v3)는 시도했다가 되돌렸다 — Capacitor iOS의 WKWebView 안에서
 // reCAPTCHA 챌린지/토큰 교환이 네트워크 단에서 실패했고(auth/network-request-failed),
@@ -47,14 +48,34 @@ class LocalStorageAuthPersistence {
     }
   }
   async _set(key, value) {
-    localStorage.setItem(key, JSON.stringify(value))
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch (err) {
+      // 쓰기 실패(쿼터 초과 등)를 삼키지 않고 남겨두되, 절대 던지지는 않는다 — 여기서
+      // 던지면 Firebase Auth 내부 상태 전이 도중이라 로그인 세션이 깨질 수 있다.
+      Sentry.captureException(err)
+    }
   }
   async _get(key) {
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch (err) {
+      // 과거 비정상 종료 등으로 저장된 값이 깨져 있으면 JSON.parse가 예외를 던진다.
+      // 이 예외를 그대로 흘려보내면 Firebase의 세션 복원 경로가 실패해서 실제로는
+      // 로그인 상태인 유저가 "복원할 세션 없음"으로 취급돼 로그아웃 화면으로 튕기는
+      // 오류로 이어질 수 있다 — 그래서 여기서 잡아 null로 폴백한다.
+      Sentry.captureException(err)
+      return null
+    }
   }
   async _remove(key) {
-    localStorage.removeItem(key)
+    try {
+      localStorage.removeItem(key)
+    } catch (err) {
+      Sentry.captureException(err)
+    }
   }
   _addListener() {}
   _removeListener() {}

@@ -201,7 +201,13 @@ export default function Analysis() {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isDemo) { fetchDemoData(); return }
-    const unsub = onAuthStateChanged(auth, u => {
+    const unsub = onAuthStateChanged(auth, async u => {
+      if (!u) {
+        // 세션 복원이 아직 안 끝난 상태에서 첫 콜백이 null로 먼저 올 수 있다 —
+        // 실제로 로그아웃된 게 맞는지 authStateReady()로 한 번 더 확인한다.
+        await auth.authStateReady()
+        u = auth.currentUser
+      }
       if (!u) navigate('/auth', { replace: true })
       else setUser(u)
     })
