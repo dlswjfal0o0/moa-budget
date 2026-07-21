@@ -112,6 +112,7 @@ export default function MyPage() {
 
   // selectedLoan이 열릴 때 Firestore에서 직접 상환 트랜잭션 불러오기
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selectedLoan) { setLoanRepaymentTxns([]); return }
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {

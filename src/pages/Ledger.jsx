@@ -134,7 +134,7 @@ const SectionLabel = ({ children }) => (
 export default function Ledger() {
   const { themeData } = useTheme()
   const { cards: userCardsList } = useCards()
-  const { loans, setLoans } = useLoans()
+  const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
   const navigate = useNavigate()
   const now = new Date()
