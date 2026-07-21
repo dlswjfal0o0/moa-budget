@@ -1,3 +1,5 @@
+require "shellwords"
+
 default_platform(:ios)
 
 # 이 lane은 CI(GitHub Actions, macos-14) 전용이다. 로컬 Xcode 개발 환경은
@@ -33,7 +35,15 @@ platform :ios do
 
     profile_path = File.join(Dir.mktmpdir, "distribution.mobileprovision")
     File.binwrite(profile_path, Base64.decode64(ENV.fetch("IOS_PROVISIONING_PROFILE_BASE64")))
-    profile = install_provisioning_profile(path: profile_path)
+    install_provisioning_profile(path: profile_path)
+
+    # install_provisioning_profile's return value is the file path it copied
+    # the profile to (which can contain spaces, e.g. ".../Provisioning
+    # Profiles/..."), not something PROVISIONING_PROFILE_SPECIFIER can use.
+    # Xcode wants the profile's own UUID, decoded from its embedded plist.
+    decoded_plist_path = File.join(Dir.mktmpdir, "profile.plist")
+    sh("security cms -D -i #{profile_path.shellescape} > #{decoded_plist_path.shellescape}")
+    profile_uuid = sh("/usr/libexec/PlistBuddy -c 'Print :UUID' #{decoded_plist_path.shellescape}").strip
 
     api_key_path = File.join(Dir.mktmpdir, "app_store_connect_api_key.p8")
     File.binwrite(api_key_path, Base64.decode64(ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64")))
@@ -50,7 +60,7 @@ platform :ios do
       xcargs: [
         "CODE_SIGN_STYLE=Manual",
         "CODE_SIGN_IDENTITY=\"iPhone Distribution\"",
-        "PROVISIONING_PROFILE_SPECIFIER=#{profile}",
+        "PROVISIONING_PROFILE_SPECIFIER=#{profile_uuid}",
         "DEVELOPMENT_TEAM=3783UTR3VM",
       ].join(" "),
     )
