@@ -25,11 +25,11 @@
 
 ## 4. 값들을 base64로 인코딩
 
-터미널에서 (macOS 기준):
+터미널에서 (macOS 기준). `.p12`는 1번에서 Keychain Access로 export할 때 직접 지정한 파일명, `.mobileprovision`은 2번에서 다운로드된 파일명, `.p8`은 3번에서 다운로드된 `AuthKey_<Key ID>.p8` 파일명을 그대로 쓰면 된다 (셋 다 파일명이 서로 다른 규칙이니 헷갈리지 않게 확인):
 ```
-base64 -i AuthKey_XXXXXXXXXX.p12 | pbcopy   # 클립보드에 복사됨
-base64 -i AppStore_com.moa.budget.mobileprovision | pbcopy
-base64 -i AuthKey_XXXXXXXXXX.p8 | pbcopy
+base64 -i <내가_export한_인증서_파일명>.p12 | pbcopy   # 클립보드에 복사됨
+base64 -i <다운로드된_프로파일_파일명>.mobileprovision | pbcopy
+base64 -i AuthKey_<Key ID>.p8 | pbcopy
 ```
 
 ## 5. GitHub Secrets 등록
