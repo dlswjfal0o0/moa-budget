@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ProBadge } from '../../components/LockedFeature'
 
 const PRIMARY = '#3182F6'
 const BG = '#fff'
@@ -28,7 +29,7 @@ function HomeMockup() {
   const [gaugeOn, setGaugeOn] = useState(false)
   const pct = useCountUp(75, 1000, 300)
   useEffect(() => { const t = setTimeout(() => setGaugeOn(true), 200); return () => clearTimeout(t) }, [])
-  const circ = Math.PI * 44
+  const circ = Math.PI * 36
   return (
     <div style={{ flex:1, background:'#f5f6f8', overflow:'hidden', display:'flex', flexDirection:'column' }}>
       {/* 헤더 */}
@@ -46,40 +47,56 @@ function HomeMockup() {
       </div>
       <div style={{ flex:1, overflow:'hidden', padding:'4px 5px 0' }}>
         {/* 예산 관리 */}
-        <div style={{ background:'white', borderRadius:16, padding:'6px 8px', marginBottom:4, animation:'moaFadeUp 0.5s 0.2s ease both' }}>
-          <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:3 }}>예산 관리</div>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ position:'relative', width:70, height:40, flexShrink:0 }}>
-              <svg width="70" height="40" viewBox="0 0 110 62">
-                <path d="M 8 54 A 47 47 0 0 1 102 54" fill="none" stroke="#f0f0f0" strokeWidth="10" strokeLinecap="round"/>
-                <path d="M 8 54 A 47 47 0 0 1 102 54" fill="none" stroke={PRIMARY} strokeWidth="10" strokeLinecap="round"
-                  strokeDasharray={circ} strokeDashoffset={gaugeOn ? circ*(1-75/100) : circ}
-                  style={{ transition:'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}/>
-              </svg>
-              <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', textAlign:'center', whiteSpace:'nowrap' }}>
-                <span style={{ fontSize:10, fontWeight:800, color:'#111' }}>{pct}<span style={{ fontSize:7 }}>%</span></span>
+        <div style={{ marginBottom:6, animation:'moaFadeUp 0.5s 0.2s ease both' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+            <span style={{ fontSize:8, fontWeight:600, color:'#111' }}>예산 관리</span>
+            <span style={{ fontSize:6, fontWeight:700, color:'white', background:PRIMARY, borderRadius:8, padding:'2.5px 8px' }}>+ 추가</span>
+          </div>
+          <div style={{ background:'white', borderRadius:16, padding:'7px 9px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+              <span style={{ fontSize:7, fontWeight:700, color:'#111' }}>생활비</span>
+              <span style={{ fontSize:5, color:'#999' }}>06/01~06/30</span>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+              <div style={{ position:'relative', width:48, height:28, flexShrink:0 }}>
+                <svg width="48" height="28" viewBox="0 0 88 48">
+                  <path d="M 8 44 A 36 36 0 0 1 80 44" fill="none" stroke="#f0f0f0" strokeWidth="9" strokeLinecap="round"/>
+                  <path d="M 8 44 A 36 36 0 0 1 80 44" fill="none" stroke={PRIMARY} strokeWidth="9" strokeLinecap="round"
+                    strokeDasharray={circ} strokeDashoffset={gaugeOn ? circ*(1-75/100) : circ}
+                    style={{ transition:'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}/>
+                </svg>
+                <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', whiteSpace:'nowrap' }}>
+                  <span style={{ fontSize:8, fontWeight:800, color:'#111' }}>{pct}<span style={{ fontSize:5.5 }}>%</span></span>
+                </div>
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:5, color:'#aaa' }}>이번 달 사용</div>
+                <div style={{ fontSize:9.5, fontWeight:700, color:'#111' }}>750,000원</div>
+                <div style={{ fontSize:5.5, fontWeight:600, color:'#22c55e' }}>잔여 250,000원</div>
               </div>
             </div>
-            <div style={{ display:'flex', gap:8 }}>
-              <div><div style={{ fontSize:5.5, color:'#aaa' }}>사용</div><div style={{ fontSize:7, fontWeight:600, color:'#ef4444' }}>750,000원</div></div>
-              <div><div style={{ fontSize:5.5, color:'#aaa' }}>잔여</div><div style={{ fontSize:7, fontWeight:600, color:'#22c55e' }}>250,000원</div></div>
+            <div style={{ marginTop:5, background:PRIMARY+'12', borderRadius:9999, padding:'5px 0', textAlign:'center', fontSize:6, lineHeight:1.2, fontWeight:600, color:PRIMARY }}>
+              ✨ AI 조언 보기
             </div>
           </div>
         </div>
         {/* 다가오는 결제 */}
-        <div style={{ background:'white', borderRadius:16, padding:'6px 8px', marginBottom:4, animation:'moaFadeUp 0.5s 0.35s ease both' }}>
-          <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:4 }}>다가오는 결제</div>
-          {[{ title:'월세', days:3, amount:'500,000', color:'#ef4444', bg:'#fee2e2' },
-            { title:'티빙', days:8, amount:'13,900', color:'#f59e0b', bg:'#fef3c7' }].map((item,i)=>(
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:5, marginBottom:i===0?3:0, background:'#f9f9f9', borderRadius:10, padding:'4px 6px' }}>
-              <div style={{ width:18, height:18, borderRadius:8, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <div style={{ background:'white', borderRadius:16, overflow:'hidden', marginBottom:6, animation:'moaFadeUp 0.5s 0.35s ease both' }}>
+          <div style={{ fontSize:8, fontWeight:600, color:'#111', padding:'7px 9px 4px' }}>다가오는 결제</div>
+          {[{ title:'월세', dueDay:1, days:3, amount:'500,000', color:'#ef4444', bg:'#fee2e2' },
+            { title:'티빙', dueDay:8, days:8, amount:'13,900', color:'#f59e0b', bg:'#fef3c7' }].map((item,i)=>(
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 9px', borderTop:i>0?'1px solid #f5f5f5':'none' }}>
+              <div style={{ width:20, height:20, borderRadius:9, background:item.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={item.color} strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:6.5, fontWeight:600, color:'#111' }}>{item.title}</div>
-                <div style={{ fontSize:5, color:'#aaa' }}>D-{item.days}</div>
+                <div style={{ fontSize:7, fontWeight:600, color:'#111' }}>{item.title}</div>
+                <div style={{ fontSize:5.5, color:'#aaa' }}>매월 {item.dueDay}일</div>
               </div>
-              <div style={{ fontSize:7, fontWeight:700, color:'#ef4444' }}>-{item.amount}원</div>
+              <div style={{ textAlign:'right', fontSize:7, lineHeight:1.2 }}>
+                <div style={{ fontWeight:700, color:'#ef4444', marginBottom:2 }}>-{item.amount}원</div>
+                <span style={{ fontSize:5, fontWeight:700, color:'white', background:item.color, borderRadius:9999, padding:'1.5px 6px', lineHeight:1.2 }}>D-{item.days}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -128,7 +145,7 @@ function HomeMockup() {
 
 function CalendarMockup() {
   const days = ['일','월','화','수','목','금','토']
-  const weeks = [[1,2,3,4,5,6,7],[8,9,10,11,12,13,14],[15,16,17,18,19,20,21]]
+  const weeks = [[1,2,3,4,5,6,7],[8,9,10,11,12,13,14],[15,16,17,18,19,20,21],[22,23,24,25,26,27,28],[29,30,null,null,null,null,null]]
   const exp = { 3:'-6,500', 7:'-28,000', 15:'-50,000', 20:'-8,000' }
   const inc = { 10:'+500,000' }
   return (
@@ -145,54 +162,66 @@ function CalendarMockup() {
           <div key={d} style={{ textAlign:'center', fontSize:6.5, color:i===0?'#ef4444':i===6?PRIMARY:'#888', padding:'2px 0' }}>{d}</div>
         ))}
       </div>
-      {/* 날짜 그리드 */}
+      {/* 날짜 그리드 — 셀 높이 고정 (항상 수입/지출 자리 확보) */}
       <div style={{ padding:'0 4px', flexShrink:0 }}>
         {weeks.map((week,wi)=>(
-          <div key={wi} style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:2 }}>
-            {week.map(day=>(
-              <div key={day} style={{ textAlign:'center', padding:'1px 0' }}>
-                <div style={{ fontSize:7.5, color:day===2?PRIMARY:'#111', fontWeight:day===2?700:400 }}>{day}</div>
-                {exp[day] && <div style={{ fontSize:5, color:'#ef4444', lineHeight:1.2 }}>{exp[day]}</div>}
-                {inc[day] && <div style={{ fontSize:5, color:'#22c55e', lineHeight:1.2 }}>{inc[day]}</div>}
+          <div key={wi} style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
+            {week.map((day,di)=> day ? (
+              <div key={day} style={{ textAlign:'center', padding:'1.5px 0' }}>
+                <div style={{ fontSize:7, color:day===2?PRIMARY:'#111', fontWeight:day===2?700:400, marginBottom:1 }}>{day}</div>
+                <div style={{ fontSize:4, color:'#22c55e', lineHeight:1.1, visibility:inc[day]?'visible':'hidden' }}>{inc[day]||'0'}</div>
+                <div style={{ fontSize:4, color:'#ef4444', lineHeight:1.1, visibility:exp[day]?'visible':'hidden' }}>{exp[day]||'0'}</div>
+              </div>
+            ) : (
+              <div key={`e-${di}`} style={{ padding:'1.5px 0' }}>
+                <div style={{ fontSize:7, marginBottom:1, visibility:'hidden' }}>0</div>
+                <div style={{ fontSize:4, lineHeight:1.1, visibility:'hidden' }}>0</div>
+                <div style={{ fontSize:4, lineHeight:1.1, visibility:'hidden' }}>0</div>
               </div>
             ))}
           </div>
         ))}
       </div>
       {/* 스크롤 영역 */}
-      <div style={{ flex:1, overflow:'hidden', padding:'3px 5px' }}>
+      <div style={{ flex:1, overflow:'hidden', padding:'3px 5px', background:'#f5f6f8' }}>
         {/* 주간/월간 요약 */}
         <div style={{ display:'flex', gap:4, marginBottom:3 }}>
-          <div style={{ flex:1, background:'#FFF5F5', borderRadius:16, padding:'4px 6px' }}>
+          <div style={{ flex:1, background:'white', borderRadius:16, padding:'4px 6px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>이번 주 지출</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#ef4444' }}>-125,000원</div>
           </div>
-          <div style={{ flex:1, background:'#F0FFF4', borderRadius:16, padding:'4px 6px' }}>
+          <div style={{ flex:1, background:'white', borderRadius:16, padding:'4px 6px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>이번 주 수입</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#22c55e' }}>+500,000원</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:4, marginBottom:4 }}>
-          <div style={{ flex:1, background:'#FFF5F5', borderRadius:16, padding:'4px 6px' }}>
+        <div style={{ display:'flex', gap:4, marginBottom:8 }}>
+          <div style={{ flex:1, background:'white', borderRadius:16, padding:'4px 6px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>6월 지출</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#ef4444' }}>-750,000원</div>
           </div>
-          <div style={{ flex:1, background:'#F0FFF4', borderRadius:16, padding:'4px 6px' }}>
+          <div style={{ flex:1, background:'white', borderRadius:16, padding:'4px 6px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>6월 수입</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#22c55e' }}>+2,000,000원</div>
           </div>
         </div>
         {/* 고정지출 */}
-        <div style={{ borderTop:'1px solid #f5f5f5', paddingTop:4 }}>
-          <div style={{ fontSize:8, fontWeight:600, color:'#111', marginBottom:3 }}>고정지출</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:3 }}>
+        <div style={{ background:'white', borderRadius:16, overflow:'hidden' }}>
+          <div style={{ padding:'5px 7px', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #f5f5f5' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <span style={{ fontSize:8, fontWeight:600, color:'#111' }}>고정지출</span>
+              <span style={{ fontSize:5, color:'#999', background:'#f0f0f0', borderRadius:9999, padding:'1px 5px', fontWeight:700 }}>4개 · 월 654,900원</span>
+            </div>
+            <span style={{ fontSize:6, fontWeight:700, color:'white', background:PRIMARY, borderRadius:6, padding:'2px 7px' }}>+ 추가</span>
+          </div>
+          <div style={{ padding:'4px 6px 6px', display:'flex', flexDirection:'column', gap:3 }}>
             {[{n:'월세',d:1,a:'500,000',p:true},{n:'티빙',d:5,a:'13,900',p:false},{n:'보험료',d:10,a:'85,000',p:true},{n:'통신비',d:15,a:'55,000',p:false}].map(item=>(
-              <div key={item.n} style={{ background:'#f8f8f8', borderRadius:16, padding:'4px 6px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:3, marginBottom:1 }}>
-                  <div style={{ width:7, height:7, borderRadius:3, background:item.p?PRIMARY:'#e0e0e0', flexShrink:0 }}/>
-                  <span style={{ fontSize:6, fontWeight:600, color:item.p?'#bbb':'#111', textDecoration:item.p?'line-through':'none' }}>{item.n}</span>
+              <div key={item.n} style={{ borderRadius:12, border:`1px solid ${item.p?'#eee':PRIMARY+'40'}`, background:item.p?'#f9f9f9':'#fff', padding:'4px 6px', display:'flex', alignItems:'center', gap:5 }}>
+                <div style={{ width:8, height:8, borderRadius:2, border:`1.3px solid ${item.p?'#ccc':PRIMARY}`, background:item.p?'#ccc':'transparent', flexShrink:0 }}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:6, fontWeight:600, color:item.p?'#bbb':'#111', textDecoration:item.p?'line-through':'none' }}>{item.n}</div>
+                  <div style={{ fontSize:5, color:'#bbb' }}>매월 {item.d}일</div>
                 </div>
-                <div style={{ fontSize:5, color:'#bbb' }}>매월 {item.d}일</div>
                 <div style={{ fontSize:7, fontWeight:600, color:item.p?'#bbb':'#ef4444' }}>{item.a}원</div>
               </div>
             ))}
@@ -216,7 +245,7 @@ function LedgerMockup() {
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
           <span style={{ fontSize:10, fontWeight:700, color:'#111' }}>가계부</span>
           <div style={{ width:22, height:22, borderRadius:8, background:'#f0f0f0', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </div>
         </div>
         {/* 기간 탭 */}
@@ -290,23 +319,23 @@ function AnalysisMockup() {
         <div style={{ flex:1, padding:'3px', borderRadius:9999, textAlign:'center', fontSize:6.5, color:'#888' }}>공과금</div>
       </div>
       {/* 지난 달 대비 */}
-      <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
-        <div style={{ fontSize:7, fontWeight:600, color:'#111', marginBottom:3 }}>지난 달 대비</div>
-        <div style={{ display:'flex', gap:4 }}>
-          <div style={{ flex:1, background:'#FFF5F5', borderRadius:12, padding:'3px 5px' }}>
+      <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0, border:`1px solid ${PRIMARY}33` }}>
+        <div style={{ fontSize:7, fontWeight:600, color:'#111', marginBottom:4 }}>지난 달 대비</div>
+        <div style={{ display:'flex', gap:5 }}>
+          <div style={{ flex:1, background:'#f7f8fa', borderRadius:10, padding:'4px 6px' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>지출</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#ef4444' }}>750,000원</div>
-            <div style={{ fontSize:5.5, color:'#ef4444' }}>▲ 5.2%</div>
+            <div style={{ fontSize:5, color:'#ef4444', marginTop:2 }}>▲ 37,000원 증가</div>
           </div>
-          <div style={{ flex:1, background:'#F0FFF4', borderRadius:12, padding:'3px 5px' }}>
+          <div style={{ flex:1, background:'#f7f8fa', borderRadius:10, padding:'4px 6px' }}>
             <div style={{ fontSize:5.5, color:'#888' }}>수입</div>
             <div style={{ fontSize:7.5, fontWeight:700, color:'#22c55e' }}>2,000,000원</div>
-            <div style={{ fontSize:5.5, color:'#aaa' }}>변동없음</div>
+            <div style={{ fontSize:5, color:'#aaa', marginTop:2 }}>변동없음</div>
           </div>
         </div>
       </div>
       {/* 일별 지출 */}
-      <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
+      <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0, border:`1px solid ${PRIMARY}33` }}>
         <div style={{ fontSize:7, fontWeight:600, color:'#111', marginBottom:3 }}>일별 지출</div>
         <div style={{ display:'flex', alignItems:'flex-end', gap:1.5, height:20 }}>
           {bars.map((h,i)=>(
@@ -314,6 +343,7 @@ function AnalysisMockup() {
               height:`${h}%`, transformOrigin:'bottom', transform:barsOn?'scaleY(1)':'scaleY(0)', transition:`transform 0.6s ${0.5+i*0.04}s ease` }}/>
           ))}
         </div>
+        <div style={{ fontSize:5, color:'#888', textAlign:'center', marginTop:4 }}>최고 지출일: <span style={{ color:PRIMARY, fontWeight:700 }}>7일</span> (-28,000원)</div>
       </div>
       {/* 카테고리별 지출 */}
       <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
@@ -321,14 +351,21 @@ function AnalysisMockup() {
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div style={{ position:'relative', width:36, height:36, flexShrink:0, animation:'moaSpinPie 0.7s 0.8s ease both' }}>
             <div style={{ width:36, height:36, borderRadius:'50%', background:`conic-gradient(#FF6B6B 0% 65%, #4ECDC4 65% 80%, #45B7D1 80% 100%)` }}/>
-            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:18, height:18, borderRadius:'50%', background:'white' }}/>
+            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:20, height:20, borderRadius:'50%', background:'white', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+              <span style={{ fontSize:3, color:'#999' }}>총지출</span>
+              <span style={{ fontSize:4, fontWeight:700, color:'#111' }}>75만</span>
+            </div>
           </div>
-          <div style={{ flex:1, display:'flex', flexDirection:'column', gap:2 }}>
+          <div style={{ flex:1, display:'flex', flexDirection:'column', gap:3 }}>
             {[['식비','#FF6B6B','65%'],['교통','#4ECDC4','15%'],['쇼핑','#45B7D1','20%']].map(([n,c,w])=>(
-              <div key={n} style={{ display:'flex', alignItems:'center', gap:3 }}>
-                <div style={{ width:5, height:5, borderRadius:'50%', background:c }}/>
-                <span style={{ fontSize:5.5, color:'#555', flex:1 }}>{n}</span>
-                <span style={{ fontSize:5.5, color:'#888' }}>{w}</span>
+              <div key={n}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:1 }}>
+                  <span style={{ fontSize:5, color:'#555' }}>{n}</span>
+                  <span style={{ fontSize:5, color:'#888' }}>{w}</span>
+                </div>
+                <div style={{ height:2.5, background:`${c}22`, borderRadius:9999, overflow:'hidden' }}>
+                  <div style={{ height:'100%', width:w, background:c, borderRadius:9999 }}/>
+                </div>
               </div>
             ))}
           </div>
@@ -336,21 +373,41 @@ function AnalysisMockup() {
       </div>
       {/* AI 분석 */}
       <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
           <span style={{ fontSize:7, fontWeight:600, color:'#111' }}>AI 소비 분석</span>
-          <div style={{ background:'#F0FFF4', borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'#22c55e', fontWeight:700, display:'flex', alignItems:'center', gap:2 }}>{score}점 <svg width="8" height="8" viewBox="0 0 24 24" fill="#22c55e" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <span style={{ background:PRIMARY, borderRadius:9999, padding:'2px 6px', fontSize:5, color:'white', fontWeight:600 }}>✨ AI 분석</span>
         </div>
-        <div style={{ background:'#F0FFF4', borderRadius:9999, padding:'3px 5px', borderLeft:`2px solid #22c55e` }}>
-          <div style={{ fontSize:5.5, color:'#555', lineHeight:1.4 }}>식비 전월 대비 15% 증가. 외식 줄이면 ~50,000원 절약!</div>
+        <div style={{ display:'flex', alignItems:'center', gap:5, background:'#F0FFF4', borderRadius:10, padding:'4px 6px' }}>
+          <div style={{ width:18, height:18, borderRadius:'50%', background:'#22c55e', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <span style={{ color:'white', fontSize:7, fontWeight:700, lineHeight:1 }}>{score}</span>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:5.5, fontWeight:600, color:'#22c55e' }}>소비 우등생이에요 🌟</div>
+            <div style={{ display:'flex', gap:1.5, marginTop:2 }}>
+              {['#FF5A5F','#f97316','#eab308','#2ECC71','#f59e0b'].map((c,i)=>(
+                <div key={i} style={{ width:4, height:4, borderRadius:'50%', background:i<4?c:'#e5e7eb' }}/>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ background:'#f8f8f8', borderRadius:6, padding:'3px 5px', marginTop:4 }}>
+          <span style={{ fontSize:4.5, fontWeight:600, color:PRIMARY, background:PRIMARY+'18', padding:'1px 5px', borderRadius:9999 }}>식비</span>
+          <div style={{ fontSize:5, color:'#888', marginTop:2, lineHeight:1.4 }}>외식 줄이면 최대 50,000원 절약</div>
         </div>
       </div>
       {/* 결제수단별 지출 */}
       <div style={{ background:'white', borderRadius:16, padding:'5px 7px', flexShrink:0 }}>
         <div style={{ fontSize:7, fontWeight:600, color:'#111', marginBottom:3 }}>결제수단별 지출</div>
-        {[['신한카드','380,000','#4F46E5'],['카카오뱅크','280,000','#22c55e'],['현금','90,000','#f59e0b']].map(([n,a,c])=>(
-          <div key={n} style={{ display:'flex', justifyContent:'space-between', padding:'2px 0', borderBottom:'1px solid #f8f8f8' }}>
-            <span style={{ fontSize:5.5, color:'#555' }}>{n}</span>
-            <span style={{ fontSize:5.5, fontWeight:600, color:c }}>-{a}원</span>
+        {[
+          { n:'카드', pct:'48%', a:'380,000', icon:<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> },
+          { n:'이체', pct:'35%', a:'280,000', icon:<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> },
+          { n:'현금', pct:'17%', a:'90,000', icon:<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg> },
+        ].map(row=>(
+          <div key={row.n} style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 0', borderBottom:'1px solid #f8f8f8' }}>
+            <div style={{ width:13, height:13, borderRadius:5, background:PRIMARY+'18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{row.icon}</div>
+            <span style={{ fontSize:5.5, color:'#555', flex:1 }}>{row.n}</span>
+            <span style={{ fontSize:4.5, fontWeight:600, color:PRIMARY, background:PRIMARY+'18', padding:'0.5px 4px', borderRadius:9999, marginRight:3 }}>{row.pct}</span>
+            <span style={{ fontSize:5.5, fontWeight:600, color:'#111' }}>{row.a}원</span>
           </div>
         ))}
       </div>
@@ -375,9 +432,10 @@ function AnalysisUtilityMockup() {
         <div style={{ flex:1, padding:'3px', borderRadius:9999, background:PRIMARY, textAlign:'center', fontSize:6.5, color:'white', fontWeight:700 }}>공과금</div>
       </div>
       {/* 총합 배너 */}
-      <div style={{ background:PRIMARY+'18', borderRadius:16, padding:'4px 8px', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:6.5, color:PRIMARY, fontWeight:600 }}>이번 달 공과금 총합</span>
-        <span style={{ fontSize:8, fontWeight:700, color:PRIMARY }}>162,000원</span>
+      <div style={{ background:PRIMARY, borderRadius:16, padding:'6px 8px', flexShrink:0 }}>
+        <div style={{ fontSize:5, color:'rgba(255,255,255,0.75)', marginBottom:2 }}>이번 달 공과금 합계</div>
+        <div style={{ fontSize:11, fontWeight:700, color:'white', marginBottom:2 }}>162,000원</div>
+        <div style={{ fontSize:5, fontWeight:600, color:'rgba(255,255,255,0.9)' }}>전월 대비 +5,000원 증가</div>
       </div>
       {/* 공과금 카드들 */}
       {items.map((item,idx)=>(
@@ -402,12 +460,30 @@ function AnalysisUtilityMockup() {
       ))}
       {/* AI 공과금 분석 */}
       <div style={{ background:'white', borderRadius:16, padding:'5px 6px', flexShrink:0 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
           <span style={{ fontSize:7, fontWeight:600, color:'#111' }}>AI 공과금 분석</span>
-          <div style={{ background:PRIMARY, borderRadius:8, padding:'2px 5px', fontSize:5.5, color:'white', animation:'moaBlink 1.5s 1.5s ease infinite', display:'flex', alignItems:'center', gap:2 }}><svg width="7" height="7" viewBox="0 0 24 24" fill="white" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>AI</div>
+          <span style={{ background:PRIMARY, borderRadius:9999, padding:'2px 6px', fontSize:5, color:'white', fontWeight:600 }}>✨ AI 분석</span>
         </div>
-        <div style={{ background:'#EEF2FF', borderRadius:9999, padding:'3px 5px', borderLeft:`2px solid ${PRIMARY}` }}>
-          <div style={{ fontSize:5.5, color:'#555', lineHeight:1.4 }}>전기세 13,000원 절약! 가스비 전년 대비 60% 감소!</div>
+        {[
+          { name:'전기세', icon:items[2].icon, diff:'13,000원', up:false, comment:'절약을 잘 하고 있어요' },
+          { name:'가스비', icon:items[3].icon, diff:'23,000원', up:false, comment:'전년 대비 60% 감소했어요' },
+        ].map((it,i,arr)=>(
+          <div key={it.name} style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 0', borderBottom:i<arr.length-1?'1px solid #f5f5f5':'none' }}>
+            <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:11, height:11, flexShrink:0 }}>{it.icon}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:5.5, fontWeight:600, color:'#111' }}>{it.name}</span>
+                <span style={{ fontSize:4.5, fontWeight:600, color:it.up?'#f97316':'#22c55e', background:(it.up?'#f97316':'#22c55e')+'18', padding:'0.5px 4px', borderRadius:9999 }}>{it.up?'▲':'▼'} {it.diff}</span>
+              </div>
+              <div style={{ fontSize:4.5, color:'#999', marginTop:1 }}>{it.comment}</div>
+            </div>
+          </div>
+        ))}
+        <div style={{ background:PRIMARY+'12', borderRadius:9999, padding:'3px 5px', marginTop:4 }}>
+          <div style={{ fontSize:5, color:PRIMARY, fontWeight:600, lineHeight:1.4 }}>전체적으로 공과금을 잘 관리하고 있어요</div>
+        </div>
+        <div style={{ background:'#F0FFF4', borderRadius:9999, padding:'3px 5px', marginTop:3 }}>
+          <div style={{ fontSize:5, color:'#16a34a', lineHeight:1.4 }}>💡 여름철 냉방비 절약 팁을 확인해보세요</div>
         </div>
       </div>
     </div>
@@ -439,37 +515,81 @@ function MyMockup() {
           <div style={{ fontSize:14, fontWeight:700, color:'#111', marginBottom:3 }}>3,750,000원</div>
           <div style={{ fontSize:6, color:'#aaa' }}>계좌 <span style={{ color:'#666' }}>1,630,000원</span> · 현금 <span style={{ color:'#666' }}>120,000원</span></div>
         </div>
-        {/* 카드 실적 */}
-        <div style={{ background:'white', borderRadius:16, padding:'6px 8px', marginBottom:4, animation:'moaFadeUp 0.4s 0.3s ease both' }}>
-          <div style={{ fontSize:7.5, fontWeight:600, color:'#111', marginBottom:4 }}>카드</div>
-          {[['신한카드',75,false],['현대카드',92,true]].map(([name,pct,done],i)=>(
-            <div key={name} style={{ marginBottom:i===0?4:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
-                <span style={{ fontSize:6.5, color:'#111' }}>{name}</span>
-                {done && <span style={{ fontSize:5, background:'#dcfce7', color:'#16a34a', borderRadius:9999, padding:'1px 4px' }}>달성 ✓</span>}
+        {/* 카드 */}
+        <div style={{ marginBottom:6, animation:'moaFadeUp 0.4s 0.3s ease both' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <span style={{ fontSize:7.5, fontWeight:700, color:'#111' }}>카드</span>
+              <span style={{ fontSize:5, color:PRIMARY, background:PRIMARY+'15', borderRadius:9999, padding:'1px 5px', fontWeight:600 }}>2개</span>
+            </div>
+            <span style={{ fontSize:5.5, fontWeight:700, color:'white', background:PRIMARY, borderRadius:8, padding:'2px 7px' }}>+ 추가</span>
+          </div>
+          {[{name:'신한카드',type:'신용',used:'500,000',pct:100,done:true},{name:'현대카드',type:'신용',used:'92,000',pct:75,done:false}].map((card,i)=>(
+            <div key={card.name} style={{ background:'white', borderRadius:14, padding:'6px 8px', marginBottom:i===0?4:0, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:3, marginBottom:3 }}>
+                <span style={{ fontSize:6.5, fontWeight:700, color:'#111' }}>{card.name}</span>
+                <span style={{ fontSize:4, background:'#fee2e2', color:'#ef4444', borderRadius:9999, padding:'1px 4px', fontWeight:600 }}>{card.type}</span>
+                {card.done && <span style={{ fontSize:4, background:'#dcfce7', color:'#16a34a', borderRadius:9999, padding:'1px 4px', fontWeight:600 }}>✓ 달성</span>}
               </div>
-              <div style={{ height:3.5, background:'#f0f0f0', borderRadius:9999, overflow:'hidden' }}>
-                <div style={{ height:'100%', width:`${pct}%`, background:done?'#22c55e':PRIMARY, borderRadius:9999,
+              <div style={{ fontSize:5, color:'#aaa' }}>이번 달 사용</div>
+              <div style={{ fontSize:9, fontWeight:700, color:'#111', marginBottom:3 }}>{card.used}원</div>
+              <div style={{ height:3, background:'#f0f0f0', borderRadius:9999, overflow:'hidden' }}>
+                <div style={{ height:'100%', width:`${card.pct}%`, background:card.done?'#22c55e':PRIMARY, borderRadius:9999,
                   transformOrigin:'left', transform:barsOn?'scaleX(1)':'scaleX(0)', transition:`transform 0.8s ${0.5+i*0.15}s ease` }}/>
               </div>
             </div>
           ))}
         </div>
         {/* 계좌 */}
-        <div style={{ background:'white', borderRadius:16, padding:'6px 8px', marginBottom:4, animation:'moaFadeUp 0.4s 0.5s ease both' }}>
-          <div style={{ fontSize:7.5, fontWeight:600, color:'#111', marginBottom:3 }}>계좌</div>
+        <div style={{ marginBottom:6, animation:'moaFadeUp 0.4s 0.45s ease both' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="22" x2="21" y2="22"/><rect x="3" y="10" width="4" height="12"/><rect x="10" y="10" width="4" height="12"/><rect x="17" y="10" width="4" height="12"/><path d="M12 2L2 10h20z"/></svg>
+              <span style={{ fontSize:7.5, fontWeight:700, color:'#111' }}>계좌</span>
+              <span style={{ fontSize:5, color:PRIMARY, background:PRIMARY+'15', borderRadius:9999, padding:'1px 5px', fontWeight:600 }}>2개</span>
+            </div>
+            <span style={{ fontSize:5.5, fontWeight:700, color:'white', background:PRIMARY, borderRadius:8, padding:'2px 7px' }}>+ 추가</span>
+          </div>
           {[['카카오뱅크','1,250,000원'],['토스뱅크','380,000원']].map(([bank,bal])=>(
-            <div key={bank} style={{ display:'flex', justifyContent:'space-between', padding:'2px 0', borderBottom:'1px solid #f8f8f8' }}>
-              <span style={{ fontSize:6.5, color:'#333' }}>{bank}</span>
+            <div key={bank} style={{ background:'white', borderRadius:12, padding:'5px 7px', marginBottom:2, display:'flex', alignItems:'center', gap:5, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+              <span style={{ fontSize:6.5, color:'#333', flex:1 }}>{bank}</span>
               <span style={{ fontSize:6.5, fontWeight:600, color:'#111' }}>{bal}</span>
             </div>
           ))}
         </div>
         {/* 현금 */}
-        <div style={{ background:'white', borderRadius:16, padding:'6px 8px', animation:'moaFadeUp 0.4s 0.7s ease both' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ fontSize:7.5, fontWeight:600, color:'#111' }}>현금</span>
-            <span style={{ fontSize:8.5, fontWeight:700, color:'#111' }}>120,000원</span>
+        <div style={{ background:`${PRIMARY}0D`, borderRadius:16, padding:'6px 8px', marginBottom:6, animation:'moaFadeUp 0.4s 0.6s ease both' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+              <span style={{ fontSize:7.5, fontWeight:700, color:'#111' }}>현금</span>
+            </div>
+            <span style={{ fontSize:5.5, fontWeight:700, color:'white', background:PRIMARY, borderRadius:8, padding:'2px 7px' }}>수정</span>
+          </div>
+          <div style={{ fontSize:5, color:'#888', marginBottom:3 }}>직접 보유한 현금 자산</div>
+          <div style={{ fontSize:12, fontWeight:700, color:'#111' }}>120,000원</div>
+        </div>
+        {/* 대출 */}
+        <div style={{ marginBottom:4, animation:'moaFadeUp 0.4s 0.75s ease both' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span style={{ fontSize:7.5, fontWeight:700, color:'#111' }}>대출</span>
+              <span style={{ fontSize:5, color:PRIMARY, background:PRIMARY+'15', borderRadius:9999, padding:'1px 5px', fontWeight:600 }}>1개</span>
+              <ProBadge style={{ fontSize:4.5, padding:'1px 4px' }} />
+            </div>
+            <span style={{ fontSize:5.5, fontWeight:700, color:'white', background:PRIMARY, borderRadius:8, padding:'2px 7px' }}>+ 추가</span>
+          </div>
+          <div style={{ background:'white', borderRadius:14, padding:'6px 8px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize:6.5, fontWeight:700, color:'#111', marginBottom:3 }}>전세자금대출</div>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+              <span style={{ fontSize:5, color:'#aaa' }}>상환 진행률</span>
+              <span style={{ fontSize:5, fontWeight:600, color:'#111' }}>32%</span>
+            </div>
+            <div style={{ height:3, background:'#f0f0f0', borderRadius:9999, overflow:'hidden' }}>
+              <div style={{ height:'100%', width:'32%', background:PRIMARY, borderRadius:9999 }}/>
+            </div>
           </div>
         </div>
       </div>
@@ -508,6 +628,8 @@ function MySettingsMockup() {
             { label:'가계부', desc:'주 시작 요일, 정렬 순서', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> },
             { label:'분석', desc:'탭 구성 옵션', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
             { label:'MY', desc:'기능 관리', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+            { label:'AI 분석', desc:'분석 스타일, 조언 표시', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="#fff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+            { label:'알림', desc:'결제 알림 시각 설정', icon:<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, pro:true },
           ].map((item, i, arr) => (
             <SettingsRow key={item.label} border={i < arr.length-1}>
               <MIcon><>{item.icon}</></MIcon>
@@ -515,6 +637,7 @@ function MySettingsMockup() {
                 <p style={{ fontSize:7, fontWeight:600, color:'#191F28' }}>{item.label}</p>
                 <p style={{ fontSize:4.5, color:'#8B95A1' }}>{item.desc}</p>
               </div>
+              {item.pro && <ProBadge style={{ fontSize:5, padding:'1px 4px', marginRight:2 }} />}
               {chevron}
             </SettingsRow>
           ))}
@@ -532,9 +655,14 @@ function MySettingsMockup() {
         {/* 디스플레이 */}
         <SLabel>디스플레이</SLabel>
         <SettingsCard>
-          <SettingsRow>
+          <SettingsRow border>
             <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="13.5" cy="6.5" r="1.3" fill="#fff" stroke="none"/><circle cx="17.5" cy="10.5" r="1.3" fill="#fff" stroke="none"/><circle cx="8.5" cy="7.5" r="1.3" fill="#fff" stroke="none"/><circle cx="6.5" cy="12.5" r="1.3" fill="#fff" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125A1.64 1.64 0 0 1 14.441 18h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" stroke="#fff" fill="none"/></svg></MIcon>
             <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>테마</p>
+            {chevron}
+          </SettingsRow>
+          <SettingsRow>
+            <MIcon><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20l4-14 4 14"/><path d="M5.5 15h5"/><path d="M15 20V9a3 3 0 0 1 6 0v11"/><path d="M15 15h6"/></svg></MIcon>
+            <p style={{ flex:1, fontSize:7, fontWeight:600, color:'#191F28' }}>글자 크기</p>
             {chevron}
           </SettingsRow>
         </SettingsCard>
@@ -585,20 +713,28 @@ function MySettingsMockup() {
 
 const SLIDES = [
   { id:'home', tab:'홈', title:'홈 대시보드', desc:'이번 달 소비 현황을 한눈에',
-    features:['이번 달 잔액 · 수입 · 지출 요약','반원 그래프로 예산 달성률 확인','다가오는 결제 D-day 알림','카테고리별 지출 & 최근 내역'],
+    features:['이번 달 잔액 · 수입 · 지출 요약','예산별 AI 조언 보기','반원 그래프로 예산 달성률 확인',
+      { text:'다가오는 결제 D-day 알림', pro:true },'카테고리별 지출 & 최근 내역'],
     Mockup:HomeMockup, SettingsMockup:null },
   { id:'calendar', tab:'캘린더', title:'캘린더', desc:'날짜별 소비 패턴을 파악해요',
-    features:['날짜별 수입 · 지출 금액 표시','주간 · 월간 합계 카드','2열 그리드 고정지출 + 납부일','날짜 클릭 시 상세 내역 확인'],
+    features:['날짜별 수입 · 지출 금액 표시','주간 · 월간 합계 카드',
+      { text:'고정지출 등록 & 결제일 자동 가계부 등록', pro:true },
+      { text:'결제일 전날 알림 받기', pro:true },'날짜 클릭 시 상세 내역 확인'],
     Mockup:CalendarMockup, SettingsMockup:null },
   { id:'ledger', tab:'가계부', title:'가계부', desc:'내역 관리의 모든 것',
-    features:['주간 · 월간 · 직접 기간 정렬','전체 · 소비 · 수입 · 이체 필터','카드 · 계좌 · 현금 결제수단 분류','⚙️ 카테고리 · 이월 · 공과금 탭 설정'],
+    features:['주간 · 월간 · 직접 기간 정렬','전체 · 소비 · 수입 · 이체 필터',
+      { text:'검색으로 내역 빠르게 찾기', pro:true },'숨기기 · 합치기 · 스와이프 삭제 · 다중 선택'],
     Mockup:LedgerMockup, SettingsMockup:null },
   { id:'analysis', tab:'분석', title:'분석', desc:'AI가 소비와 공과금을 분석해요',
-    features:['지난 달 대비 수입 · 지출 비교','일별 · 카테고리 · 결제수단별 분석','AI 소비 점수 & 절감 팁 제안','공과금 탭: 전기 · 수도 · 가스 전월 비교'],
+    features:['지난 달 대비 수입 · 지출 비교','일별 · 카테고리 · 결제수단별 분석','AI 소비 점수 & 절감 팁 제안 (톤 설정 가능)',
+      { text:'공과금 탭: 전기 · 수도 · 가스 전월 비교', pro:true }],
     Mockup:AnalysisMockup, SettingsMockup:AnalysisUtilityMockup,
     phoneLabels:['소비 분석', '공과금 분석'] },
   { id:'my', tab:'MY', title:'MY', desc:'나의 자산과 앱 설정',
-    features:['총 자산 · 계좌 · 현금 잔액 관리','카드 실적 달성률 · 혜택 확인','테마 변경 (6가지 스타일)','⚙️ PDF · 엑셀 내보내기 · 피드백'],
+    features:['총 자산 · 계좌 · 현금 잔액 관리 · 프로필 편집',
+      { text:'카드 실적 달성률 확인', pro:true },
+      { text:'대출 · 상환 관리', pro:true },
+      { text:'PDF · 엑셀 내보내기', pro:true },'AI 분석 스타일 · 글자 크기 등 설정'],
     Mockup:MyMockup, SettingsMockup:MySettingsMockup },
 ]
 
@@ -693,12 +829,19 @@ export default function HowToUse() {
         <h2 style={{ fontSize: 22, fontWeight: 600, color: TEXT, marginBottom: 6, lineHeight: 1.3 }}>{slide.title}</h2>
         <p style={{ fontSize: 14, color: TEXT2, marginBottom: 16, lineHeight: 1.6 }}>{slide.desc}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {slide.features.map((f, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY, flexShrink: 0, marginTop: 5 }} />
-              <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0 }}>{f}</p>
-            </div>
-          ))}
+          {slide.features.map((f, i) => {
+            const isPro = typeof f === 'object'
+            const text = isPro ? f.text : f
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIMARY, flexShrink: 0, marginTop: 5 }} />
+                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span>{text}</span>
+                  {isPro && <ProBadge style={{ fontSize: 9, padding: '1px 5px' }} />}
+                </p>
+              </div>
+            )
+          })}
         </div>
       </div>
 
