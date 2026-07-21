@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
+import ForceUpdateGate from './components/ForceUpdateGate'
 import { AppConfigProvider } from './contexts/AppConfigContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
@@ -70,7 +71,9 @@ function App() {
         <CardsProvider>
         <LoansProvider>
         <BrowserRouter>
-          <AnimatedRoutes />
+          <ForceUpdateGate>
+            <AnimatedRoutes />
+          </ForceUpdateGate>
         </BrowserRouter>
         </LoansProvider>
         </CardsProvider>
