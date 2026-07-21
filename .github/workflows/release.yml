@@ -19,6 +19,11 @@ jobs:
         with:
           xcode-version: "16.2"
 
+      # Non-default Xcode versions on GitHub's macOS runners ship with a
+      # stripped-down platform install (missing iOS SDK support), which
+      # breaks the generic/platform=iOS archive destination.
+      - run: sudo xcodebuild -downloadPlatform iOS
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
