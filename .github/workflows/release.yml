@@ -7,9 +7,17 @@ on:
 
 jobs:
   build-and-upload:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      # macos-15's default Xcode (15.4) can't resolve the
+      # @capgo/capacitor-updater -> Alamofire SPM dependency (its
+      # resolver rejects a valid 5.12.0 match while chasing an
+      # incompatible 6.3.0 candidate). A newer Xcode resolves it fine.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "16.2"
 
       - uses: actions/setup-node@v4
         with:
