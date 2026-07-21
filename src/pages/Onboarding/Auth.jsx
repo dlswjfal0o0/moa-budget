@@ -41,6 +41,7 @@ export default function Auth() {
   const [touchedEmail, setTouchedEmail] = useState(false)
   const [touchedConfirm, setTouchedConfirm] = useState(false)
   const [ageConfirmed, setAgeConfirmed] = useState(false)
+  const [termsConfirmed, setTermsConfirmed] = useState(false)
 
   // 비밀번호 강도
   const getStrength = (pw) => {
@@ -66,6 +67,7 @@ export default function Auth() {
   const handleEmail = async () => {
     setError('')
     if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
+    if (mode === 'signup' && !termsConfirmed) return setError('이용약관 및 개인정보 처리방침에 동의해주세요.')
     if (!email || !password) return setError('이메일과 비밀번호를 입력해주세요.')
     if (mode === 'signup' && password !== confirm) return setError('비밀번호가 일치하지 않아요.')
     if (password.length < 6) return setError('비밀번호는 6자 이상이어야 해요.')
@@ -105,6 +107,7 @@ export default function Auth() {
   const handleGoogle = async () => {
     setError('')
     if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
+    if (mode === 'signup' && !termsConfirmed) return setError('이용약관 및 개인정보 처리방침에 동의해주세요.')
     setLoading(true)
     try {
       // signInWithPopup은 이 웹뷰에서 동작하지 않아(popupRedirectResolver를 꺼둔 상태 —
@@ -130,6 +133,7 @@ export default function Auth() {
   const handleApple = async () => {
     setError('')
     if (mode === 'signup' && !ageConfirmed) return setError('만 14세 이상만 가입할 수 있어요.')
+    if (mode === 'signup' && !termsConfirmed) return setError('이용약관 및 개인정보 처리방침에 동의해주세요.')
     setLoading(true)
     try {
       const result = await SignInWithApple.authorize({
@@ -337,6 +341,30 @@ export default function Auth() {
                 style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
               />
               <span style={{ fontSize: 13, color: '#666' }}>만 14세 이상입니다</span>
+            </label>
+          )}
+
+          {/* 약관 동의 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
+          {mode === 'signup' && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={termsConfirmed}
+                onChange={e => setTermsConfirmed(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 13, color: '#666' }}>
+                <span
+                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
+                  style={{ color: '#3182F6', textDecoration: 'underline' }}
+                >이용약관</span>
+                {' '}및{' '}
+                <span
+                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
+                  style={{ color: '#3182F6', textDecoration: 'underline' }}
+                >개인정보 처리방침</span>
+                에 동의합니다
+              </span>
             </label>
           )}
 
