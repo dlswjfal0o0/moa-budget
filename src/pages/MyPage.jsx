@@ -15,6 +15,7 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import { version as APP_VERSION } from '../../package.json'
 
 // PDF 내보내기에서 거래 제목/카테고리를 innerHTML에 안전하게 삽입하기 위한 이스케이프
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
@@ -1439,7 +1440,7 @@ export default function MyPage() {
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg={t.primary}><SI><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>업데이트 내용</p>
-                      <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v1.5.0</span>
+                      <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v{APP_VERSION}</span>
                       {settingsChevron}
                     </button>
                     <button onClick={() => window.location.href = 'mailto:moa.studio030@gmail.com?subject=모아 앱 피드백'}

@@ -1,7 +1,7 @@
 {
   "name": "moa-budget",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,9 @@
     "build:beta": "vite build --mode beta",
     "lint": "eslint .",
     "preview": "vite preview",
-    "preview:beta": "vite preview"
+    "preview:beta": "vite preview",
+    "version:sync": "node scripts/sync-version.js",
+    "postversion": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",
