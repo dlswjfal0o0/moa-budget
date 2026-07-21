@@ -15,7 +15,9 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
-import { version as APP_VERSION } from '../../package.json'
+
+// vite.config.js의 define에서 package.json 버전을 주입한다.
+const APP_VERSION = __APP_VERSION__
 
 // PDF 내보내기에서 거래 제목/카테고리를 innerHTML에 안전하게 삽입하기 위한 이스케이프
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (

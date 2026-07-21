@@ -1,6 +1,8 @@
 import { useAppConfig } from '../contexts/AppConfigContext'
 import { compareVersions } from '../utils/version'
-import { version as APP_VERSION } from '../../package.json'
+
+// vite.config.js의 define에서 package.json 버전을 주입한다.
+const APP_VERSION = __APP_VERSION__
 
 const PRIMARY = '#3182F6'
 const TEXT = '#111827'
