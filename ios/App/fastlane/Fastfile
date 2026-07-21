@@ -58,7 +58,11 @@ platform :ios do
     # -showBuildSettings` call times out waiting on that first resolve
     # (its retry budget is only a few seconds). Warm the package cache
     # explicitly first so that call resolves instantly.
-    sh("xcodebuild -resolvePackageDependencies -scheme App -project App.xcodeproj")
+    # `sh` runs relative to this Fastfile's own folder (fastlane/), one
+    # level below App.xcodeproj, so use an absolute path instead of
+    # relying on a relative one.
+    xcodeproj_path = File.expand_path("../App.xcodeproj", __dir__)
+    sh("xcodebuild -resolvePackageDependencies -scheme App -project #{xcodeproj_path.shellescape}")
 
     # xcargs applies to every target in the build graph, including the
     # SPM package dependencies (Alamofire, Firebase, etc.) — those are
