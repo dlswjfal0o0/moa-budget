@@ -55,6 +55,14 @@
 				<string>com.googleusercontent.apps.327190499292-pttucbjun5hl4gff7fqh60kg3prc70kd</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.moa.budget</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>moabudget</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
