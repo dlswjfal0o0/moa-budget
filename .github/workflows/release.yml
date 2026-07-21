@@ -11,18 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # macos-15's default Xcode (15.4) can't resolve the
-      # @capgo/capacitor-updater -> Alamofire SPM dependency (its
-      # resolver rejects a valid 5.12.0 match while chasing an
-      # incompatible 6.3.0 candidate). A newer Xcode resolves it fine.
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "16.2"
-
-      # Non-default Xcode versions on GitHub's macOS runners ship with a
-      # stripped-down platform install (missing iOS SDK support), which
-      # breaks the generic/platform=iOS archive destination.
-      - run: sudo xcodebuild -downloadPlatform iOS
+      # Deliberately NOT pinning a specific Xcode version here: macos-14's
+      # default (15.4) can't resolve the @capgo/capacitor-updater ->
+      # Alamofire SPM dependency, but side-installed non-default Xcode
+      # versions on GitHub's runners ship with stripped-down platform
+      # installs (no iOS SDK) that `xcodebuild -downloadPlatform` can't
+      # reliably fix in headless CI. macos-15's own default Xcode is newer
+      # than 15.4 and comes with iOS platform support already installed.
 
       - uses: actions/setup-node@v4
         with:
