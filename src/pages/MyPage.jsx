@@ -16,6 +16,9 @@ import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
 
+// vite.config.js의 define에서 package.json 버전을 주입한다.
+const APP_VERSION = __APP_VERSION__
+
 // PDF 내보내기에서 거래 제목/카테고리를 innerHTML에 안전하게 삽입하기 위한 이스케이프
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -109,6 +112,7 @@ export default function MyPage() {
 
   // selectedLoan이 열릴 때 Firestore에서 직접 상환 트랜잭션 불러오기
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selectedLoan) { setLoanRepaymentTxns([]); return }
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
     if (isDemo) {
@@ -144,6 +148,12 @@ export default function MyPage() {
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
+      if (!u) {
+        // 세션 복원이 아직 안 끝난 상태에서 첫 콜백이 null로 먼저 올 수 있다 —
+        // 실제로 로그아웃된 게 맞는지 authStateReady()로 한 번 더 확인한다.
+        await auth.authStateReady()
+        u = auth.currentUser
+      }
       if (!u) navigate('/auth', { replace: true })
       else {
         setUser(u)
@@ -1433,7 +1443,7 @@ export default function MyPage() {
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg={t.primary}><SI><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>업데이트 내용</p>
-                      <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v1.5.0</span>
+                      <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v{APP_VERSION}</span>
                       {settingsChevron}
                     </button>
                     <button onClick={() => window.location.href = 'mailto:moa.studio030@gmail.com?subject=모아 앱 피드백'}

@@ -1,7 +1,7 @@
 {
   "name": "moa-budget",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,15 +9,19 @@
     "build:beta": "vite build --mode beta",
     "lint": "eslint .",
     "preview": "vite preview",
-    "preview:beta": "vite preview"
+    "preview:beta": "vite preview",
+    "version:sync": "node scripts/sync-version.js",
+    "postversion": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",
     "@capacitor-firebase/authentication": "^8.3.0",
+    "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.4.1",
+    "@capgo/capacitor-updater": "^8.51.2",
     "@sentry/node": "^10.65.0",
     "@sentry/react": "^10.65.0",
     "firebase": "^12.14.0",

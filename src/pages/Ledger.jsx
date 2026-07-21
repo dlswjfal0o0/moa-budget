@@ -134,7 +134,7 @@ const SectionLabel = ({ children }) => (
 export default function Ledger() {
   const { themeData } = useTheme()
   const { cards: userCardsList } = useCards()
-  const { loans, setLoans } = useLoans()
+  const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
   const navigate = useNavigate()
   const now = new Date()
@@ -214,10 +214,14 @@ export default function Ledger() {
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
-      if (!u) navigate('/auth', { replace: true })
-      else {
-        setUser(u)
+      if (!u) {
+        // 세션 복원이 아직 안 끝난 상태에서 첫 콜백이 null로 먼저 올 수 있다 —
+        // 실제로 로그아웃된 게 맞는지 authStateReady()로 한 번 더 확인한다.
+        await auth.authStateReady()
+        u = auth.currentUser
       }
+      if (!u) { navigate('/auth', { replace: true }); return }
+      setUser(u)
     })
     return unsub
   }, [])

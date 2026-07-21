@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "3783UTR3VM.com.moa.budget",
+        "paths": ["/home", "/ledger", "/calendar", "/analysis", "/my"]
+      }
+    ]
+  }
+}

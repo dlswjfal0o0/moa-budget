@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app"
 import { initializeAuth } from "firebase/auth"
 import { initializeFirestore } from "firebase/firestore"
+import { Sentry } from "../utils/sentry"
 
 // App Check(reCAPTCHA v3)는 시도했다가 되돌렸다 — Capacitor iOS의 WKWebView 안에서
 // reCAPTCHA 챌린지/토큰 교환이 네트워크 단에서 실패했고(auth/network-request-failed),
@@ -9,13 +10,15 @@ import { initializeFirestore } from "firebase/firestore"
 // 붙이려면 iOS 네이티브 App Attest/DeviceCheck 프로바이더로 가야 하고, 별도로 충분히
 // 검증한 뒤 도입해야 한다.
 
+// 환경변수(.env / .env.development)에서 읽되, 값이 없으면 기존 하드코딩 값으로 폴백한다
+// (환경변수 파일이 아직 없는 로컬 체크아웃에서도 동작이 끊기지 않게 하기 위함).
 const firebaseConfig = {
-  apiKey: "AIzaSyBSeLYCOH2bL3KXKQby2-ty_y3E9n9msys",
-  authDomain: "moa-budget.firebaseapp.com",
-  projectId: "moa-budget",
-  storageBucket: "moa-budget.firebasestorage.app",
-  messagingSenderId: "327190499292",
-  appId: "1:327190499292:web:1363d5cf3d6c84bc47c919"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBSeLYCOH2bL3KXKQby2-ty_y3E9n9msys",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "moa-budget.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "moa-budget",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "moa-budget.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "327190499292",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:327190499292:web:1363d5cf3d6c84bc47c919"
 }
 
 const app = initializeApp(firebaseConfig)
@@ -45,14 +48,34 @@ class LocalStorageAuthPersistence {
     }
   }
   async _set(key, value) {
-    localStorage.setItem(key, JSON.stringify(value))
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch (err) {
+      // 쓰기 실패(쿼터 초과 등)를 삼키지 않고 남겨두되, 절대 던지지는 않는다 — 여기서
+      // 던지면 Firebase Auth 내부 상태 전이 도중이라 로그인 세션이 깨질 수 있다.
+      Sentry.captureException(err)
+    }
   }
   async _get(key) {
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch (err) {
+      // 과거 비정상 종료 등으로 저장된 값이 깨져 있으면 JSON.parse가 예외를 던진다.
+      // 이 예외를 그대로 흘려보내면 Firebase의 세션 복원 경로가 실패해서 실제로는
+      // 로그인 상태인 유저가 "복원할 세션 없음"으로 취급돼 로그아웃 화면으로 튕기는
+      // 오류로 이어질 수 있다 — 그래서 여기서 잡아 null로 폴백한다.
+      Sentry.captureException(err)
+      return null
+    }
   }
   async _remove(key) {
-    localStorage.removeItem(key)
+    try {
+      localStorage.removeItem(key)
+    } catch (err) {
+      Sentry.captureException(err)
+    }
   }
   _addListener() {}
   _removeListener() {}

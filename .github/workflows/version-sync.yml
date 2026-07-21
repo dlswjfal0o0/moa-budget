@@ -1,0 +1,35 @@
+name: Version Sync
+
+# package.json의 version이 바뀌거나 새 커밋이 쌓일 때마다 iOS
+# project.pbxproj의 MARKETING_VERSION/CURRENT_PROJECT_VERSION을 자동으로
+# 맞춰 커밋한다. 실제 아카이브/서명/TestFlight 업로드는 하지 않는다 —
+# 그건 App Store Connect API 키 등 별도 시크릿이 필요해서 이 워크플로 밖이다.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'ios/App/App.xcodeproj/project.pbxproj'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/sync-version.js
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- ios/App/App.xcodeproj/project.pbxproj; then
+            echo "No version changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ios/App/App.xcodeproj/project.pbxproj
+          git commit -m "chore: sync iOS version/build number [skip ci]"
+          git push

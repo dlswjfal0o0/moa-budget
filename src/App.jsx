@@ -1,6 +1,9 @@
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
+import ForceUpdateGate from './components/ForceUpdateGate'
+import DeepLinkListener from './components/DeepLinkListener'
+import { AppConfigProvider } from './contexts/AppConfigContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
@@ -63,17 +66,22 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <SettingsProvider>
-      <CardsProvider>
-      <LoansProvider>
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
-      </LoansProvider>
-      </CardsProvider>
-      </SettingsProvider>
-    </ThemeProvider>
+    <AppConfigProvider>
+      <ThemeProvider>
+        <SettingsProvider>
+        <CardsProvider>
+        <LoansProvider>
+        <BrowserRouter>
+          <ForceUpdateGate>
+            <DeepLinkListener />
+            <AnimatedRoutes />
+          </ForceUpdateGate>
+        </BrowserRouter>
+        </LoansProvider>
+        </CardsProvider>
+        </SettingsProvider>
+      </ThemeProvider>
+    </AppConfigProvider>
   )
 }
 

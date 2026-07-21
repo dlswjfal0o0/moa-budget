@@ -1,0 +1,63 @@
+default_platform(:ios)
+
+# 이 lane은 CI(GitHub Actions, macos-14) 전용이다. 로컬 Xcode 개발 환경은
+# CODE_SIGN_STYLE = Automatic을 그대로 쓰고(project.pbxproj), 여기서는
+# build_app 호출 시 xcargs로만 수동 서명을 오버라이드해서 로컬 개발에는
+# 영향이 없다.
+#
+# fastlane match 대신 GitHub Secrets에 base64로 저장해둔 배포용 인증서(.p12)와
+# 프로비저닝 프로파일(.mobileprovision)을 매 실행마다 임시 키체인에 import한다 —
+# 별도 인증서 저장 저장소를 관리할 필요가 없는, 개인 프로젝트 규모에 맞는 방식.
+platform :ios do
+  desc "Build and upload a release build to TestFlight"
+  lane :beta do
+    keychain_password = ENV.fetch("IOS_CI_KEYCHAIN_PASSWORD")
+    keychain_name = "ci-signing.keychain-db"
+
+    create_keychain(
+      name: keychain_name,
+      password: keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+    )
+
+    cert_path = File.join(Dir.mktmpdir, "dist_certificate.p12")
+    File.binwrite(cert_path, Base64.decode64(ENV.fetch("IOS_DIST_CERTIFICATE_BASE64")))
+    import_certificate(
+      certificate_path: cert_path,
+      certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD"),
+      keychain_name: keychain_name,
+      keychain_password: keychain_password,
+    )
+
+    profile_path = File.join(Dir.mktmpdir, "distribution.mobileprovision")
+    File.binwrite(profile_path, Base64.decode64(ENV.fetch("IOS_PROVISIONING_PROFILE_BASE64")))
+    profile = install_provisioning_profile(path: profile_path)
+
+    api_key_path = File.join(Dir.mktmpdir, "app_store_connect_api_key.p8")
+    File.binwrite(api_key_path, Base64.decode64(ENV.fetch("APP_STORE_CONNECT_API_KEY_BASE64")))
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_API_ISSUER_ID"),
+      key_filepath: api_key_path,
+    )
+
+    build_app(
+      workspace: "App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      xcargs: [
+        "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY=\"iPhone Distribution\"",
+        "PROVISIONING_PROFILE_SPECIFIER=#{profile}",
+        "DEVELOPMENT_TEAM=3783UTR3VM",
+      ].join(" "),
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end

@@ -1,0 +1,40 @@
+name: Release (TestFlight)
+
+# 수동 실행 전용 — TestFlight 업로드는 매 커밋마다 나가는 게 아니라
+# 릴리스하기로 결정했을 때 의도적으로 실행한다.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - run: node scripts/sync-version.js
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: ios/App
+
+      - name: Build and upload to TestFlight
+        working-directory: ios/App
+        env:
+          IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
+          IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          IOS_CI_KEYCHAIN_PASSWORD: ${{ secrets.IOS_CI_KEYCHAIN_PASSWORD }}
+        run: bundle exec fastlane beta

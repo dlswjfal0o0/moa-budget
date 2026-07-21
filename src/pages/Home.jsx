@@ -135,22 +135,26 @@ export default function Home() {
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
-      if (!u) navigate('/auth', { replace: true })
-      else {
-        setUser(u)
-        try {
-          const snap = await getDoc(doc(db, 'users', u.uid))
-          if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
-          if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
-          if (snap.exists() && snap.data().aiCache) {
-            const remote = snap.data().aiCache
-            setAiCache(remote)
-            try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
-          }
-        } catch (err) {
-          console.error('[Home] 사용자 데이터 로딩 실패', err)
-          setLoadError('예산 정보를 불러오지 못했어요.')
+      if (!u) {
+        // 세션 복원이 아직 안 끝난 상태에서 첫 콜백이 null로 먼저 올 수 있다 —
+        // 실제로 로그아웃된 게 맞는지 authStateReady()로 한 번 더 확인한다.
+        await auth.authStateReady()
+        u = auth.currentUser
+      }
+      if (!u) { navigate('/auth', { replace: true }); return }
+      setUser(u)
+      try {
+        const snap = await getDoc(doc(db, 'users', u.uid))
+        if (snap.exists() && snap.data().budgets) setBudgets(snap.data().budgets)
+        if (snap.data().fixedExpenses) setFixedExpenses(snap.data().fixedExpenses)
+        if (snap.exists() && snap.data().aiCache) {
+          const remote = snap.data().aiCache
+          setAiCache(remote)
+          try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
         }
+      } catch (err) {
+        console.error('[Home] 사용자 데이터 로딩 실패', err)
+        setLoadError('예산 정보를 불러오지 못했어요.')
       }
     })
     return unsub

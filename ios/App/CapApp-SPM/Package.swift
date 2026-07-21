@@ -14,7 +14,9 @@ let package = Package(
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.1"),
         .package(name: "CapacitorCommunityAppleSignIn", path: "../../../node_modules/@capacitor-community/apple-sign-in"),
         .package(name: "CapacitorFirebaseAuthentication", path: "../../../node_modules/@capacitor-firebase/authentication"),
-        .package(name: "CapacitorHaptics", path: "../../../node_modules/@capacitor/haptics")
+        .package(name: "CapacitorApp", path: "../../../node_modules/@capacitor/app"),
+        .package(name: "CapacitorHaptics", path: "../../../node_modules/@capacitor/haptics"),
+        .package(name: "CapgoCapacitorUpdater", path: "../../../node_modules/@capgo/capacitor-updater")
     ],
     targets: [
         .target(
@@ -24,7 +26,9 @@ let package = Package(
                 .product(name: "Cordova", package: "capacitor-swift-pm"),
                 .product(name: "CapacitorCommunityAppleSignIn", package: "CapacitorCommunityAppleSignIn"),
                 .product(name: "CapacitorFirebaseAuthentication", package: "CapacitorFirebaseAuthentication"),
-                .product(name: "CapacitorHaptics", package: "CapacitorHaptics")
+                .product(name: "CapacitorApp", package: "CapacitorApp"),
+                .product(name: "CapacitorHaptics", package: "CapacitorHaptics"),
+                .product(name: "CapgoCapacitorUpdater", package: "CapgoCapacitorUpdater")
             ]
         )
     ]
