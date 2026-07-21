@@ -26,3 +26,4 @@ dist_*
 *.sw?
 .vercel
 .env*
+.capgo_key_v2

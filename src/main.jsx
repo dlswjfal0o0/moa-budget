@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { initSentry } from './utils/sentry'
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+
+CapacitorUpdater.notifyAppReady();
 
 initSentry()
 

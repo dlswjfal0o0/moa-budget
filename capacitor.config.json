@@ -8,7 +8,15 @@
   "plugins": {
     "FirebaseAuthentication": {
       "skipNativeAuth": true,
-      "providers": ["google.com"]
+      "providers": [
+        "google.com"
+      ]
+    },
+    "CapacitorUpdater": {
+      "appId": "com.moa.budget",
+      "version": "0.0.0",
+      "autoUpdate": "atBackground",
+      "publicKey": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAmkUUIRc31xjkrx+ltqTCqnHy1F4DFJ8LkY7zdhz+1fhwwVfwZzCJ\nUmHL/AcxOOUKdewtL3vl1Of6qcDp/2s7yqljLSapghV6fYosK1yXhjfU5QlMZ9r/\np3ewyNuJ2ldKDsppN8mpJEdT0LL3HV68xdpsqN1fvvoE02cDgks56SB3q7h3UxJf\n3j9lakoWph5iJIqKOSp0E3eMEG1E9WASaYIBwH7lBZSfYed0DoE/bUwiU/J8Av1L\nTIi3AFBe2tHSxCPNKIx4oy8vC698dz+DxRnuiq1XXvq3PFKA6d6JqalKBIPbv8M3\nTy1o+wKaXubIjD8ua1e2LcrB9FPbKrer8QIDAQAB\n-----END RSA PUBLIC KEY-----\n"
     }
   }
 }
