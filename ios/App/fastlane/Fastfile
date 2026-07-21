@@ -2,10 +2,10 @@ require "shellwords"
 
 default_platform(:ios)
 
-# 이 lane은 CI(GitHub Actions, macos-14) 전용이다. 로컬 Xcode 개발 환경은
+# 이 lane은 CI(GitHub Actions) 전용이다. 로컬 Xcode 개발 환경은
 # CODE_SIGN_STYLE = Automatic을 그대로 쓰고(project.pbxproj), 여기서는
-# build_app 호출 시 xcargs로만 수동 서명을 오버라이드해서 로컬 개발에는
-# 영향이 없다.
+# update_code_signing_settings로 App 타겟의 CI 체크아웃 사본만 수동 서명으로
+# 바꿔서 로컬 개발에는 영향이 없다 (커밋되어 돌아가지 않는, 그 실행 한정 변경).
 #
 # fastlane match 대신 GitHub Secrets에 base64로 저장해둔 배포용 인증서(.p12)와
 # 프로비저닝 프로파일(.mobileprovision)을 매 실행마다 임시 키체인에 import한다 —
@@ -53,16 +53,24 @@ platform :ios do
       key_filepath: api_key_path,
     )
 
+    # xcargs applies to every target in the build graph, including the
+    # SPM package dependencies (Alamofire, Firebase, etc.) — those are
+    # libraries and error out if forced into manual signing. Scope the
+    # signing override to just the App target's own project settings
+    # instead, which leaves the SPM packages on their own defaults.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App.xcodeproj",
+      team_id: "3783UTR3VM",
+      code_sign_identity: "iPhone Distribution",
+      profile_uuid: profile_uuid,
+      targets: ["App"],
+    )
+
     build_app(
       project: "App.xcodeproj",
       scheme: "App",
       export_method: "app-store",
-      xcargs: [
-        "CODE_SIGN_STYLE=Manual",
-        "CODE_SIGN_IDENTITY=\"iPhone Distribution\"",
-        "PROVISIONING_PROFILE_SPECIFIER=#{profile_uuid}",
-        "DEVELOPMENT_TEAM=3783UTR3VM",
-      ].join(" "),
     )
 
     upload_to_testflight(
