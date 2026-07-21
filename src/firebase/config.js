@@ -9,13 +9,15 @@ import { initializeFirestore } from "firebase/firestore"
 // 붙이려면 iOS 네이티브 App Attest/DeviceCheck 프로바이더로 가야 하고, 별도로 충분히
 // 검증한 뒤 도입해야 한다.
 
+// 환경변수(.env / .env.development)에서 읽되, 값이 없으면 기존 하드코딩 값으로 폴백한다
+// (환경변수 파일이 아직 없는 로컬 체크아웃에서도 동작이 끊기지 않게 하기 위함).
 const firebaseConfig = {
-  apiKey: "AIzaSyBSeLYCOH2bL3KXKQby2-ty_y3E9n9msys",
-  authDomain: "moa-budget.firebaseapp.com",
-  projectId: "moa-budget",
-  storageBucket: "moa-budget.firebasestorage.app",
-  messagingSenderId: "327190499292",
-  appId: "1:327190499292:web:1363d5cf3d6c84bc47c919"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBSeLYCOH2bL3KXKQby2-ty_y3E9n9msys",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "moa-budget.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "moa-budget",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "moa-budget.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "327190499292",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:327190499292:web:1363d5cf3d6c84bc47c919"
 }
 
 const app = initializeApp(firebaseConfig)
