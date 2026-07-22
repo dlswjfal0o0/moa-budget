@@ -24,6 +24,18 @@ platform :ios do
       timeout: 3600,
     )
 
+    # A fresh CI keychain has no trust chain for Apple's own certificates.
+    # codesign/xcodebuild don't seem to mind locally, but App Store
+    # Connect's server-side validation rejects the upload as "not signed
+    # using an Apple submission certificate" without the WWDR
+    # intermediate present to complete the chain.
+    keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}")
+    ["AppleWWDRCAG3.cer", "AppleWWDRCAG2.cer"].each do |wwdr_cert|
+      wwdr_path = File.join(Dir.mktmpdir, wwdr_cert)
+      sh("curl -sSL -o #{wwdr_path.shellescape} https://www.apple.com/certificateauthority/#{wwdr_cert}")
+      sh("security import #{wwdr_path.shellescape} -k #{keychain_path.shellescape} -A")
+    end
+
     cert_path = File.join(Dir.mktmpdir, "dist_certificate.p12")
     File.binwrite(cert_path, Base64.decode64(ENV.fetch("IOS_DIST_CERTIFICATE_BASE64")))
     import_certificate(
