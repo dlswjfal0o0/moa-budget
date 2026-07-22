@@ -45,6 +45,10 @@ platform :ios do
       keychain_password: keychain_password,
     )
 
+    # Diagnostic: confirm exactly what got imported and whether the
+    # system considers it a valid codesigning identity.
+    sh("security find-identity -v -p codesigning #{keychain_path.shellescape} || true")
+
     profile_path = File.join(Dir.mktmpdir, "distribution.mobileprovision")
     File.binwrite(profile_path, Base64.decode64(ENV.fetch("IOS_PROVISIONING_PROFILE_BASE64")))
     install_provisioning_profile(path: profile_path)
@@ -101,6 +105,13 @@ platform :ios do
       output_directory: "build",
       output_name: "App",
     )
+
+    # Diagnostic: show exactly what signed the exported .app, since the
+    # upload keeps getting rejected for reasons that don't match what
+    # we've configured so far.
+    archive_path = lane_context[SharedValues::XCODEBUILD_ARCHIVE]
+    app_path = Dir.glob(File.join(archive_path, "Products/Applications/*.app")).first
+    sh("codesign -dvvv #{app_path.shellescape} 2>&1 || true") if app_path
 
     upload_to_testflight(
       api_key: api_key,
