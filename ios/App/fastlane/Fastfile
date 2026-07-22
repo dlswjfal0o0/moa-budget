@@ -36,14 +36,18 @@ platform :ios do
       sh("security import #{wwdr_path.shellescape} -k #{keychain_path.shellescape} -A")
     end
 
+    # Bypassing fastlane's import_certificate action here — it has
+    # consistently reported "MAC verification failed (wrong password?)"
+    # across several independently-generated certificates/passwords that
+    # all verified fine locally with openssl, which points at the action's
+    # wrapper rather than the actual credentials. Shelling out to
+    # `security import` directly (same as the WWDR imports above, which
+    # have never failed) rules that out.
     cert_path = File.join(Dir.mktmpdir, "dist_certificate.p12")
     File.binwrite(cert_path, Base64.decode64(ENV.fetch("IOS_DIST_CERTIFICATE_BASE64")))
-    import_certificate(
-      certificate_path: cert_path,
-      certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD"),
-      keychain_name: keychain_name,
-      keychain_password: keychain_password,
-    )
+    cert_password = ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD")
+    sh("security import #{cert_path.shellescape} -k #{keychain_path.shellescape} -P #{cert_password.shellescape} -T /usr/bin/codesign -T /usr/bin/security -A")
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k #{keychain_password.shellescape} #{keychain_path.shellescape}")
 
     # Diagnostic: confirm exactly what got imported and whether the
     # system considers it a valid codesigning identity.
