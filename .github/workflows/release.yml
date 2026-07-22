@@ -46,3 +46,13 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
           IOS_CI_KEYCHAIN_PASSWORD: ${{ secrets.IOS_CI_KEYCHAIN_PASSWORD }}
         run: bundle exec fastlane beta
+
+      # Keep the built IPA even if the upload step fails, so it can be
+      # downloaded and tried manually via Transporter to isolate whether
+      # a failure is CI/altool-specific or an account/cert/profile issue.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: App-ipa
+          path: ios/App/build/App.ipa
+          if-no-files-found: ignore
