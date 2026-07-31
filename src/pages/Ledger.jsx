@@ -415,9 +415,23 @@ export default function Ledger() {
     const txn = transactions.find(t => t.id === id)
     setTxnExitId(id)
     await new Promise(r => setTimeout(r, 250))
-    await deleteDoc(doc(db, 'transactions', id))
-    setTransactions(prev => prev.filter(t => t.id !== id))
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    const mergedOriginalIds = txn?.isMerged ? (txn.mergedItems || []).map(item => item.id) : []
+    if (!isDemo && user) {
+      await deleteDoc(doc(db, 'transactions', id))
+      for (const originalId of mergedOriginalIds) {
+        await updateDoc(doc(db, 'transactions', originalId), { mergedInto: null })
+      }
+    }
+    setTransactions(prev => {
+      const without = prev.filter(t => t.id !== id)
+      return mergedOriginalIds.length
+        ? without.map(t => mergedOriginalIds.includes(t.id) ? { ...t, mergedInto: null } : t)
+        : without
+    })
     setSelectedId(null)
+    setSwipedId(null)
+    setExpandedMergeId(null)
     setTxnExitId(null)
     setDeletedTxn(txn)
     if (txnUndoTimerRef.current) clearTimeout(txnUndoTimerRef.current)
@@ -432,9 +446,24 @@ export default function Ledger() {
     setTxnUndoSnackbar(false)
     // eslint-disable-next-line no-unused-vars
     const { id: _id, ...data } = deletedTxn
-    const ref = await addDoc(collection(db, 'transactions'), data)
-    const restoredId = ref.id
-    setTransactions(prev => [{ ...data, id: restoredId }, ...prev])
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    const originalIds = deletedTxn.isMerged ? (deletedTxn.mergedItems || []).map(item => item.id) : []
+    let restoredId
+    if (!isDemo && user) {
+      const ref = await addDoc(collection(db, 'transactions'), data)
+      restoredId = ref.id
+      for (const originalId of originalIds) {
+        await updateDoc(doc(db, 'transactions', originalId), { mergedInto: restoredId })
+      }
+    } else {
+      restoredId = deletedTxn.isMerged ? `merged_${Date.now()}` : String(Date.now())
+    }
+    setTransactions(prev => {
+      const withRestored = [{ ...data, id: restoredId }, ...prev]
+      return originalIds.length
+        ? withRestored.map(t => originalIds.includes(t.id) ? { ...t, mergedInto: restoredId } : t)
+        : withRestored
+    })
     setNewTxnId(restoredId)
     setTimeout(() => setNewTxnId(null), 800)
     setDeletedTxn(null)
@@ -840,18 +869,29 @@ export default function Ledger() {
                   const amtPrefix = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''
                   const selBg = isSelected ? `${themeData.primary}15` : '#fff'
                   return (
-                    <div key={t.id} style={{ borderRadius: 20, overflow: 'hidden', background: selBg, boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10,
+                    <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: selBg, boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10,
                       border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
                       transition: 'border-color 0.15s, background 0.15s' }}>
+                      {!selectionMode && swipedId === t.id && (
+                        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          onClick={() => handleDelete(t.id)}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6"/><path d="M14 11v6"/>
+                          </svg>
+                        </div>
+                      )}
                       <div
                         onClick={() => {
                           if (selectionMode) { handleSelectItem(t.id) }
-                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null) }
+                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); setSwipedId(null) }
                         }}
                         onTouchStart={e => handleItemTouchStart(e, t)}
                         onTouchMove={handleItemTouchMove}
                         onTouchEnd={e => handleItemTouchEnd(e, t.id)}
-                        style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68 }}>
+                        style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
+                          transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
+                          transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, background: selBg }}>
                         {/* 선택 체크박스 */}
                         {selectionMode && (
                           <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
@@ -920,6 +960,12 @@ export default function Ledger() {
                               </div>
                             )
                           })}
+                          <button
+                            onClick={() => handleDelete(t.id)}
+                            style={{ width: '100%', marginTop: 8, padding: '13px', borderRadius: 16, border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            합산 내역 삭제
+                          </button>
                         </div>
                       )}
                     </div>
