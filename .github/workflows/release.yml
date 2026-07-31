@@ -38,6 +38,15 @@ jobs:
       - name: Build and upload to TestFlight
         working-directory: ios/App
         env:
+          # fastlane has been warning "requires your locale to be set to
+          # UTF-8" in every run — turns out to matter: without a UTF-8
+          # locale, Ruby's default external encoding is US-ASCII, which
+          # crashes on the Korean PRODUCT_NAME ("모아 moa") anywhere the
+          # Fastfile reads/writes the pbxproj as text (e.g. via the
+          # xcodeproj gem). Set at job-start so it's in effect before the
+          # Ruby process launches.
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
           IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
           IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
