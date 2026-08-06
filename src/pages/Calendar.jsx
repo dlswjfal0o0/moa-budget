@@ -10,10 +10,13 @@ import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
 import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
+import { syncPaymentNotifications } from '../utils/paymentNotifications'
 
 export default function Calendar() {
   const { themeData } = useTheme()
   const { cards } = useCards()
+  const settings = useSettings()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -127,6 +130,17 @@ export default function Calendar() {
         setLoadError('거래내역을 불러오지 못했어요.')
       })
   }, [user, viewYear, viewMonth, refreshTrigger])
+
+  useEffect(() => {
+    syncPaymentNotifications({
+      fixedExpenses,
+      settings: {
+        notifyPaymentEnabled: settings?.notifyPaymentEnabled,
+        notifyPaymentTime: settings?.notifyPaymentTime,
+        notifyNightConsent: settings?.notifyNightConsent,
+      },
+    })
+  }, [fixedExpenses, settings?.notifyPaymentEnabled, settings?.notifyPaymentTime, settings?.notifyNightConsent])
 
   const saveFixed = async (updated) => {
     setFixedExpenses(updated)
