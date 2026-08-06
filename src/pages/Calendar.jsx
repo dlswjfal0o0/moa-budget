@@ -10,10 +10,13 @@ import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
 import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
+import { useSettings } from '../contexts/SettingsContext'
+import { syncPaymentNotifications } from '../utils/paymentNotifications'
 
 export default function Calendar() {
   const { themeData } = useTheme()
   const { cards } = useCards()
+  const settings = useSettings()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -128,6 +131,17 @@ export default function Calendar() {
       })
   }, [user, viewYear, viewMonth, refreshTrigger])
 
+  useEffect(() => {
+    syncPaymentNotifications({
+      fixedExpenses,
+      settings: {
+        notifyPaymentEnabled: settings?.notifyPaymentEnabled,
+        notifyPaymentTime: settings?.notifyPaymentTime,
+        notifyNightConsent: settings?.notifyNightConsent,
+      },
+    })
+  }, [fixedExpenses, settings?.notifyPaymentEnabled, settings?.notifyPaymentTime, settings?.notifyNightConsent])
+
   const saveFixed = async (updated) => {
     setFixedExpenses(updated)
     if (user) await setDoc(doc(db, 'users', user.uid), { fixedExpenses: updated }, { merge: true })
@@ -169,7 +183,7 @@ export default function Calendar() {
           title: f.title, amount: f.amount,
           category: f.category || '기타', payment: f.payment || '현금',
           date: dateStr, time: '00:00', memo: '고정지출',
-          fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
+          fixedExpenseId: String(f.id), isAutoRegistered: true, createdAt: new Date().toISOString()
         })
         setRefreshTrigger(t => t + 1)
       }

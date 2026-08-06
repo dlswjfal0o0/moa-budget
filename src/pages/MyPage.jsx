@@ -15,6 +15,7 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
 const APP_VERSION = __APP_VERSION__
@@ -38,7 +39,8 @@ export default function MyPage() {
   const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
-  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale } = useSettings()
+  const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
+  const [notifyPermissionError, setNotifyPermissionError] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
@@ -661,7 +663,7 @@ export default function MyPage() {
   )
 
   const settingsChevron = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', categories: '카테고리 관리', theme: '테마', 'font-size': '글자 크기', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
+  const settingsPageTitle = { root: '설정', home: '홈', ledger: '가계부', analysis: '분석', my: 'MY', ai: 'AI 분석', notifications: '알림', categories: '카테고리 관리', theme: '테마', 'font-size': '글자 크기', export: '데이터 내보내기', updates: '업데이트 내용', 'delete-account': '계정 탈퇴' }[settingsPage] || '설정'
   const updatesList = [
     { version: 'v1.6.0', date: '2026.07.11', changes: ['[ MY - 설정 ] AI 분석 탭 추가 — 분석 스타일(공감형~이성형), 조언 표시 설정', '[ 온보딩 ] 회원가입 후 AI 분석 스타일 선택 화면 추가', '[ 분석 ] AI 소비·공과금 분석에 사용자 설정 스타일/조언 반영'] },
     { version: 'v1.5.0', date: '2026.06.22', changes: ['[ MY - 설정 ] 설정 통합 및 계정 관리 기능 개선', '[ MY - 카드 ] 신용카드 추적 방식 로직 수정', '[ MY - 카드 ] 변경사항 자동 반영'] },
@@ -1369,6 +1371,7 @@ export default function MyPage() {
                       { label: '분석', desc: '탭 구성 옵션', page: 'analysis', bg: t.primary, icon: <SI><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></SI> },
                       { label: 'MY', desc: '기능 관리', page: 'my', bg: t.primary, icon: <SI><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></SI> },
                       { label: 'AI 분석', desc: '분석 스타일, 조언 표시', page: 'ai', bg: t.primary, icon: <SI><path d="M12 2a5 5 0 0 0-5 5c0 1.6.8 3 2 3.87V13a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.13c1.2-.87 2-2.27 2-3.87a5 5 0 0 0-5-5z"/><line x1="9" y1="19" x2="15" y2="19"/><line x1="10" y1="22" x2="14" y2="22"/></SI> },
+                      { label: '알림', desc: '다가오는 결제 알림', page: 'notifications', bg: t.primary, icon: <SI><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></SI> },
                     ].map((item, i, arr) => (
                       <button key={item.page} onClick={() => setSettingsPage(item.page)}
                         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid #F2F4F6' : 'none' }}>
@@ -1591,6 +1594,50 @@ export default function MyPage() {
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>분석 결과와 함께 실천 방법을 제안</p>
                       </div>
                       <SToggle on={aiShowAdvice} onChange={setAiShowAdvice} primary={t.primary} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── 알림 설정 ── */}
+              {settingsPage === 'notifications' && (
+                <div style={{ padding: '0 20px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '20px 4px 8px', letterSpacing: 0.3 }}>다가오는 결제 알림</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>결제 알림 받기</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>고정지출 결제일 전날 알림을 보내드려요</p>
+                      </div>
+                      <SToggle on={notifyPaymentEnabled} onChange={async (val) => {
+                        setNotifyPermissionError('')
+                        if (val) {
+                          const granted = await requestPaymentNotificationPermission()
+                          if (!granted) { setNotifyPermissionError('기기 설정에서 알림 권한을 허용해주세요.'); return }
+                        }
+                        setNotifyPaymentEnabled(val)
+                      }} primary={t.primary} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', opacity: notifyPaymentEnabled ? 1 : 0.4 }}>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>알림 시각</p>
+                      <input type="time" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
+                        onChange={e => setNotifyPaymentTime(e.target.value)}
+                        style={{ border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '8px 10px', fontSize: 14, color: '#191F28', background: '#F7F8FA' }} />
+                    </div>
+                  </div>
+                  {notifyPermissionError && (
+                    <p style={{ fontSize: 12, color: '#ef4444', padding: '0 4px 12px' }}>{notifyPermissionError}</p>
+                  )}
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '0 4px 8px', letterSpacing: 0.3 }}>심야시간 알림 동의</p>
+                  <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px' }}>
+                      <div style={{ flex: 1, paddingRight: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>심야시간(21시~08시) 알림 수신 동의</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2, lineHeight: 1.5 }}>
+                          정보통신망법에 따라 심야시간 알림 발송에는 별도 동의가 필요해요. 동의하지 않으면 다음날 오전 8시에 보내드려요.
+                        </p>
+                      </div>
+                      <SToggle on={notifyNightConsent} onChange={setNotifyNightConsent} primary={t.primary} />
                     </div>
                   </div>
                 </div>
