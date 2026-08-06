@@ -716,7 +716,7 @@ export default function MyPage() {
 
           {/* 설정 아이콘 */}
           {!editingNick && (
-            <button onClick={() => setSettingsPage('root')}
+            <button onClick={() => setSettingsPage('root')} aria-label="설정"
               style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 12, width: 36, height: 36, padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"/>
@@ -803,7 +803,7 @@ export default function MyPage() {
                     <button onClick={e => {
                       e.stopPropagation()
                       setExpandedCardId(expandedCardId === card.id ? null : card.id)
-                    }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedCardId === card.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
+                    }} aria-label={expandedCardId === card.id ? '카드 상세 접기' : '카드 상세 펼치기'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedCardId === card.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -913,7 +913,7 @@ export default function MyPage() {
                 {/* Header */}
                 <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button onClick={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }}
+                    <button onClick={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }} aria-label="뒤로가기"
                       style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6"/>
@@ -1103,7 +1103,7 @@ export default function MyPage() {
               {accounts.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{accounts.length}개</span>}
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button onClick={() => setShowAccountNumbers(!showAccountNumbers)}
+              <button onClick={() => setShowAccountNumbers(!showAccountNumbers)} aria-label={showAccountNumbers ? '계좌번호 숨기기' : '계좌번호 표시'}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: showAccountNumbers ? t.primary : '#bbb', lineHeight: 0 }}>
                 {showAccountNumbers ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1306,7 +1306,7 @@ export default function MyPage() {
                       </p>
                       {loan.rate && <p style={{ fontSize: 11, color: '#8B95A1', marginTop: 1 }}>월 이자 {fmt(monthlyInterest)}원</p>}
                     </div>
-                    <button onClick={e => { e.stopPropagation(); setExpandedLoanId(expandedLoanId === loan.id ? null : loan.id) }}
+                    <button onClick={e => { e.stopPropagation(); setExpandedLoanId(expandedLoanId === loan.id ? null : loan.id) }} aria-label={expandedLoanId === loan.id ? '대출 상세 접기' : '대출 상세 펼치기'}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: expandedLoanId === loan.id ? t.primary : '#bbb', padding: 4, lineHeight: 0, flexShrink: 0 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1349,7 +1349,7 @@ export default function MyPage() {
             {/* 공통 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')}
+                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')} aria-label={settingsPage === 'root' ? '닫기' : '뒤로가기'}
                   style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{settingsPageTitle}</p>
               </div>
@@ -1612,7 +1612,7 @@ export default function MyPage() {
                         <button onClick={() => {
                           const updated = { ...categories, [settingsCatTab]: categories[settingsCatTab].filter(c => c !== cat) }
                           setCategories(updated)
-                        }} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 17, padding: '0 2px', lineHeight: 1 }}>×</button>
+                        }} aria-label={`${cat} 삭제`} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 17, padding: '0 2px', lineHeight: 1 }}>×</button>
                       </div>
                     ))}
                   </div>
@@ -1807,7 +1807,7 @@ export default function MyPage() {
                 <div style={{ background: t.primary, padding: '24px 20px 20px', borderRadius: '28px 28px 0 0', color: '#fff', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                         <p style={{ fontSize: 18, fontWeight: 700 }}>{selectedCard.name}</p>
-                        <button onClick={() => setSelectedCard(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                        <button onClick={() => setSelectedCard(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                     </div>
                     <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, opacity: 0.9 }}>
                         **** **** **** {selectedCard.cardNumber || '****'}
@@ -1854,7 +1854,7 @@ export default function MyPage() {
                                             ? { ...c, benefits: c.benefits.filter((_, j) => j !== i) } : c)
                                         setCards(updated); saveToFirestore({ cards: updated })
                                         setSelectedCard(prev => ({ ...prev, benefits: prev.benefits.filter((_, j) => j !== i) }))
-                                    }} style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                                    }} aria-label="혜택 삭제" style={{ background: 'none', border: 'none', color: '#ddd', cursor: 'pointer', fontSize: 16 }}>✕</button>
                                 </div>
                             ))}
                         </div>
@@ -2001,7 +2001,7 @@ export default function MyPage() {
               <div style={{ background: t.primary, padding: '20px 20px 18px', borderRadius: '28px 28px 0 0', color: '#fff', flexShrink: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <p style={{ fontSize: 17, fontWeight: 700 }}>{selectedAccount.name}</p>
-                  <button onClick={() => setSelectedAccount(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                  <button onClick={() => setSelectedAccount(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                 </div>
                 {selectedAccount.number && (
                   <p style={{ fontSize: 13, opacity: 0.85, letterSpacing: 1 }}>{maskAccountNumber(selectedAccount.number)}</p>
@@ -2075,7 +2075,7 @@ export default function MyPage() {
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }}
+                  <button onClick={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }} aria-label="뒤로가기"
                     style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
@@ -2183,7 +2183,7 @@ export default function MyPage() {
             {/* 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => setSelectedLoan(null)}
+                <button onClick={() => setSelectedLoan(null)} aria-label="뒤로가기"
                   style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>

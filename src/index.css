@@ -36,11 +36,15 @@ body {
 
 #root {
   width: 100%;
-  max-width: 100%;
+  max-width: 430px;
   background: #F7F8FA;
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
+  /* transform이 있는 요소는 position:fixed 자손의 containing block이 되므로,
+     태블릿/데스크톱에서도 하단 네비/모달/바텀시트가 뷰포트 전체가 아닌
+     이 430px 프레임 안에서만 고정되도록 한다(반응형 폭 넓이는 그대로 유지). */
+  transform: translateZ(0);
 }
 
 /* 버튼 기본 reset */

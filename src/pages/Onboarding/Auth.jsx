@@ -34,6 +34,7 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetSent, setResetSent] = useState(false)
   const [resetError, setResetError] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
 
   // 추가 state
   const [showPw, setShowPw] = useState(false)
@@ -158,6 +159,9 @@ export default function Auth() {
 
   const handlePasswordReset = async () => {
     if (!resetEmail) return setResetError('이메일을 입력해주세요.')
+    // 전송 중 연타로 인한 중복 요청 방지
+    if (resetLoading) return
+    setResetLoading(true)
     try {
       await sendPasswordResetEmail(auth, resetEmail)
       setResetSent(true)
@@ -167,6 +171,7 @@ export default function Auth() {
       else if (err.code === 'auth/invalid-email') setResetError('올바른 이메일 형식이 아니에요.')
       else setResetError('오류가 발생했어요. 다시 시도해주세요.')
     }
+    setResetLoading(false)
   }
 
   return (
@@ -235,7 +240,7 @@ export default function Auth() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <button type="button" onClick={() => setShowPw(!showPw)}
+              <button type="button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
                 style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
                 {showPw ? (
@@ -306,7 +311,7 @@ export default function Auth() {
                   onChange={e => setConfirm(e.target.value)}
                   onBlur={() => setTouchedConfirm(true)}
                 />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 표시'}
                   style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
                   {showConfirm ? (
@@ -455,7 +460,7 @@ export default function Auth() {
       {/* 비밀번호 찾기 모달 */}
       {showReset && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => { setShowReset(false); setResetSent(false); setResetError(''); setResetEmail('') }}>
+          onClick={() => { setShowReset(false); setResetSent(false); setResetError(''); setResetEmail(''); setResetLoading(false) }}>
           <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
@@ -480,9 +485,9 @@ export default function Auth() {
                   onChange={e => { setResetEmail(e.target.value); setResetError('') }}
                   style={{ ...inputStyle, marginBottom: 8 }} />
                 {resetError && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>{resetError}</p>}
-                <button onClick={handlePasswordReset}
-                  style={{ width: '100%', padding: '14px', borderRadius: 12, background: '#3182F6', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>
-                  재설정 링크 보내기
+                <button onClick={handlePasswordReset} disabled={resetLoading}
+                  style={{ width: '100%', padding: '14px', borderRadius: 12, background: resetLoading ? '#a7cbfdff' : '#3182F6', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: resetLoading ? 'not-allowed' : 'pointer', marginTop: 8 }}>
+                  {resetLoading ? '전송 중...' : '재설정 링크 보내기'}
                 </button>
               </>
             )}

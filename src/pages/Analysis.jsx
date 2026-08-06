@@ -393,13 +393,13 @@ export default function Analysis() {
       {/* 헤더 */}
       <div style={{ background: themeData.card, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={() => { triggerMonthSlide('prev'); if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
+          <button onClick={() => { triggerMonthSlide('prev'); if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }} aria-label="이전 달"
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>‹</button>
           <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28',
             animation: monthSlideDir === 'prev' ? 'slideContentRight 260ms ease' : monthSlideDir === 'next' ? 'slideContentLeft 260ms ease' : undefined }}>
             {viewYear}년 {viewMonth + 1}월 분석
           </p>
-          <button onClick={() => { triggerMonthSlide('next'); if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
+          <button onClick={() => { triggerMonthSlide('next'); if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }} aria-label="다음 달"
             style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>›</button>
         </div>
       </div>
@@ -773,7 +773,7 @@ export default function Analysis() {
                     </div>
                     {/* 연필 아이콘: 데이터 없으면 모달, 있으면 하단 펼침 */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); toggleUtility(type) }}
+                      onClick={(e) => { e.stopPropagation(); toggleUtility(type) }} aria-label="공과금 수정"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: isExpand ? primary : '#bbb', padding: 4, lineHeight: 0 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

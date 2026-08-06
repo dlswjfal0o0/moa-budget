@@ -277,13 +277,13 @@ export default function Calendar() {
       <div style={{ flexShrink: 0, background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 24px 12px', borderBottom: '1px solid #F2F4F6' }}>
           {/* 월 네비게이션 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }}
+            <button onClick={() => { if (viewMonth === 0) { setViewYear(y => y-1); setViewMonth(11) } else setViewMonth(m => m-1) }} aria-label="이전 달"
               style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>‹</button>
             <p onClick={() => setShowYMPicker(true)}
               style={{ fontSize: 18, fontWeight: 700, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
               {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#C9CDD4' }}>▾</span>
             </p>
-            <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }}
+            <button onClick={() => { if (viewMonth === 11) { setViewYear(y => y+1); setViewMonth(0) } else setViewMonth(m => m+1) }} aria-label="다음 달"
               style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#8B95A1', padding: '4px 8px' }}>›</button>
           </div>
 
@@ -601,7 +601,7 @@ export default function Calendar() {
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
                   </div>
-                  <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))}
+                  <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))} aria-label="가계부 자동 등록" aria-pressed={editFixedData.autoRegister}
                     style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
                       background: editFixedData.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
                       position: 'relative', flexShrink: 0 }}>
@@ -758,7 +758,7 @@ export default function Calendar() {
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
                   </div>
-                  <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))}
+                  <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))} aria-label="가계부 자동 등록" aria-pressed={newFixed.autoRegister}
                     style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
                       background: newFixed.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
                       position: 'relative', flexShrink: 0 }}>

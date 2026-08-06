@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
 import DeepLinkListener from './components/DeepLinkListener'
@@ -57,6 +57,8 @@ function AnimatedRoutes() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/my" element={<MyPage />} />
+            {/* 알 수 없는 경로(구 딥링크, 오타 등) → 흰 화면 대신 스플래시로 복귀시켜 로그인 상태에 따라 자동 라우팅 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
