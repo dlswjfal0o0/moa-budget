@@ -183,7 +183,7 @@ export default function Calendar() {
           title: f.title, amount: f.amount,
           category: f.category || '기타', payment: f.payment || '현금',
           date: dateStr, time: '00:00', memo: '고정지출',
-          fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
+          fixedExpenseId: String(f.id), isAutoRegistered: true, createdAt: new Date().toISOString()
         })
         setRefreshTrigger(t => t + 1)
       }
