@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { haptic } from '../utils/haptics'
+import FixedPortal from './FixedPortal'
 
 const Icon = ({ name, color }) => {
   const p = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" }
@@ -26,25 +27,27 @@ export default function BottomNav() {
   const { themeData } = useTheme()
 
   return (
-    <div style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: 430, background: '#fff',
-      boxShadow: '0 -1px 0 #F2F4F6, 0 -8px 24px rgba(0,0,0,0.04)',
-      display: 'flex', zIndex: 100,
-      paddingBottom: 'env(safe-area-inset-bottom)',
-    }}>
-      {tabs.map(tab => {
-        const active = location.pathname === tab.path
-        const color = active ? themeData.primary : '#C9CDD4'
-        return (
-          <button key={tab.path} onClick={() => { if (!active) { haptic.selection(); navigate(tab.path) } }}
-            style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer',
-              transition: 'opacity 80ms ease' }}>
-            <Icon name={tab.icon} color={color} />
-            <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
-          </button>
-        )
-      })}
-    </div>
+    <FixedPortal>
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 430, background: '#fff',
+        boxShadow: '0 -1px 0 #F2F4F6, 0 -8px 24px rgba(0,0,0,0.04)',
+        display: 'flex', zIndex: 100,
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {tabs.map(tab => {
+          const active = location.pathname === tab.path
+          const color = active ? themeData.primary : '#C9CDD4'
+          return (
+            <button key={tab.path} onClick={() => { if (!active) { haptic.selection(); navigate(tab.path) } }}
+              style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer',
+                transition: 'opacity 80ms ease' }}>
+              <Icon name={tab.icon} color={color} />
+              <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </FixedPortal>
   )
 }

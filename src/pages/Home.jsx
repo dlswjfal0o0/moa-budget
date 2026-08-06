@@ -8,6 +8,7 @@ import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
@@ -572,6 +573,7 @@ export default function Home() {
 
       {/* 예산 추가 bottom sheet */}
       {showAddBudget && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '' }) }}>
           <div style={{ width: '100%', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}
@@ -622,10 +624,12 @@ export default function Home() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* 예산 수정 bottom sheet */}
       {editingBudgetId && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => setEditingBudgetId(null)}>
           <div style={{ width: '100%', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}
@@ -676,6 +680,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
     </div>
   )

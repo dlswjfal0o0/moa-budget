@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import BottomNav from '../components/BottomNav'
+import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
@@ -912,6 +913,7 @@ export default function Analysis() {
 
           {/* 추가/수정 모달 */}
           {showAddUtility && (
+            <FixedPortal>
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', zIndex: 999 }}
               onClick={() => setShowAddUtility(false)}>
               <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }} onClick={e => e.stopPropagation()}>
@@ -938,6 +940,7 @@ export default function Analysis() {
                 </div>
               </div>
             </div>
+            </FixedPortal>
           )}
 
         </div>
