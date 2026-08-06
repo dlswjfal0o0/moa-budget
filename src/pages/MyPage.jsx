@@ -1642,7 +1642,7 @@ export default function MyPage() {
                       <div style={{ flex: 1, paddingRight: 16 }}>
                         <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>심야시간(21시~08시) 알림 수신 동의</p>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2, lineHeight: 1.5 }}>
-                          정보통신망법에 따라 심야시간 알림 발송에는 별도 동의가 필요해요. 동의하지 않으면 다음날 오전 8시에 보내드려요.
+                          정보통신망법에 따라 심야시간 알림 발송에는 별도 동의가 필요해요.<br />동의하지 않으면 다음날 오전 8시에 보내드려요.
                         </p>
                       </div>
                       <SToggle on={notifyNightConsent} onChange={setNotifyNightConsent} primary={t.primary} />
