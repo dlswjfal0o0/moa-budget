@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
+import FixedPortal from './FixedPortal'
 
 export default function YearMonthPicker({ viewYear, viewMonth, onConfirm, onClose }) {
   const { themeData } = useTheme()
@@ -19,6 +20,7 @@ export default function YearMonthPicker({ viewYear, viewMonth, onConfirm, onClos
   })
 
   return (
+    <FixedPortal>
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
       onClick={onClose}>
       <div style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
@@ -43,5 +45,6 @@ export default function YearMonthPicker({ viewYear, viewMonth, onConfirm, onClos
         </div>
       </div>
     </div>
+    </FixedPortal>
   )
 }

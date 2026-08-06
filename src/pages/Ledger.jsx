@@ -10,6 +10,7 @@ import {
   getDoc, setDoc
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { getCategoryColor } from '../styles/theme'
@@ -1069,12 +1070,15 @@ export default function Ledger() {
 
       {/* ── FAB (선택 모드 아닐 때만) ── */}
       {!selectionMode && (
+        <FixedPortal>
         <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' }); setShowForm(true) }} aria-label="내역 추가"
           style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+        </FixedPortal>
       )}
 
       {/* ── 선택 모드 하단 액션 바 ── */}
       {selectionMode && (
+        <FixedPortal>
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #F2F4F6', padding: '14px 20px', paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', zIndex: 200, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 2 }}>선택 합산</p>
@@ -1098,10 +1102,12 @@ export default function Ledger() {
             </button>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* ── 내역 추가/수정 폼 ── */}
       {showForm && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
           animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
           {/* 헤더 */}
@@ -1133,9 +1139,9 @@ export default function Ledger() {
             <div style={{ background: '#fff', borderRadius: 20, padding: '20px 24px', marginBottom: 16 }}>
               <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>금액</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                <input type="number" className="input-plain" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                   placeholder="0"
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: 38, fontWeight: 700,
+                  style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 38, fontWeight: 700,
                     color: form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : '#191F28',
                     background: 'transparent', letterSpacing: '-1px' }} />
                 <span style={{ fontSize: 22, fontWeight: 600, color: '#8B95A1' }}>원</span>
@@ -1153,7 +1159,7 @@ export default function Ledger() {
             {/* 제목 */}
             <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
               <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 10, fontWeight: 600 }}>제목</p>
-              <input style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '0', fontSize: 16 }}
+              <input className="input-plain" style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '0', fontSize: 16 }}
                 placeholder={form.type === 'income' ? '어디서 받았나요?' : form.type === 'transfer' ? '이체 내용을 입력하세요' : '어디에 썼나요?'} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             </div>
 
@@ -1455,6 +1461,7 @@ export default function Ledger() {
             </button>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {showYMPicker && (
@@ -1468,6 +1475,7 @@ export default function Ledger() {
 
       {/* ── 숨긴 내역 보기 ── */}
       {showHiddenView && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
           animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
           <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -1519,10 +1527,12 @@ export default function Ledger() {
             )}
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* ── 합치기 모달 ── */}
       {showMergeModal && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <div onClick={() => setShowMergeModal(false)}
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
@@ -1571,10 +1581,12 @@ export default function Ledger() {
             </button>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* ── 내역 삭제 확인 Bottom Sheet ── */}
       {deleteConfirmTxnId && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <div onClick={() => setDeleteConfirmTxnId(null)}
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
@@ -1595,9 +1607,11 @@ export default function Ledger() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* ── 합치기 Undo Snackbar ── */}
+      <FixedPortal>
       <div style={{
         position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
@@ -1619,8 +1633,10 @@ export default function Ledger() {
           되돌리기
         </button>
       </div>
+      </FixedPortal>
 
       {/* ── Undo Snackbar ── */}
+      <FixedPortal>
       <div style={{
         position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
@@ -1639,6 +1655,7 @@ export default function Ledger() {
           실행 취소
         </button>
       </div>
+      </FixedPortal>
 
       <BottomNav />
     </div>

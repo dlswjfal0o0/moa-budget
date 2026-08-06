@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { injectDemoData } from '../../utils/demoData'
+import FixedPortal from '../../components/FixedPortal'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
@@ -459,6 +460,7 @@ export default function Auth() {
 
       {/* 비밀번호 찾기 모달 */}
       {showReset && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setShowReset(false); setResetSent(false); setResetError(''); setResetEmail(''); setResetLoading(false) }}>
           <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px' }}
@@ -493,6 +495,7 @@ export default function Auth() {
             )}
           </div>
         </div>
+        </FixedPortal>
       )}
     </div>
   )

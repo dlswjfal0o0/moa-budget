@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { THEMES } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
@@ -910,6 +911,7 @@ export default function MyPage() {
             ]
 
             return (
+              <FixedPortal>
               <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column',
                 animation: isEdit ? 'slideInFromRight 350ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' : 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
                 {/* Header */}
@@ -1090,6 +1092,7 @@ export default function MyPage() {
                   </button>
                 </div>
               </div>
+              </FixedPortal>
             )
           })()}
         </div>
@@ -1182,6 +1185,7 @@ export default function MyPage() {
 
           {/* 계좌 수정 bottom sheet */}
           {editingAccountId && (
+            <FixedPortal>
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
               onClick={() => setEditingAccountId(null)}>
               <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
@@ -1210,9 +1214,11 @@ export default function MyPage() {
                 </div>
               </div>
             </div>
+            </FixedPortal>
           )}
           {/* 계좌 추가 bottom sheet */}
           {showAddAccount && (
+            <FixedPortal>
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
               onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}>
               <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
@@ -1241,6 +1247,7 @@ export default function MyPage() {
                 </div>
               </div>
             </div>
+            </FixedPortal>
           )}
         </div>
 
@@ -1347,6 +1354,7 @@ export default function MyPage() {
 
       {/* ── 설정 – 계층형 네비게이션 ── */}
       {settingsPage && (
+          <FixedPortal>
           <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
             {/* 공통 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
@@ -1823,10 +1831,12 @@ export default function MyPage() {
 
             </div>
           </div>
+          </FixedPortal>
       )}
 
       {/* 계정 탈퇴 최종 확인 바텀시트 */}
       {showDeleteModal && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => setShowDeleteModal(false)}>
           <div style={{ background: '#fff', borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
@@ -1843,10 +1853,12 @@ export default function MyPage() {
             </button>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* 카드 상세 모달 */}
       {selectedCard && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
             <div style={{ background: '#fff', borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
@@ -2022,6 +2034,7 @@ export default function MyPage() {
 
             </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* 계좌 내역 바텀시트 */}
@@ -2040,6 +2053,7 @@ export default function MyPage() {
           return acc
         }, {})
         return (
+          <FixedPortal>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end' }}
             onClick={() => setSelectedAccount(null)}>
             <div style={{ width: '100%', background: t.card || '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
@@ -2107,6 +2121,7 @@ export default function MyPage() {
               </div>
             </div>
           </div>
+          </FixedPortal>
         )
       })()}
 
@@ -2117,6 +2132,7 @@ export default function MyPage() {
         const isValid = !!loanForm.name && !!loanForm.principal && !!loanForm.remainingPrincipal && !!loanForm.startDate
         const lInput = { ...inputStyle, height: 52, appearance: 'none', WebkitAppearance: 'none' }
         return (
+          <FixedPortal>
           <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
             {/* 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
@@ -2205,6 +2221,7 @@ export default function MyPage() {
               </button>
             </div>
           </div>
+          </FixedPortal>
         )
       })()}
 
@@ -2226,6 +2243,7 @@ export default function MyPage() {
         const repayments = loanDetailSort === 'desc' ? [...repaymentsFromTxns].reverse() : repaymentsFromTxns
 
         return (
+          <FixedPortal>
           <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
             {/* 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
@@ -2333,11 +2351,13 @@ export default function MyPage() {
               </button>
             </div>
           </div>
+          </FixedPortal>
         )
       })()}
 
       {/* ── 카드 삭제 확인 Bottom Sheet ─────────── */}
       {deleteConfirmCard && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <div onClick={() => setDeleteConfirmCard(null)}
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
@@ -2360,9 +2380,11 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* ── Undo Snackbar ───────────────────────── */}
+      <FixedPortal>
       <div style={{
         position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 900,
         transform: undoSnackbar ? 'translateY(0)' : 'translateY(120px)',
@@ -2381,6 +2403,7 @@ export default function MyPage() {
           실행 취소
         </button>
       </div>
+      </FixedPortal>
 
       <BottomNav />
     </div>

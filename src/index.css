@@ -58,6 +58,12 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(49,130,246,0.12);
 }
 
+/* 테두리 없는 입력창(금액, 제목 등) — 각진 포커스 박스가 카드 디자인과 어긋나 보이므로 제거 */
+input.input-plain:focus, textarea.input-plain:focus {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* ── Global Motion System ─────────────────────────── */
 @keyframes pageEnter {
   from { opacity: 0; }
