@@ -1166,13 +1166,12 @@ export default function Ledger() {
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 14, fontWeight: 600 }}>카테고리</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {categories[form.type === 'expense' ? 'expense' : 'income'].map(cat => (
-                    <button key={cat} onClick={() => { haptic.selection(); setForm(f => ({ ...f, category: cat })) }}
+                    <button key={cat} onClick={() => { haptic.selection(); setForm(f => ({ ...f, category: cat })) }} className="pressable-subtle"
                       style={{ padding: '12px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: form.category === cat ? themeData.primary : '#F2F4F6',
                         color: form.category === cat ? '#fff' : '#191F28',
                         fontWeight: form.category === cat ? 700 : 500, textAlign: 'center',
-                        transform: form.category === cat ? 'scale(1)' : 'scale(1)',
-                        transition: 'all 0.15s, transform 120ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+                        transition: 'background 150ms ease, color 150ms ease' }}>
                       {cat}
                     </button>
                   ))}
@@ -1594,8 +1593,8 @@ export default function Ledger() {
         transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: mergeUndoSnackbar ? 1 : 0,
         transition: mergeUndoSnackbar
-          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
-          : 'transform 200ms ease-in, opacity 200ms ease-in',
+          ? 'transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease-out'
+          : 'transform 180ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: '#191F28', borderRadius: 16, padding: '14px 16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
@@ -1605,7 +1604,7 @@ export default function Ledger() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 합쳐졌습니다.</span>
         </div>
-        <button onClick={handleUndoMerge}
+        <button onClick={handleUndoMerge} className="pressable"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
           되돌리기
         </button>
@@ -1619,15 +1618,15 @@ export default function Ledger() {
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: txnUndoSnackbar ? 1 : 0,
         transition: txnUndoSnackbar
-          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
-          : 'transform 200ms ease-in, opacity 200ms ease-in',
+          ? 'transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease-out'
+          : 'transform 180ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: '#191F28', borderRadius: 16, padding: '14px 16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
         pointerEvents: txnUndoSnackbar ? 'auto' : 'none',
       }}>
         <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 삭제되었습니다.</span>
-        <button onClick={handleUndoTxn}
+        <button onClick={handleUndoTxn} className="pressable"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
           실행 취소
         </button>

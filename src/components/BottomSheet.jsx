@@ -6,6 +6,23 @@ const DISMISS_RATIO = 0.3     // 시트 높이의 30% 이상 내려가면 dismis
 const DISMISS_VELOCITY = 0.6  // px/ms 이상으로 떼면 거리와 무관하게 dismiss
 const DRAG_START_SLOP = 6     // 스크롤/드래그 판정을 가르는 최소 이동량(px)
 
+// 시트 내부에 header/footer가 고정된 flex 레이아웃(중첩 스크롤)이 있는 경우를 위해,
+// 터치 지점에서 boundary까지 조상을 훑어 실제로 스크롤 중인 요소의 scrollTop을 찾는다.
+function findScrollTop(target, boundary) {
+  let el = target
+  while (el) {
+    if (el.nodeType === 1) {
+      const style = window.getComputedStyle(el)
+      if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+        return el.scrollTop
+      }
+    }
+    if (el === boundary) break
+    el = el.parentElement
+  }
+  return 0
+}
+
 /**
  * 네이티브 iOS 바텀시트처럼 동작하는 공용 시트.
  * - 등장: rAF 기반 spring으로 아래→위 정착 (약간의 오버슈트)
@@ -119,6 +136,7 @@ export default function BottomSheet({
       startY: e.clientY,
       pointerId: e.pointerId,
       target: e.currentTarget,
+      touchTarget: e.target,
     }
   }
 
@@ -129,7 +147,7 @@ export default function BottomSheet({
     const dx = e.clientX - drag.startX
 
     if (drag.phase === 'maybe') {
-      const scrollTop = sheetRef.current?.scrollTop ?? 0
+      const scrollTop = findScrollTop(drag.touchTarget, sheetRef.current)
       if (Math.abs(dy) < DRAG_START_SLOP && Math.abs(dx) < DRAG_START_SLOP) return
       if (dy > 0 && scrollTop <= 0) {
         drag.phase = 'dragging'
