@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../../utils/motion'
 
 const PRIMARY = '#3182F6'
 const BG = '#fff'
@@ -745,23 +746,126 @@ const SLIDES = [
 export default function HowToUse() {
   const navigate = useNavigate()
   const [current, setCurrent] = useState(0)
-  const touchStartX = useRef(null)
+  const reducedMotion = useReducedMotion()
 
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
-  const handleTouchEnd = (e) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    if (dx < -50 && current < SLIDES.length - 1) setCurrent(c => c + 1)
-    if (dx > 50 && current > 0) setCurrent(c => c - 1)
+  // 화면 전환 방향(다음: right, 이전: left) — 드래그든 탭이든 동일하게 판정
+  const [prevCurrent, setPrevCurrent] = useState(0)
+  let enterDir = 'right'
+  if (current !== prevCurrent) {
+    enterDir = current > prevCurrent ? 'right' : 'left'
+    setPrevCurrent(current)
   }
+
+  const contentRef = useRef(null)
+  const containerRef = useRef(null)
+  const posRef = useRef(0)
+  const dragRef = useRef(null)
+  const springRef = useRef(null)
+
+  const DRAG_SLOP = 8
+  const ADVANCE_RATIO = 0.22
+  const VELOCITY_THRESHOLD = 0.5
+  const EXIT_DISTANCE = 140
+
+  const cancelSpring = () => { if (springRef.current) { springRef.current.cancel(); springRef.current = null } }
+
+  const applyContent = (x, opacity = 1) => {
+    posRef.current = x
+    if (contentRef.current) {
+      contentRef.current.style.transform = `translateX(${x}px)`
+      contentRef.current.style.opacity = String(opacity)
+    }
+  }
+
+  const settleBack = (velocity = 0) => {
+    cancelSpring()
+    springRef.current = animateSpring({
+      from: posRef.current, to: 0, velocity,
+      ...getSpringPreset('snappy', reducedMotion),
+      onUpdate: (x) => applyContent(x, 1),
+      onComplete: () => { springRef.current = null },
+    })
+  }
+
+  const exitAndAdvance = (indexDelta, velocity) => {
+    cancelSpring()
+    const exitTo = indexDelta > 0 ? -EXIT_DISTANCE : EXIT_DISTANCE
+    springRef.current = animateSpring({
+      from: posRef.current, to: exitTo, velocity,
+      stiffness: reducedMotion ? 500 : 320, damping: reducedMotion ? 60 : 30, mass: 1,
+      onUpdate: (x) => applyContent(x, Math.max(1 - Math.abs(x) / EXIT_DISTANCE, 0)),
+      onComplete: () => {
+        springRef.current = null
+        applyContent(0, 1)
+        setCurrent(c => c + indexDelta)
+      },
+    })
+  }
+
+  const handlePointerDown = (e) => {
+    if (e.target.closest && e.target.closest('button')) return
+    cancelSpring()
+    dragRef.current = { phase: 'maybe', startX: e.clientX, startY: e.clientY, startPos: posRef.current }
+  }
+
+  const handlePointerMove = (e) => {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = e.clientX - drag.startX
+    const dy = e.clientY - drag.startY
+
+    if (drag.phase === 'maybe') {
+      if (Math.abs(dx) < DRAG_SLOP && Math.abs(dy) < DRAG_SLOP) return
+      if (Math.abs(dx) > Math.abs(dy)) {
+        drag.phase = 'dragging'
+        drag.tracker = createVelocityTracker()
+        drag.tracker.record(e.clientX, e.clientY)
+        // 등장 애니메이션이 아직 재생 중이면 direct style 조작과 충돌하므로 즉시 끈다
+        if (contentRef.current) contentRef.current.style.animation = 'none'
+        try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* 이미 종료된 포인터면 무시 */ }
+      } else {
+        drag.phase = 'scrolling'
+      }
+      return
+    }
+
+    if (drag.phase === 'dragging') {
+      e.preventDefault()
+      drag.tracker.record(e.clientX, e.clientY)
+      let next = drag.startPos + dx
+      const atFirst = current === 0
+      const atLast = current === SLIDES.length - 1
+      if ((atFirst && next > 0) || (atLast && next < 0)) next *= 0.35 // 첫/마지막 슬라이드에서는 고무줄 저항
+      applyContent(next, 1)
+    }
+  }
+
+  const handlePointerEnd = () => {
+    const drag = dragRef.current
+    dragRef.current = null
+    if (!drag || drag.phase !== 'dragging') return
+    const { vx } = drag.tracker.getVelocity()
+    const pos = posRef.current
+    const width = containerRef.current?.offsetWidth || 320
+    const threshold = width * ADVANCE_RATIO
+    const atFirst = current === 0
+    const atLast = current === SLIDES.length - 1
+    const wantsNext = (pos < -threshold || vx < -VELOCITY_THRESHOLD) && !atLast
+    const wantsPrev = (pos > threshold || vx > VELOCITY_THRESHOLD) && !atFirst
+    if (wantsNext) exitAndAdvance(1, vx)
+    else if (wantsPrev) exitAndAdvance(-1, vx)
+    else settleBack(vx)
+  }
+
+  useEffect(() => () => cancelSpring(), [])
 
   const slide = SLIDES[current]
   const isLast = current === SLIDES.length - 1
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: BG, overflow: 'hidden' }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}>
+      ref={containerRef}
+      style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: BG, overflow: 'hidden' }}>
 
       <style>{`
         @keyframes moaFadeUp {
@@ -789,7 +893,7 @@ export default function HowToUse() {
       {/* 탭 인디케이터 */}
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 28px) 16px 12px', display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
         {SLIDES.map((s, i) => (
-          <button key={s.id} onClick={() => setCurrent(i)}
+          <button key={s.id} onClick={() => setCurrent(i)} className="pressable-subtle"
             style={{ padding: '5px 12px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 12, transition: 'all 0.2s',
               background: i === current ? PRIMARY : `${PRIMARY}15`,
               color: i === current ? 'white' : PRIMARY,
@@ -798,6 +902,17 @@ export default function HowToUse() {
           </button>
         ))}
       </div>
+
+      {/* 드래그로 넘기는 콘텐츠 영역(목업 + 설명) */}
+      <div
+        ref={contentRef}
+        key={current}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, touchAction: 'pan-y',
+          animation: `${enterDir === 'left' ? 'pageEnterFromLeft' : 'pageEnterFromRight'} 240ms cubic-bezier(0.22,1,0.36,1) forwards` }}>
 
       {/* 폰 목업 */}
       {slide.SettingsMockup ? (
@@ -841,6 +956,7 @@ export default function HowToUse() {
           ))}
         </div>
       </div>
+      </div>
 
       {/* 하단 네비게이션 */}
       <div style={{ padding: '12px 24px 44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -852,12 +968,12 @@ export default function HowToUse() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {!isLast && (
-            <button onClick={() => navigate('/auth')}
+            <button onClick={() => navigate('/auth')} className="pressable"
               style={{ padding: '11px 16px', borderRadius: 9999, background: 'transparent', color: TEXT2, border: 'none', fontSize: 13, cursor: 'pointer' }}>
               건너뛰기
             </button>
           )}
-          <button onClick={() => isLast ? navigate('/auth') : setCurrent(c => c + 1)}
+          <button onClick={() => isLast ? navigate('/auth') : setCurrent(c => c + 1)} className="pressable-subtle"
             style={{ padding: '12px 24px', borderRadius: 9999, background: PRIMARY, color: 'white', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             {isLast ? '시작하기 →' : '다음 →'}
           </button>
