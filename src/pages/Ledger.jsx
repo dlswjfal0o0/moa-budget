@@ -19,6 +19,7 @@ import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
+import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -139,6 +140,7 @@ export default function Ledger() {
   const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
   const navigate = useNavigate()
+  const reducedMotion = useReducedMotion()
   const now = new Date()
   const [user, setUser] = useState(null)
   const [loadError, setLoadError] = useState(null)
@@ -156,8 +158,11 @@ export default function Ledger() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [userPayments, setUserPayments] = useState(['현금'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
-  const touchStartX = useRef(null)
-  const touchStartY = useRef(null)
+  // ── 스와이프 삭제 제스처 (물리 기반) ──────────────────
+  const rowRefs = useRef(new Map())     // id -> DOM element
+  const rowPosRef = useRef({})          // id -> 현재 translateX(px)
+  const rowDragRef = useRef(null)       // 진행 중인 제스처
+  const rowSpringRef = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
@@ -405,6 +410,8 @@ export default function Ledger() {
 
   const handleDelete = (id) => {
     setDeleteConfirmTxnId(id)
+    cancelRowSpring()
+    rowPosRef.current[id] = 0
     setSwipedId(null)
   }
 
@@ -480,32 +487,112 @@ export default function Ledger() {
     setShowForm(true); setSelectedId(null)
   }
 
-  const handleItemTouchStart = (e, t) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-    if (selectionMode) return
-    longPressTimer.current = setTimeout(() => {
-      haptic.light()
-      setSelectionMode(true)
-      setSelectedIds(new Set([t.id]))
-      setSwipedId(null)
-      longPressTimer.current = null
-    }, 500)
+  // 행 스와이프: 손가락을 그대로 따라오다가(rowPosRef/DOM 직접 조작),
+  // 뗄 때 이동거리+velocity로 open/close를 판정해 spring으로 정착시킨다.
+  const ROW_OPEN_X = -70
+  const ROW_OPEN_THRESHOLD = ROW_OPEN_X * 0.5
+  const ROW_VELOCITY_THRESHOLD = 0.5 // px/ms
+  const ROW_DRAG_SLOP = 6
+
+  const setRowEl = (id) => (el) => {
+    if (el) rowRefs.current.set(id, el)
+    else rowRefs.current.delete(id)
   }
-  const handleItemTouchMove = (e) => {
-    if (longPressTimer.current) {
-      const dx = Math.abs(e.touches[0].clientX - (touchStartX.current || 0))
-      const dy = Math.abs(e.touches[0].clientY - (touchStartY.current || 0))
-      if (dx > 8 || dy > 8) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-    }
+
+  const cancelRowSpring = () => {
+    if (rowSpringRef.current) { rowSpringRef.current.cancel(); rowSpringRef.current = null }
   }
-  const handleItemTouchEnd = (e, id) => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+
+  const applyRowX = (id, x) => {
+    rowPosRef.current[id] = x
+    const el = rowRefs.current.get(id)
+    if (el) el.style.transform = `translateX(${x}px)`
+  }
+
+  const settleRow = (id, open, velocity = 0) => {
+    cancelRowSpring()
+    const from = rowPosRef.current[id] ?? 0
+    const to = open ? ROW_OPEN_X : 0
+    rowSpringRef.current = animateSpring({
+      from, to, velocity,
+      ...getSpringPreset('snappy', reducedMotion),
+      onUpdate: (x) => applyRowX(id, x),
+      onComplete: () => {
+        rowSpringRef.current = null
+        setSwipedId(open ? id : null)
+      },
+    })
+  }
+
+  const handleItemPointerDown = (e, t) => {
+    if (e.target.closest && e.target.closest('button')) return
     if (!selectionMode) {
-      const dx = e.changedTouches[0].clientX - (touchStartX.current || 0)
-      if (dx < -60) setSwipedId(id)
-      else if (dx > 30) setSwipedId(null)
+      longPressTimer.current = setTimeout(() => {
+        haptic.light()
+        setSelectionMode(true)
+        setSelectedIds(new Set([t.id]))
+        setSwipedId(null)
+        longPressTimer.current = null
+        rowDragRef.current = null
+      }, 500)
     }
+    // 다른 행이 열려 있으면 먼저 자연스럽게 닫는다
+    if (!selectionMode && swipedId && swipedId !== t.id) settleRow(swipedId, false)
+    rowDragRef.current = {
+      id: t.id,
+      phase: 'maybe',
+      startX: e.clientX,
+      startY: e.clientY,
+      startPos: rowPosRef.current[t.id] ?? (swipedId === t.id ? ROW_OPEN_X : 0),
+      pointerId: e.pointerId,
+      el: e.currentTarget,
+    }
+  }
+
+  const handleItemPointerMove = (e) => {
+    const drag = rowDragRef.current
+    if (longPressTimer.current) {
+      const dx0 = Math.abs(e.clientX - (drag?.startX || 0))
+      const dy0 = Math.abs(e.clientY - (drag?.startY || 0))
+      if (dx0 > 8 || dy0 > 8) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    }
+    if (!drag || selectionMode) return
+    const dx = e.clientX - drag.startX
+    const dy = e.clientY - drag.startY
+
+    if (drag.phase === 'maybe') {
+      if (Math.abs(dx) < ROW_DRAG_SLOP && Math.abs(dy) < ROW_DRAG_SLOP) return
+      if (Math.abs(dx) > Math.abs(dy)) {
+        drag.phase = 'dragging'
+        cancelRowSpring()
+        drag.tracker = createVelocityTracker()
+        drag.tracker.record(e.clientX, e.clientY)
+        try { drag.el.setPointerCapture?.(drag.pointerId) } catch { /* 이미 종료된 포인터면 무시 */ }
+      } else {
+        drag.phase = 'scrolling'
+      }
+      return
+    }
+
+    if (drag.phase === 'dragging') {
+      e.preventDefault()
+      drag.tracker.record(e.clientX, e.clientY)
+      const raw = drag.startPos + dx
+      const clamped = Math.max(Math.min(raw, 8), ROW_OPEN_X - 8)
+      applyRowX(drag.id, clamped)
+      if (swipedId !== drag.id && clamped < -4) setSwipedId(drag.id)
+    }
+  }
+
+  const handleItemPointerEnd = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    const drag = rowDragRef.current
+    rowDragRef.current = null
+    if (!drag || drag.phase !== 'dragging') return
+    const { vx } = drag.tracker.getVelocity()
+    const pos = rowPosRef.current[drag.id] ?? 0
+    const shouldOpen = pos < ROW_OPEN_THRESHOLD || vx < -ROW_VELOCITY_THRESHOLD
+    settleRow(drag.id, shouldOpen, vx)
   }
 
   // ── 숨기기 핸들러 ────────────────────────────────────
@@ -881,16 +968,18 @@ export default function Ledger() {
                         </div>
                       )}
                       <div
+                        ref={setRowEl(t.id)}
                         onClick={() => {
                           if (selectionMode) { handleSelectItem(t.id) }
-                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); setSwipedId(null) }
+                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
                         }}
-                        onTouchStart={e => handleItemTouchStart(e, t)}
-                        onTouchMove={handleItemTouchMove}
-                        onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                        onPointerDown={e => handleItemPointerDown(e, t)}
+                        onPointerMove={handleItemPointerMove}
+                        onPointerUp={handleItemPointerEnd}
+                        onPointerCancel={handleItemPointerEnd}
                         style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
                           transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                          transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, background: selBg }}>
+                          touchAction: 'pan-y', position: 'relative', zIndex: 1, background: selBg }}>
                         {/* 선택 체크박스 */}
                         {selectionMode && (
                           <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
@@ -992,17 +1081,19 @@ export default function Ledger() {
                       </div>
                     )}
                     <div
-                      onTouchStart={e => handleItemTouchStart(e, t)}
-                      onTouchMove={handleItemTouchMove}
-                      onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                      ref={setRowEl(t.id)}
+                      onPointerDown={e => handleItemPointerDown(e, t)}
+                      onPointerMove={handleItemPointerMove}
+                      onPointerUp={handleItemPointerEnd}
+                      onPointerCancel={handleItemPointerEnd}
                       onClick={() => {
                         if (selectionMode) { handleSelectItem(t.id) }
-                        else { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }
+                        else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
                       }}
                       style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
                         background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
                         transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                        transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
+                        touchAction: 'pan-y', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
                       {/* 선택 체크박스 */}
                       {selectionMode && (
                         <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
