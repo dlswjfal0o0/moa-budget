@@ -595,6 +595,8 @@ export default function Ledger() {
     settleRow(drag.id, shouldOpen, vx)
   }
 
+  useEffect(() => () => cancelRowSpring(), [])
+
   // ── 숨기기 핸들러 ────────────────────────────────────
   const handleHide = async (id) => {
     haptic.light()
