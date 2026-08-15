@@ -8,7 +8,7 @@ import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
-import FixedPortal from '../components/FixedPortal'
+import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
@@ -572,116 +572,103 @@ export default function Home() {
       <BottomNav />
 
       {/* 예산 추가 bottom sheet */}
-      {showAddBudget && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '' }) }}>
-          <div style={{ width: '100%', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ width: 40, height: 4, borderRadius: 9999, background: '#E5E8EB', margin: '0 auto 24px' }} />
-            <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>예산 추가</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>예산 이름 <span style={{ color: '#FF5A5F' }}>*</span></p>
-                <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={newBudget.label} onChange={e => setNewBudget(b => ({ ...b, label: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액 <span style={{ color: '#FF5A5F' }}>*</span></p>
-                <input style={inputStyle} type="number" placeholder="예: 300000" value={newBudget.amount} onChange={e => setNewBudget(b => ({ ...b, amount: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간 <span style={{ color: '#FF5A5F' }}>*</span></p>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
-                  <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {allExpenseCategories.map(cat => {
-                    const selected = (newBudget.categories || []).includes(cat)
-                    return (
-                      <button key={cat} onClick={() => setNewBudget(b => ({
-                        ...b,
-                        categories: selected ? (b.categories || []).filter(c => c !== cat) : [...(b.categories || []), cat]
-                      }))} style={{ padding: '7px 14px', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
-                        background: selected ? themeData.primary + '15' : '#fff',
-                        color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
-                        {cat}
-                      </button>
-                    )
-                  })}
-                </div>
+      <BottomSheet open={showAddBudget} maxOpacity={0.4}
+        onClose={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>예산 추가</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>예산 이름 <span style={{ color: '#FF5A5F' }}>*</span></p>
+              <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={newBudget.label} onChange={e => setNewBudget(b => ({ ...b, label: e.target.value }))} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액 <span style={{ color: '#FF5A5F' }}>*</span></p>
+              <input style={inputStyle} type="number" placeholder="예: 300000" value={newBudget.amount} onChange={e => setNewBudget(b => ({ ...b, amount: e.target.value }))} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간 <span style={{ color: '#FF5A5F' }}>*</span></p>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
+                <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
+                <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-              <button onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}
-                style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleAddBudget}
-                style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>추가</button>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {allExpenseCategories.map(cat => {
+                  const selected = (newBudget.categories || []).includes(cat)
+                  return (
+                    <button key={cat} className="pressable-subtle" onClick={() => setNewBudget(b => ({
+                      ...b,
+                      categories: selected ? (b.categories || []).filter(c => c !== cat) : [...(b.categories || []), cat]
+                    }))} style={{ padding: '7px 14px', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
+                      background: selected ? themeData.primary + '15' : '#fff',
+                      color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
+                      {cat}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+            <button className="pressable-subtle" onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}
+              style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+            <button className="pressable-subtle" onClick={handleAddBudget}
+              style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>추가</button>
+          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* 예산 수정 bottom sheet */}
-      {editingBudgetId && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setEditingBudgetId(null)}>
-          <div style={{ width: '100%', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ width: 40, height: 4, borderRadius: 9999, background: '#E5E8EB', margin: '0 auto 24px' }} />
-            <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>예산 수정</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>예산 이름</p>
-                <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={editBudgetData.label} onChange={e => setEditBudgetData(d => ({ ...d, label: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
-                <input style={inputStyle} type="number" placeholder="예: 300000" value={editBudgetData.amount} onChange={e => setEditBudgetData(d => ({ ...d, amount: e.target.value }))} />
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
-                  <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
-                  <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {allExpenseCategories.map(cat => {
-                    const selected = (editBudgetData.categories || []).includes(cat)
-                    return (
-                      <button key={cat} onClick={() => setEditBudgetData(d => ({
-                        ...d,
-                        categories: selected ? (d.categories || []).filter(c => c !== cat) : [...(d.categories || []), cat]
-                      }))} style={{ padding: '7px 14px', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
-                        background: selected ? themeData.primary + '15' : '#fff',
-                        color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
-                        {cat}
-                      </button>
-                    )
-                  })}
-                </div>
+      <BottomSheet open={!!editingBudgetId} onClose={() => setEditingBudgetId(null)}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+          <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>예산 수정</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>예산 이름</p>
+              <input style={inputStyle} placeholder="예: 식비, 전체 생활비" value={editBudgetData.label} onChange={e => setEditBudgetData(d => ({ ...d, label: e.target.value }))} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
+              <input style={inputStyle} type="number" placeholder="예: 300000" value={editBudgetData.amount} onChange={e => setEditBudgetData(d => ({ ...d, amount: e.target.value }))} />
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
+                <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
+                <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-              <button onClick={() => setEditingBudgetId(null)}
-                style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleSaveBudget}
-                style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {allExpenseCategories.map(cat => {
+                  const selected = (editBudgetData.categories || []).includes(cat)
+                  return (
+                    <button key={cat} className="pressable-subtle" onClick={() => setEditBudgetData(d => ({
+                      ...d,
+                      categories: selected ? (d.categories || []).filter(c => c !== cat) : [...(d.categories || []), cat]
+                    }))} style={{ padding: '7px 14px', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
+                      background: selected ? themeData.primary + '15' : '#fff',
+                      color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
+                      {cat}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+            <button className="pressable-subtle" onClick={() => setEditingBudgetId(null)}
+              style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>취소</button>
+            <button className="pressable-subtle" onClick={handleSaveBudget}
+              style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>저장</button>
+          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
     </div>
   )
 }
