@@ -86,7 +86,6 @@ export default function MyPage() {
   }
   // ── Card CRUD motion state ───────────────────────
   const [cardSaveState, setCardSaveState] = useState(null) // null | 'loading' | 'success'
-  const [cardBtnPressed, setCardBtnPressed] = useState(false)
   const [deleteConfirmCard, setDeleteConfirmCard] = useState(null)
   const [cardExitId, setCardExitId] = useState(null)
   const [deletedCard, setDeletedCard] = useState(null)
@@ -313,8 +312,6 @@ export default function MyPage() {
       haptic.warning(); return
     }
     haptic.light()
-    setCardBtnPressed(true)
-    setTimeout(() => setCardBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
     const newId = Date.now()
@@ -389,8 +386,6 @@ export default function MyPage() {
       haptic.warning(); return
     }
     haptic.light()
-    setCardBtnPressed(true)
-    setTimeout(() => setCardBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
     const updated = cards.map(c => c.id === editingCardId
@@ -1066,17 +1061,16 @@ export default function MyPage() {
                   )}
                   <button onClick={isEdit ? handleSaveCard : handleAddCard}
                     disabled={!isValid || !!cardSaveState}
+                    className="pressable-subtle"
                     style={{ width: '100%', height: 56, borderRadius: 16,
                       background: cardSaveState === 'success' ? '#22c55e' : (isValid ? t.primary : '#E5E8EB'),
                       color: isValid ? '#fff' : '#B0B8C1',
                       border: 'none', fontSize: 16, fontWeight: 700,
                       cursor: (isValid && !cardSaveState) ? 'pointer' : 'not-allowed',
-                      transition: 'background 200ms, color 200ms, transform 80ms ease-out',
-                      transform: cardBtnPressed ? 'scale(0.97)' : 'scale(1)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     {cardSaveState === 'loading' ? (
                       <>
-                        <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                        <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />
                         저장 중...
                       </>
                     ) : cardSaveState === 'success' ? (

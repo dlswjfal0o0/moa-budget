@@ -27,7 +27,7 @@ const TAB_PATHS = ['/home', '/ledger', '/calendar', '/analysis', '/my']
 function RouteFallback() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%' }} />
     </div>
   )
 }

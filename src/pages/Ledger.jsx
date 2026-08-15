@@ -163,7 +163,6 @@ export default function Ledger() {
   // ── Ledger motion state ──────────────────────────
   const [formSaveState, setFormSaveState] = useState(null) // null | 'loading' | 'success'
   const submittingRef = useRef(false) // 동기 가드: 연타 시 중복 저장 방지
-  const [formBtnPressed, setFormBtnPressed] = useState(false)
   const [deleteConfirmTxnId, setDeleteConfirmTxnId] = useState(null)
   const [txnExitId, setTxnExitId] = useState(null)
   const [deletedTxn, setDeletedTxn] = useState(null)
@@ -337,8 +336,6 @@ export default function Ledger() {
     if (submittingRef.current) return
     submittingRef.current = true
     haptic.light()
-    setFormBtnPressed(true)
-    setTimeout(() => setFormBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
     try {
@@ -1437,15 +1434,15 @@ export default function Ledger() {
 
             <button onClick={handleSubmit}
               disabled={!!formSaveState}
+              className="pressable-subtle"
               style={{ width: '100%', height: 56, borderRadius: 16,
                 background: formSaveState === 'success' ? '#22c55e' : (form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : themeData.primary),
                 color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: formSaveState ? 'not-allowed' : 'pointer',
-                letterSpacing: '-0.2px', transition: 'background 200ms, transform 80ms ease-out',
-                transform: formBtnPressed ? 'scale(0.97)' : 'scale(1)',
+                letterSpacing: '-0.2px', transition: 'background 200ms',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {formSaveState === 'loading' ? (
                 <>
-                  <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                  <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />
                   저장 중...
                 </>
               ) : formSaveState === 'success' ? (
