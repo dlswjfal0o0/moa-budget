@@ -10,6 +10,7 @@ import {
   getDoc, setDoc
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
@@ -1103,13 +1104,12 @@ export default function Ledger() {
       )}
 
       {/* ── 내역 추가/수정 폼 ── */}
-      {showForm && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
-          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+      <BottomSheet variant="full" open={showForm} showHandle={false} background="#F7F8FA"
+        onClose={() => { setShowForm(false); setEditItem(null) }}>
+        <div>
           {/* 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
-            <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+            <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
           </div>
 
@@ -1458,8 +1458,7 @@ export default function Ledger() {
             </button>
           </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {showYMPicker && (
         <YearMonthPicker
@@ -1471,13 +1470,12 @@ export default function Ledger() {
       )}
 
       {/* ── 숨긴 내역 보기 ── */}
-      {showHiddenView && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
-          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+      <BottomSheet variant="full" open={showHiddenView} showHandle={false} background="#F7F8FA"
+        onClose={() => setShowHiddenView(false)}>
+        <div>
           <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <button onClick={() => setShowHiddenView(false)} aria-label="뒤로가기" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+              <button onClick={() => setShowHiddenView(false)} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>숨긴 내역</p>
               <span style={{ marginLeft: 8, fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>{hiddenTransactions.length}건</span>
             </div>
@@ -1524,19 +1522,11 @@ export default function Ledger() {
             )}
           </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 합치기 모달 ── */}
-      {showMergeModal && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={() => setShowMergeModal(false)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
-            zIndex: 1, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+      <BottomSheet open={showMergeModal} onClose={() => setShowMergeModal(false)} blur={3} background="#fff">
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>내역 합치기</p>
 
             {/* 선택 항목 목록 */}
@@ -1572,40 +1562,30 @@ export default function Ledger() {
               style={{ width: '100%', padding: '14px 16px', borderRadius: 16, border: `1.5px solid ${themeData.primary}40`, fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#191F28', marginBottom: 24 }}
             />
 
-            <button onClick={handleMerge}
+            <button onClick={handleMerge} className="pressable-subtle"
               style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
               확인
             </button>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 내역 삭제 확인 Bottom Sheet ── */}
-      {deleteConfirmTxnId && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={() => setDeleteConfirmTxnId(null)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', zIndex: 1 }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+      <BottomSheet open={!!deleteConfirmTxnId} onClose={() => setDeleteConfirmTxnId(null)} blur={3} background="#fff" zIndex={210}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 10 }}>내역을 삭제할까요?</p>
             <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>삭제 후 5초 이내에 되돌릴 수 있어요.</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteConfirmTxnId(null)}
+              <button onClick={() => setDeleteConfirmTxnId(null)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
                 취소
               </button>
-              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)}
+              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                 삭제
               </button>
             </div>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 합치기 Undo Snackbar ── */}
       <FixedPortal>

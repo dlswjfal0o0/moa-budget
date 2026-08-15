@@ -25,6 +25,7 @@ export default function BottomSheet({
   background = '#F7F8FA',
   dragToDismiss = true,
   showHandle = true,
+  blur = 0,
   zIndex = 200,
 }) {
   const [mounted, setMounted] = useState(open)
@@ -111,7 +112,7 @@ export default function BottomSheet({
 
   const handlePointerDown = (e) => {
     if (!dragToDismiss) return
-    if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"], [data-no-drag]')) return
+    if (e.target.closest && e.target.closest('input, textarea, select, button, [contenteditable="true"], [data-no-drag]')) return
     dragRef.current = {
       phase: 'maybe',
       startX: e.clientX,
@@ -136,7 +137,7 @@ export default function BottomSheet({
         drag.tracker = createVelocityTracker()
         drag.tracker.record(e.clientX, e.clientY)
         drag.startPos = posRef.current
-        drag.target.setPointerCapture?.(drag.pointerId)
+        try { drag.target.setPointerCapture?.(drag.pointerId) } catch { /* 이미 종료된 포인터면 무시 */ }
       } else {
         drag.phase = 'scrolling'
       }
@@ -190,7 +191,8 @@ export default function BottomSheet({
         <div
           ref={backdropRef}
           onClick={() => { if (!closingRef.current) { closingRef.current = true; runExit(0) } }}
-          style={{ position: 'absolute', inset: 0, background: '#000', opacity: 0 }}
+          style={{ position: 'absolute', inset: 0, background: '#000', opacity: 0,
+            backdropFilter: blur ? `blur(${blur}px)` : undefined, WebkitBackdropFilter: blur ? `blur(${blur}px)` : undefined }}
         />
         <div
           ref={sheetRef}
