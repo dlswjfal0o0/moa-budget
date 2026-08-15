@@ -108,9 +108,23 @@ input.input-plain:focus, textarea.input-plain:focus {
 }
 
 /* ── Global Motion System ─────────────────────────── */
-@keyframes pageEnter {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+/* 탭 전환: BottomNav 좌우 순서에 맞춰 살짝만 밀려 들어와 방향성을 준다 */
+@keyframes pageEnterFromRight {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pageEnterFromLeft {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+/* push 성격의 화면(온보딩 등): 더 크게 밀려 들어와 다음/이전 관계를 드러낸다 */
+@keyframes pushEnterFromRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pushEnterFromLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes fadeSlideUp {
