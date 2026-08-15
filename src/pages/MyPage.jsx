@@ -56,6 +56,13 @@ export default function MyPage() {
   const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
   const [settingsPage, setSettingsPage] = useState(null)
+  // 설정 하위 화면 전환 방향(root→하위: push, 하위→root: pop) 판정
+  const [prevSettingsPage, setPrevSettingsPage] = useState(settingsPage)
+  let settingsDirection = 'push'
+  if (settingsPage !== prevSettingsPage) {
+    settingsDirection = (prevSettingsPage && prevSettingsPage !== 'root' && (settingsPage === 'root' || settingsPage === null)) ? 'pop' : 'push'
+    setPrevSettingsPage(settingsPage)
+  }
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteChecked, setDeleteChecked] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -1345,19 +1352,20 @@ export default function MyPage() {
       </div>
 
       {/* ── 설정 – 계층형 네비게이션 ── */}
-      {settingsPage && (
-          <FixedPortal>
-          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+      <BottomSheet variant="full" showHandle={false} background="#F7F8FA"
+        open={!!settingsPage} onClose={() => setSettingsPage(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* 공통 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')} aria-label={settingsPage === 'root' ? '닫기' : '뒤로가기'}
+                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')} aria-label={settingsPage === 'root' ? '닫기' : '뒤로가기'} className="pressable"
                   style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{settingsPageTitle}</p>
               </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 env(safe-area-inset-bottom, 20px)' }}>
+            <div key={settingsPage} style={{ flex: 1, overflowY: 'auto', padding: '0 0 env(safe-area-inset-bottom, 20px)',
+              animation: `${settingsDirection === 'pop' ? 'pageEnterFromLeft' : 'pageEnterFromRight'} 240ms cubic-bezier(0.22,1,0.36,1) forwards` }}>
 
               {/* ── ROOT ── */}
               {settingsPage === 'root' && (
@@ -1823,8 +1831,7 @@ export default function MyPage() {
 
             </div>
           </div>
-          </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* 계정 탈퇴 최종 확인 바텀시트 */}
       <BottomSheet open={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxOpacity={0.5}>
