@@ -4,7 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
 import DeepLinkListener from './components/DeepLinkListener'
 import { AppConfigProvider } from './contexts/AppConfigContext'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { LoansProvider } from './contexts/LoansContext'
@@ -25,9 +25,10 @@ const MyPage = lazy(() => import('./pages/MyPage'))
 const TAB_PATHS = ['/calendar', '/ledger', '/home', '/analysis', '/my']
 
 function RouteFallback() {
+  const { themeData } = useTheme()
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%' }} />
+      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: themeData.primary, borderRadius: '50%' }} />
     </div>
   )
 }
