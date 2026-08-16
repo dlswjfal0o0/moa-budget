@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { THEMES } from '../styles/theme'
@@ -43,6 +44,10 @@ export default function MyPage() {
   const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
   const [notifyPermissionError, setNotifyPermissionError] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
+  // BottomSheet가 닫히는 애니메이션 동안에도 카드 정보가 유지되도록 마지막 값을 보존한다
+  const [lastSelectedCard, setLastSelectedCard] = useState(null)
+  if (selectedCard && selectedCard !== lastSelectedCard) setLastSelectedCard(selectedCard)
+  const displayCard = selectedCard || lastSelectedCard || {}
   const [cardDetailTab, setCardDetailTab] = useState('benefits')
   const [cardHistoryMonth, setCardHistoryMonth] = useState(null)
   const [cardTransactions, setCardTransactions] = useState([])
@@ -51,6 +56,13 @@ export default function MyPage() {
   const [editingNick, setEditingNick] = useState(false)
   const [profileImg, setProfileImg] = useState(() => localStorage.getItem('moa_profileImg') || null)
   const [settingsPage, setSettingsPage] = useState(null)
+  // 설정 하위 화면 전환 방향(root→하위: push, 하위→root: pop) 판정
+  const [prevSettingsPage, setPrevSettingsPage] = useState(settingsPage)
+  let settingsDirection = 'push'
+  if (settingsPage !== prevSettingsPage) {
+    settingsDirection = (prevSettingsPage && prevSettingsPage !== 'root' && (settingsPage === 'root' || settingsPage === null)) ? 'pop' : 'push'
+    setPrevSettingsPage(settingsPage)
+  }
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteChecked, setDeleteChecked] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
@@ -86,7 +98,6 @@ export default function MyPage() {
   }
   // ── Card CRUD motion state ───────────────────────
   const [cardSaveState, setCardSaveState] = useState(null) // null | 'loading' | 'success'
-  const [cardBtnPressed, setCardBtnPressed] = useState(false)
   const [deleteConfirmCard, setDeleteConfirmCard] = useState(null)
   const [cardExitId, setCardExitId] = useState(null)
   const [deletedCard, setDeletedCard] = useState(null)
@@ -101,12 +112,18 @@ export default function MyPage() {
   const [showAccountNumbers, setShowAccountNumbers] = useState(false)
   const [expandedAccountEditId, setExpandedAccountEditId] = useState(null)
   const [selectedAccount, setSelectedAccount] = useState(null)
+  const [lastSelectedAccount, setLastSelectedAccount] = useState(null)
+  if (selectedAccount && selectedAccount !== lastSelectedAccount) setLastSelectedAccount(selectedAccount)
+  const displayAccount = selectedAccount || lastSelectedAccount || {}
   const [accountHistoryMonth, setAccountHistoryMonth] = useState(null)
   const EMPTY_LOAN = { name: '', principal: '', remainingPrincipal: '', startDate: '', rate: '', rateType: 'simple', monthlyPayment: '', paymentDay: '', maturityDate: '' }
   const [loanForm, setLoanForm] = useState(EMPTY_LOAN)
   const [showAddLoan, setShowAddLoan] = useState(false)
   const [editingLoan, setEditingLoan] = useState(null)
   const [selectedLoan, setSelectedLoan] = useState(null)
+  const [lastSelectedLoan, setLastSelectedLoan] = useState(null)
+  if (selectedLoan && selectedLoan !== lastSelectedLoan) setLastSelectedLoan(selectedLoan)
+  const displayLoan = selectedLoan || lastSelectedLoan
   const [loanDetailSort, setLoanDetailSort] = useState('desc')
   const [expandedLoanId, setExpandedLoanId] = useState(null)
   const [loanRepaymentTxns, setLoanRepaymentTxns] = useState([])
@@ -313,8 +330,6 @@ export default function MyPage() {
       haptic.warning(); return
     }
     haptic.light()
-    setCardBtnPressed(true)
-    setTimeout(() => setCardBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
     const newId = Date.now()
@@ -389,8 +404,6 @@ export default function MyPage() {
       haptic.warning(); return
     }
     haptic.light()
-    setCardBtnPressed(true)
-    setTimeout(() => setCardBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setCardSaveState('loading'), 300)
     const updated = cards.map(c => c.id === editingCardId
@@ -865,7 +878,7 @@ export default function MyPage() {
               </div>
             )
           })}
-          {(showAddCard || !!editingCardId) && (() => {
+          {(() => {
             const isEdit = !!editingCardId
             const data = isEdit ? editCardData : newCard
             const setData = isEdit ? setEditCardData : setNewCard
@@ -911,13 +924,14 @@ export default function MyPage() {
             ]
 
             return (
-              <FixedPortal>
-              <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column',
-                animation: isEdit ? 'slideInFromRight 350ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' : 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+              <BottomSheet variant="full" showHandle={false} background="#F7F8FA"
+                open={showAddCard || isEdit}
+                onClose={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }}>
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 {/* Header */}
                 <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button onClick={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }} aria-label="뒤로가기"
+                    <button onClick={() => { if (isEdit) setEditingCardId(null); else { setShowAddCard(false); setNewCard(EMPTY_CARD) } }} aria-label="뒤로가기" className="pressable"
                       style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6"/>
@@ -1066,17 +1080,16 @@ export default function MyPage() {
                   )}
                   <button onClick={isEdit ? handleSaveCard : handleAddCard}
                     disabled={!isValid || !!cardSaveState}
+                    className="pressable-subtle"
                     style={{ width: '100%', height: 56, borderRadius: 16,
                       background: cardSaveState === 'success' ? '#22c55e' : (isValid ? t.primary : '#E5E8EB'),
                       color: isValid ? '#fff' : '#B0B8C1',
                       border: 'none', fontSize: 16, fontWeight: 700,
                       cursor: (isValid && !cardSaveState) ? 'pointer' : 'not-allowed',
-                      transition: 'background 200ms, color 200ms, transform 80ms ease-out',
-                      transform: cardBtnPressed ? 'scale(0.97)' : 'scale(1)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     {cardSaveState === 'loading' ? (
                       <>
-                        <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                        <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />
                         저장 중...
                       </>
                     ) : cardSaveState === 'success' ? (
@@ -1092,7 +1105,7 @@ export default function MyPage() {
                   </button>
                 </div>
               </div>
-              </FixedPortal>
+              </BottomSheet>
             )
           })()}
         </div>
@@ -1184,13 +1197,8 @@ export default function MyPage() {
           )}
 
           {/* 계좌 수정 bottom sheet */}
-          {editingAccountId && (
-            <FixedPortal>
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-              onClick={() => setEditingAccountId(null)}>
-              <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
-                onClick={e => e.stopPropagation()}>
-                <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
+          <BottomSheet open={!!editingAccountId} onClose={() => setEditingAccountId(null)}>
+            <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>계좌 수정</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
@@ -1207,23 +1215,16 @@ export default function MyPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-                  <button onClick={() => setEditingAccountId(null)}
+                  <button onClick={() => setEditingAccountId(null)} className="pressable-subtle"
                     style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
-                  <button onClick={handleSaveAccount}
+                  <button onClick={handleSaveAccount} className="pressable-subtle"
                     style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: t.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>저장</button>
                 </div>
-              </div>
             </div>
-            </FixedPortal>
-          )}
+          </BottomSheet>
           {/* 계좌 추가 bottom sheet */}
-          {showAddAccount && (
-            <FixedPortal>
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
-              onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}>
-              <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}
-                onClick={e => e.stopPropagation()}>
-                <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
+          <BottomSheet open={showAddAccount} onClose={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}>
+            <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 40px)' }}>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>계좌 추가</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
@@ -1240,15 +1241,13 @@ export default function MyPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-                  <button onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }}
+                  <button onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }} className="pressable-subtle"
                     style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>취소</button>
-                  <button onClick={handleAddAccount}
+                  <button onClick={handleAddAccount} className="pressable-subtle"
                     style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: t.primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>추가</button>
                 </div>
-              </div>
             </div>
-            </FixedPortal>
-          )}
+          </BottomSheet>
         </div>
 
         {/* 현금 */}
@@ -1353,19 +1352,20 @@ export default function MyPage() {
       </div>
 
       {/* ── 설정 – 계층형 네비게이션 ── */}
-      {settingsPage && (
-          <FixedPortal>
-          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 300, display: 'flex', flexDirection: 'column' }}>
+      <BottomSheet variant="full" showHandle={false} background="#F7F8FA"
+        open={!!settingsPage} onClose={() => setSettingsPage(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* 공통 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')} aria-label={settingsPage === 'root' ? '닫기' : '뒤로가기'}
+                <button onClick={() => settingsPage === 'root' ? setSettingsPage(null) : setSettingsPage('root')} aria-label={settingsPage === 'root' ? '닫기' : '뒤로가기'} className="pressable"
                   style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#191F28', padding: 0, lineHeight: 1 }}>‹</button>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{settingsPageTitle}</p>
               </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 env(safe-area-inset-bottom, 20px)' }}>
+            <div key={settingsPage} style={{ flex: 1, overflowY: 'auto', padding: '0 0 env(safe-area-inset-bottom, 20px)',
+              animation: `${settingsDirection === 'pop' ? 'pageEnterFromLeft' : 'pageEnterFromRight'} 240ms cubic-bezier(0.22,1,0.36,1) forwards` }}>
 
               {/* ── ROOT ── */}
               {settingsPage === 'root' && (
@@ -1831,55 +1831,46 @@ export default function MyPage() {
 
             </div>
           </div>
-          </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* 계정 탈퇴 최종 확인 바텀시트 */}
-      {showDeleteModal && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={() => setShowDeleteModal(false)}>
-          <div style={{ background: '#fff', borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, padding: '28px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}
-            onClick={e => e.stopPropagation()}>
+      <BottomSheet open={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxOpacity={0.5}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}>
             <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 8, textAlign: 'center' }}>정말 탈퇴할까요?</p>
             <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
-            <button onClick={() => setShowDeleteModal(false)}
+            <button onClick={() => setShowDeleteModal(false)} className="pressable-subtle"
               style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', background: t.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
               계속 사용할게요
             </button>
-            <button onClick={handleWithdrawAccount} disabled={deletingAccount}
+            <button onClick={handleWithdrawAccount} disabled={deletingAccount} className="pressable"
               style={{ width: '100%', padding: '12px', border: 'none', background: 'none', color: deletingAccount ? '#C9CDD2' : '#FF3B30', fontSize: 14, fontWeight: 500, cursor: deletingAccount ? 'not-allowed' : 'pointer' }}>
               {deletingAccount ? '처리 중...' : '탈퇴하기'}
             </button>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* 카드 상세 모달 */}
-      {selectedCard && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <BottomSheet open={!!selectedCard} onClose={() => setSelectedCard(null)} maxOpacity={0.4} background="transparent" zIndex={400}>
             <div style={{ background: '#fff', borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
                 {/* 카드 헤더 */}
                 <div style={{ background: t.primary, padding: '24px 20px 20px', borderRadius: '28px 28px 0 0', color: '#fff', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                        <p style={{ fontSize: 18, fontWeight: 700 }}>{selectedCard.name}</p>
-                        <button onClick={() => setSelectedCard(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                        <p style={{ fontSize: 18, fontWeight: 700 }}>{displayCard.name}</p>
+                        <button onClick={() => setSelectedCard(null)} aria-label="닫기" className="pressable" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                     </div>
                     <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, opacity: 0.9 }}>
-                        **** **** **** {selectedCard.cardNumber || '****'}
+                        **** **** **** {displayCard.cardNumber || '****'}
                     </p>
                     <div style={{ display: 'flex', gap: 24 }}>
                         <div>
                             <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>유효기간</p>
-                            <p style={{ fontSize: 13 }}>{selectedCard.expiry || '--/--'}</p>
+                            <p style={{ fontSize: 13 }}>{displayCard.expiry || '--/--'}</p>
                         </div>
-                        {selectedCard.linkedAccount && (
+                        {displayCard.linkedAccount && (
                             <div>
                                 <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>연동 계좌</p>
-                                <p style={{ fontSize: 13 }}>{selectedCard.linkedAccount}</p>
+                                <p style={{ fontSize: 13 }}>{displayCard.linkedAccount}</p>
                             </div>
                         )}
                     </div>
@@ -1887,7 +1878,7 @@ export default function MyPage() {
 
                 {/* 혜택/내역 탭 */}
                 <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
-                    {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }, ...(selectedCard.cardType === 'credit' ? [{ key: 'installment', label: '할부' }] : [])].map(tab => (
+                    {[{ key: 'benefits', label: '혜택' }, { key: 'history', label: '내역' }, ...(displayCard.cardType === 'credit' ? [{ key: 'installment', label: '할부' }] : [])].map(tab => (
                         <button key={tab.key} onClick={() => setCardDetailTab(tab.key)}
                             style={{ flex: 1, padding: '14px', border: 'none', background: 'none', cursor: 'pointer',
                                 fontSize: 14, fontWeight: cardDetailTab === tab.key ? 600 : 400,
@@ -1902,14 +1893,14 @@ export default function MyPage() {
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
                     {cardDetailTab === 'benefits' ? (
                         <div>
-                            {(selectedCard.benefits || []).length === 0 && (
+                            {(displayCard.benefits || []).length === 0 && (
                                 <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '20px 0' }}>혜택을 추가해보세요</p>
                             )}
-                            {(selectedCard.benefits || []).map((b, i) => (
+                            {(displayCard.benefits || []).map((b, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f8f8f8' }}>
                                     <p style={{ fontSize: 14, color: '#333' }}>• {b}</p>
                                     <button onClick={() => {
-                                        const updated = cards.map(c => c.id === selectedCard.id
+                                        const updated = cards.map(c => c.id === displayCard.id
                                             ? { ...c, benefits: c.benefits.filter((_, j) => j !== i) } : c)
                                         setCards(updated); saveToFirestore({ cards: updated })
                                         setSelectedCard(prev => ({ ...prev, benefits: prev.benefits.filter((_, j) => j !== i) }))
@@ -2022,7 +2013,7 @@ export default function MyPage() {
                             <button onClick={() => {
                                 const val = document.getElementById('benefitInput').value.trim()
                                 if (!val) return
-                                const updated = cards.map(c => c.id === selectedCard.id
+                                const updated = cards.map(c => c.id === displayCard.id
                                     ? { ...c, benefits: [...(c.benefits || []), val] } : c)
                                 setCards(updated); saveToFirestore({ cards: updated })
                                 setSelectedCard(prev => ({ ...prev, benefits: [...(prev.benefits || []), val] }))
@@ -2033,13 +2024,11 @@ export default function MyPage() {
                 )}
 
             </div>
-        </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* 계좌 내역 바텀시트 */}
-      {selectedAccount && (() => {
-        const accTxns = allTxns.filter(tx => tx.payment === selectedAccount.name || tx.toAccount === selectedAccount.name)
+      {(() => {
+        const accTxns = allTxns.filter(tx => tx.payment === displayAccount.name || tx.toAccount === displayAccount.name)
         const availableMonths = [...new Set(
           accTxns.map(tx => tx.month || tx.date?.slice(0, 7) || '')
         )].filter(Boolean).sort((a, b) => b.localeCompare(a))
@@ -2053,19 +2042,16 @@ export default function MyPage() {
           return acc
         }, {})
         return (
-          <FixedPortal>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 400, display: 'flex', alignItems: 'flex-end' }}
-            onClick={() => setSelectedAccount(null)}>
-            <div style={{ width: '100%', background: t.card || '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-              onClick={e => e.stopPropagation()}>
+          <BottomSheet open={!!selectedAccount} onClose={() => setSelectedAccount(null)} maxOpacity={0.4} background="transparent" zIndex={400}>
+            <div style={{ width: '100%', background: t.card || '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
               {/* 헤더 */}
               <div style={{ background: t.primary, padding: '20px 20px 18px', borderRadius: '28px 28px 0 0', color: '#fff', flexShrink: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <p style={{ fontSize: 17, fontWeight: 700 }}>{selectedAccount.name}</p>
-                  <button onClick={() => setSelectedAccount(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                  <p style={{ fontSize: 17, fontWeight: 700 }}>{displayAccount.name}</p>
+                  <button onClick={() => setSelectedAccount(null)} aria-label="닫기" className="pressable" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                 </div>
-                {selectedAccount.number && (
-                  <p style={{ fontSize: 13, opacity: 0.85, letterSpacing: 1 }}>{maskAccountNumber(selectedAccount.number)}</p>
+                {displayAccount.number && (
+                  <p style={{ fontSize: 13, opacity: 0.85, letterSpacing: 1 }}>{maskAccountNumber(displayAccount.number)}</p>
                 )}
               </div>
 
@@ -2120,25 +2106,26 @@ export default function MyPage() {
                 ))}
               </div>
             </div>
-          </div>
-          </FixedPortal>
+          </BottomSheet>
         )
       })()}
 
       {/* ── 대출 추가/수정 전체화면 폼 ── */}
-      {(showAddLoan || !!editingLoan) && (() => {
+      {(() => {
         const isEdit = !!editingLoan
         const monthlyInterest = calcMonthlyInterest(loanForm.remainingPrincipal, loanForm.rate, loanForm.rateType)
         const isValid = !!loanForm.name && !!loanForm.principal && !!loanForm.remainingPrincipal && !!loanForm.startDate
         const lInput = { ...inputStyle, height: 52, appearance: 'none', WebkitAppearance: 'none' }
         return (
-          <FixedPortal>
-          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+          <BottomSheet variant="full" showHandle={false} background="#F7F8FA"
+            open={showAddLoan || isEdit}
+            onClose={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button onClick={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }} aria-label="뒤로가기"
+                  <button onClick={() => { if (isEdit) { setEditingLoan(null); setLoanForm(EMPTY_LOAN) } else { setShowAddLoan(false); setLoanForm(EMPTY_LOAN) } }} aria-label="뒤로가기" className="pressable"
                     style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
@@ -2215,19 +2202,19 @@ export default function MyPage() {
 
             {/* 하단 버튼 */}
             <div style={{ padding: '12px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', background: '#fff', borderTop: '1px solid #F2F4F6', flexShrink: 0 }}>
-              <button onClick={isEdit ? handleSaveLoan : handleAddLoan} disabled={!isValid}
-                style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: isValid ? t.primary : '#E5E8EB', color: isValid ? '#fff' : '#B0B8C1', fontSize: 16, fontWeight: 700, cursor: isValid ? 'pointer' : 'not-allowed', transition: 'all 200ms' }}>
+              <button onClick={isEdit ? handleSaveLoan : handleAddLoan} disabled={!isValid} className="pressable-subtle"
+                style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: isValid ? t.primary : '#E5E8EB', color: isValid ? '#fff' : '#B0B8C1', fontSize: 16, fontWeight: 700, cursor: isValid ? 'pointer' : 'not-allowed', transition: 'background 200ms' }}>
                 {isEdit ? '저장하기' : '추가하기'}
               </button>
             </div>
           </div>
-          </FixedPortal>
+          </BottomSheet>
         )
       })()}
 
       {/* ── 대출 상세 화면 ── */}
-      {selectedLoan && (() => {
-        const loan = loans.find(l => l.id === selectedLoan.id) || selectedLoan
+      {(() => {
+        const loan = (displayLoan && (loans.find(l => l.id === displayLoan.id) || displayLoan)) || {}
         const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
         const totalWithInterest = loan.remainingPrincipal + (loan.rate ? monthlyInterest : 0)
         // 상환 내역: Firestore 트랜잭션에서 직접 계산 (단일 소스)
@@ -2243,12 +2230,14 @@ export default function MyPage() {
         const repayments = loanDetailSort === 'desc' ? [...repaymentsFromTxns].reverse() : repaymentsFromTxns
 
         return (
-          <FixedPortal>
-          <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 500, display: 'flex', flexDirection: 'column' }}>
+          <BottomSheet variant="full" showHandle={false} background="#F7F8FA"
+            open={!!selectedLoan}
+            onClose={() => setSelectedLoan(null)}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* 헤더 */}
             <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button onClick={() => setSelectedLoan(null)} aria-label="뒤로가기"
+                <button onClick={() => setSelectedLoan(null)} aria-label="뒤로가기" className="pressable"
                   style={{ width: 36, height: 36, borderRadius: 10, background: '#F2F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#191F28" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
@@ -2345,43 +2334,35 @@ export default function MyPage() {
               </div>
 
               {/* 삭제 버튼 */}
-              <button onClick={() => handleDeleteLoan(loan.id)}
+              <button onClick={() => handleDeleteLoan(loan.id)} className="pressable-subtle"
                 style={{ width: '100%', marginTop: 16, padding: '14px', borderRadius: 16, border: '1.5px solid #FF5A5F', background: 'transparent', color: '#FF5A5F', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 대출 삭제
               </button>
             </div>
           </div>
-          </FixedPortal>
+          </BottomSheet>
         )
       })()}
 
       {/* ── 카드 삭제 확인 Bottom Sheet ─────────── */}
-      {deleteConfirmCard && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={() => setDeleteConfirmCard(null)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', zIndex: 1 }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+      <BottomSheet open={!!deleteConfirmCard} onClose={() => setDeleteConfirmCard(null)} blur={3} background="#fff" zIndex={1000}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 10 }}>카드를 삭제할까요?</p>
             <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>
               이 카드와 연결된 정보는 유지되지만<br/>카드 관리 목록에서는 제거됩니다.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteConfirmCard(null)}
+              <button onClick={() => setDeleteConfirmCard(null)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
                 취소
               </button>
-              <button onClick={() => confirmDeleteCard(deleteConfirmCard.id)}
+              <button onClick={() => confirmDeleteCard(deleteConfirmCard.id)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                 삭제
               </button>
             </div>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── Undo Snackbar ───────────────────────── */}
       <FixedPortal>
@@ -2390,15 +2371,15 @@ export default function MyPage() {
         transform: undoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: undoSnackbar ? 1 : 0,
         transition: undoSnackbar
-          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
-          : 'transform 200ms ease-in, opacity 200ms ease-in',
+          ? 'transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease-out'
+          : 'transform 180ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: '#191F28', borderRadius: 16, padding: '14px 16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
         pointerEvents: undoSnackbar ? 'auto' : 'none',
       }}>
         <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>카드가 삭제되었습니다.</span>
-        <button onClick={handleUndo}
+        <button onClick={handleUndo} className="pressable"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
           실행 취소
         </button>

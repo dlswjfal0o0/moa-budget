@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Suspense, lazy, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
 import DeepLinkListener from './components/DeepLinkListener'
@@ -21,28 +21,40 @@ const Calendar = lazy(() => import('./pages/Calendar'))
 const Analysis = lazy(() => import('./pages/Analysis'))
 const MyPage = lazy(() => import('./pages/MyPage'))
 
-// Tab paths that should use Fade Through transition
-const TAB_PATHS = ['/home', '/ledger', '/calendar', '/analysis', '/my']
+// BottomNav의 좌→우 표시 순서와 동일해야 탭 전환 방향이 맞다 (캘린더·가계부·홈·분석·MY)
+const TAB_PATHS = ['/calendar', '/ledger', '/home', '/analysis', '/my']
 
 function RouteFallback() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%' }} />
     </div>
   )
 }
 
 function AnimatedRoutes() {
   const location = useLocation()
+  const navigationType = useNavigationType()
   const isTab = TAB_PATHS.includes(location.pathname)
   const { fontScale } = useSettings()
+  const [lastTabIndex, setLastTabIndex] = useState(TAB_PATHS.indexOf(location.pathname))
+
+  // 탭끼리는 BottomNav의 좌우 순서로, 그 외(온보딩 등)는 뒤로가기 여부로 방향을 정한다
+  let animationName
+  if (isTab) {
+    const idx = TAB_PATHS.indexOf(location.pathname)
+    animationName = idx < lastTabIndex ? 'pageEnterFromLeft' : 'pageEnterFromRight'
+    if (idx !== lastTabIndex) setLastTabIndex(idx)
+  } else {
+    animationName = navigationType === 'POP' ? 'pushEnterFromLeft' : 'pushEnterFromRight'
+  }
 
   return (
     <div
       key={location.pathname}
       style={{
         zoom: fontScale,
-        ...(isTab ? { animation: 'pageEnter 220ms ease forwards' } : undefined),
+        animation: `${animationName} 280ms cubic-bezier(0.22,1,0.36,1) forwards`,
       }}
     >
       <ErrorBoundary key={location.pathname}>

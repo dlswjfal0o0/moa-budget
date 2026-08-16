@@ -10,6 +10,7 @@ import {
   getDoc, setDoc
 } from 'firebase/firestore'
 import BottomNav from '../components/BottomNav'
+import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
@@ -18,6 +19,7 @@ import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
+import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -138,6 +140,7 @@ export default function Ledger() {
   const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
   const navigate = useNavigate()
+  const reducedMotion = useReducedMotion()
   const now = new Date()
   const [user, setUser] = useState(null)
   const [loadError, setLoadError] = useState(null)
@@ -155,15 +158,17 @@ export default function Ledger() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [userPayments, setUserPayments] = useState(['현금'])
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
-  const touchStartX = useRef(null)
-  const touchStartY = useRef(null)
+  // ── 스와이프 삭제 제스처 (물리 기반) ──────────────────
+  const rowRefs = useRef(new Map())     // id -> DOM element
+  const rowPosRef = useRef({})          // id -> 현재 translateX(px)
+  const rowDragRef = useRef(null)       // 진행 중인 제스처
+  const rowSpringRef = useRef(null)
   const [showYMPicker, setShowYMPicker] = useState(false)
   const [showCardSelector, setShowCardSelector] = useState(false)
   const [showAccountSelector, setShowAccountSelector] = useState(false)
   // ── Ledger motion state ──────────────────────────
   const [formSaveState, setFormSaveState] = useState(null) // null | 'loading' | 'success'
   const submittingRef = useRef(false) // 동기 가드: 연타 시 중복 저장 방지
-  const [formBtnPressed, setFormBtnPressed] = useState(false)
   const [deleteConfirmTxnId, setDeleteConfirmTxnId] = useState(null)
   const [txnExitId, setTxnExitId] = useState(null)
   const [deletedTxn, setDeletedTxn] = useState(null)
@@ -337,8 +342,6 @@ export default function Ledger() {
     if (submittingRef.current) return
     submittingRef.current = true
     haptic.light()
-    setFormBtnPressed(true)
-    setTimeout(() => setFormBtnPressed(false), 80)
 
     const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
     try {
@@ -407,6 +410,8 @@ export default function Ledger() {
 
   const handleDelete = (id) => {
     setDeleteConfirmTxnId(id)
+    cancelRowSpring()
+    rowPosRef.current[id] = 0
     setSwipedId(null)
   }
 
@@ -482,33 +487,115 @@ export default function Ledger() {
     setShowForm(true); setSelectedId(null)
   }
 
-  const handleItemTouchStart = (e, t) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-    if (selectionMode) return
-    longPressTimer.current = setTimeout(() => {
-      haptic.light()
-      setSelectionMode(true)
-      setSelectedIds(new Set([t.id]))
-      setSwipedId(null)
-      longPressTimer.current = null
-    }, 500)
+  // 행 스와이프: 손가락을 그대로 따라오다가(rowPosRef/DOM 직접 조작),
+  // 뗄 때 이동거리+velocity로 open/close를 판정해 spring으로 정착시킨다.
+  const ROW_OPEN_X = -70
+  const ROW_OPEN_THRESHOLD = ROW_OPEN_X * 0.5
+  const ROW_VELOCITY_THRESHOLD = 0.5 // px/ms
+  const ROW_DRAG_SLOP = 6
+
+  const setRowEl = (id) => (el) => {
+    if (el) rowRefs.current.set(id, el)
+    else rowRefs.current.delete(id)
   }
-  const handleItemTouchMove = (e) => {
-    if (longPressTimer.current) {
-      const dx = Math.abs(e.touches[0].clientX - (touchStartX.current || 0))
-      const dy = Math.abs(e.touches[0].clientY - (touchStartY.current || 0))
-      if (dx > 8 || dy > 8) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-    }
+
+  const cancelRowSpring = () => {
+    if (rowSpringRef.current) { rowSpringRef.current.cancel(); rowSpringRef.current = null }
   }
-  const handleItemTouchEnd = (e, id) => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+
+  const applyRowX = (id, x) => {
+    rowPosRef.current[id] = x
+    const el = rowRefs.current.get(id)
+    if (el) el.style.transform = `translateX(${x}px)`
+  }
+
+  const settleRow = (id, open, velocity = 0) => {
+    cancelRowSpring()
+    const from = rowPosRef.current[id] ?? 0
+    const to = open ? ROW_OPEN_X : 0
+    rowSpringRef.current = animateSpring({
+      from, to, velocity,
+      ...getSpringPreset('snappy', reducedMotion),
+      onUpdate: (x) => applyRowX(id, x),
+      onComplete: () => {
+        rowSpringRef.current = null
+        setSwipedId(open ? id : null)
+      },
+    })
+  }
+
+  const handleItemPointerDown = (e, t) => {
+    if (e.target.closest && e.target.closest('button')) return
     if (!selectionMode) {
-      const dx = e.changedTouches[0].clientX - (touchStartX.current || 0)
-      if (dx < -60) setSwipedId(id)
-      else if (dx > 30) setSwipedId(null)
+      longPressTimer.current = setTimeout(() => {
+        haptic.light()
+        setSelectionMode(true)
+        setSelectedIds(new Set([t.id]))
+        setSwipedId(null)
+        longPressTimer.current = null
+        rowDragRef.current = null
+      }, 500)
+    }
+    // 다른 행이 열려 있으면 먼저 자연스럽게 닫는다
+    if (!selectionMode && swipedId && swipedId !== t.id) settleRow(swipedId, false)
+    rowDragRef.current = {
+      id: t.id,
+      phase: 'maybe',
+      startX: e.clientX,
+      startY: e.clientY,
+      startPos: rowPosRef.current[t.id] ?? (swipedId === t.id ? ROW_OPEN_X : 0),
+      pointerId: e.pointerId,
+      el: e.currentTarget,
     }
   }
+
+  const handleItemPointerMove = (e) => {
+    const drag = rowDragRef.current
+    if (longPressTimer.current) {
+      const dx0 = Math.abs(e.clientX - (drag?.startX || 0))
+      const dy0 = Math.abs(e.clientY - (drag?.startY || 0))
+      if (dx0 > 8 || dy0 > 8) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    }
+    if (!drag || selectionMode) return
+    const dx = e.clientX - drag.startX
+    const dy = e.clientY - drag.startY
+
+    if (drag.phase === 'maybe') {
+      if (Math.abs(dx) < ROW_DRAG_SLOP && Math.abs(dy) < ROW_DRAG_SLOP) return
+      if (Math.abs(dx) > Math.abs(dy)) {
+        drag.phase = 'dragging'
+        cancelRowSpring()
+        drag.tracker = createVelocityTracker()
+        drag.tracker.record(e.clientX, e.clientY)
+        try { drag.el.setPointerCapture?.(drag.pointerId) } catch { /* 이미 종료된 포인터면 무시 */ }
+      } else {
+        drag.phase = 'scrolling'
+      }
+      return
+    }
+
+    if (drag.phase === 'dragging') {
+      e.preventDefault()
+      drag.tracker.record(e.clientX, e.clientY)
+      const raw = drag.startPos + dx
+      const clamped = Math.max(Math.min(raw, 8), ROW_OPEN_X - 8)
+      applyRowX(drag.id, clamped)
+      if (swipedId !== drag.id && clamped < -4) setSwipedId(drag.id)
+    }
+  }
+
+  const handleItemPointerEnd = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+    const drag = rowDragRef.current
+    rowDragRef.current = null
+    if (!drag || drag.phase !== 'dragging') return
+    const { vx } = drag.tracker.getVelocity()
+    const pos = rowPosRef.current[drag.id] ?? 0
+    const shouldOpen = pos < ROW_OPEN_THRESHOLD || vx < -ROW_VELOCITY_THRESHOLD
+    settleRow(drag.id, shouldOpen, vx)
+  }
+
+  useEffect(() => () => cancelRowSpring(), [])
 
   // ── 숨기기 핸들러 ────────────────────────────────────
   const handleHide = async (id) => {
@@ -883,16 +970,18 @@ export default function Ledger() {
                         </div>
                       )}
                       <div
+                        ref={setRowEl(t.id)}
                         onClick={() => {
                           if (selectionMode) { handleSelectItem(t.id) }
-                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); setSwipedId(null) }
+                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
                         }}
-                        onTouchStart={e => handleItemTouchStart(e, t)}
-                        onTouchMove={handleItemTouchMove}
-                        onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                        onPointerDown={e => handleItemPointerDown(e, t)}
+                        onPointerMove={handleItemPointerMove}
+                        onPointerUp={handleItemPointerEnd}
+                        onPointerCancel={handleItemPointerEnd}
                         style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
                           transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                          transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, background: selBg }}>
+                          touchAction: 'pan-y', position: 'relative', zIndex: 1, background: selBg }}>
                         {/* 선택 체크박스 */}
                         {selectionMode && (
                           <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
@@ -994,17 +1083,19 @@ export default function Ledger() {
                       </div>
                     )}
                     <div
-                      onTouchStart={e => handleItemTouchStart(e, t)}
-                      onTouchMove={handleItemTouchMove}
-                      onTouchEnd={e => handleItemTouchEnd(e, t.id)}
+                      ref={setRowEl(t.id)}
+                      onPointerDown={e => handleItemPointerDown(e, t)}
+                      onPointerMove={handleItemPointerMove}
+                      onPointerUp={handleItemPointerEnd}
+                      onPointerCancel={handleItemPointerEnd}
                       onClick={() => {
                         if (selectionMode) { handleSelectItem(t.id) }
-                        else { setSelectedId(selectedId === t.id ? null : t.id); setSwipedId(null) }
+                        else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
                       }}
                       style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
                         background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
                         transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                        transition: 'transform 0.25s ease', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
+                        touchAction: 'pan-y', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
                       {/* 선택 체크박스 */}
                       {selectionMode && (
                         <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
@@ -1106,13 +1197,12 @@ export default function Ledger() {
       )}
 
       {/* ── 내역 추가/수정 폼 ── */}
-      {showForm && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
-          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+      <BottomSheet variant="full" open={showForm} showHandle={false} background="#F7F8FA"
+        onClose={() => { setShowForm(false); setEditItem(null) }}>
+        <div>
           {/* 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
-            <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+            <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
           </div>
 
@@ -1169,13 +1259,12 @@ export default function Ledger() {
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 14, fontWeight: 600 }}>카테고리</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {categories[form.type === 'expense' ? 'expense' : 'income'].map(cat => (
-                    <button key={cat} onClick={() => { haptic.selection(); setForm(f => ({ ...f, category: cat })) }}
+                    <button key={cat} onClick={() => { haptic.selection(); setForm(f => ({ ...f, category: cat })) }} className="pressable-subtle"
                       style={{ padding: '12px 4px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13,
                         background: form.category === cat ? themeData.primary : '#F2F4F6',
                         color: form.category === cat ? '#fff' : '#191F28',
                         fontWeight: form.category === cat ? 700 : 500, textAlign: 'center',
-                        transform: form.category === cat ? 'scale(1)' : 'scale(1)',
-                        transition: 'all 0.15s, transform 120ms cubic-bezier(0.34,1.56,0.64,1)' }}>
+                        transition: 'background 150ms ease, color 150ms ease' }}>
                       {cat}
                     </button>
                   ))}
@@ -1437,15 +1526,15 @@ export default function Ledger() {
 
             <button onClick={handleSubmit}
               disabled={!!formSaveState}
+              className="pressable-subtle"
               style={{ width: '100%', height: 56, borderRadius: 16,
                 background: formSaveState === 'success' ? '#22c55e' : (form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : themeData.primary),
                 color: '#fff', border: 'none', fontSize: 16, fontWeight: 700, cursor: formSaveState ? 'not-allowed' : 'pointer',
-                letterSpacing: '-0.2px', transition: 'background 200ms, transform 80ms ease-out',
-                transform: formBtnPressed ? 'scale(0.97)' : 'scale(1)',
+                letterSpacing: '-0.2px', transition: 'background 200ms',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {formSaveState === 'loading' ? (
                 <>
-                  <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0 }} />
+                  <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />
                   저장 중...
                 </>
               ) : formSaveState === 'success' ? (
@@ -1461,8 +1550,7 @@ export default function Ledger() {
             </button>
           </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {showYMPicker && (
         <YearMonthPicker
@@ -1474,13 +1562,12 @@ export default function Ledger() {
       )}
 
       {/* ── 숨긴 내역 보기 ── */}
-      {showHiddenView && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 200, overflowY: 'auto', overflowX: 'hidden',
-          animation: 'slideInUp 400ms cubic-bezier(0.25,0.46,0.45,0.94) forwards' }}>
+      <BottomSheet variant="full" open={showHiddenView} showHandle={false} background="#F7F8FA"
+        onClose={() => setShowHiddenView(false)}>
+        <div>
           <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <button onClick={() => setShowHiddenView(false)} aria-label="뒤로가기" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
+              <button onClick={() => setShowHiddenView(false)} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>숨긴 내역</p>
               <span style={{ marginLeft: 8, fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>{hiddenTransactions.length}건</span>
             </div>
@@ -1527,19 +1614,11 @@ export default function Ledger() {
             )}
           </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 합치기 모달 ── */}
-      {showMergeModal && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={() => setShowMergeModal(false)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
-            zIndex: 1, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+      <BottomSheet open={showMergeModal} onClose={() => setShowMergeModal(false)} blur={3} background="#fff">
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>내역 합치기</p>
 
             {/* 선택 항목 목록 */}
@@ -1575,40 +1654,30 @@ export default function Ledger() {
               style={{ width: '100%', padding: '14px 16px', borderRadius: 16, border: `1.5px solid ${themeData.primary}40`, fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#191F28', marginBottom: 24 }}
             />
 
-            <button onClick={handleMerge}
+            <button onClick={handleMerge} className="pressable-subtle"
               style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
               확인
             </button>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 내역 삭제 확인 Bottom Sheet ── */}
-      {deleteConfirmTxnId && (
-        <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div onClick={() => setDeleteConfirmTxnId(null)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
-          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0',
-            padding: '28px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)', zIndex: 1 }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E5E8EB', margin: '0 auto 24px' }} />
+      <BottomSheet open={!!deleteConfirmTxnId} onClose={() => setDeleteConfirmTxnId(null)} blur={3} background="#fff" zIndex={210}>
+        <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 10 }}>내역을 삭제할까요?</p>
             <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>삭제 후 5초 이내에 되돌릴 수 있어요.</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteConfirmTxnId(null)}
+              <button onClick={() => setDeleteConfirmTxnId(null)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
                 취소
               </button>
-              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)}
+              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)} className="pressable-subtle"
                 style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                 삭제
               </button>
             </div>
-          </div>
         </div>
-        </FixedPortal>
-      )}
+      </BottomSheet>
 
       {/* ── 합치기 Undo Snackbar ── */}
       <FixedPortal>
@@ -1617,8 +1686,8 @@ export default function Ledger() {
         transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: mergeUndoSnackbar ? 1 : 0,
         transition: mergeUndoSnackbar
-          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
-          : 'transform 200ms ease-in, opacity 200ms ease-in',
+          ? 'transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease-out'
+          : 'transform 180ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: '#191F28', borderRadius: 16, padding: '14px 16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
@@ -1628,7 +1697,7 @@ export default function Ledger() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 합쳐졌습니다.</span>
         </div>
-        <button onClick={handleUndoMerge}
+        <button onClick={handleUndoMerge} className="pressable"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
           되돌리기
         </button>
@@ -1642,15 +1711,15 @@ export default function Ledger() {
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: txnUndoSnackbar ? 1 : 0,
         transition: txnUndoSnackbar
-          ? 'transform 250ms cubic-bezier(0.34,1.4,0.64,1), opacity 250ms ease'
-          : 'transform 200ms ease-in, opacity 200ms ease-in',
+          ? 'transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 220ms ease-out'
+          : 'transform 180ms cubic-bezier(0.4,0,1,1), opacity 180ms ease-in',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: '#191F28', borderRadius: 16, padding: '14px 16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
         pointerEvents: txnUndoSnackbar ? 'auto' : 'none',
       }}>
         <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>내역이 삭제되었습니다.</span>
-        <button onClick={handleUndoTxn}
+        <button onClick={handleUndoTxn} className="pressable"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeData.primary, fontSize: 14, fontWeight: 700, padding: '4px 8px', flexShrink: 0 }}>
           실행 취소
         </button>
