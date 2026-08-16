@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { LoansProvider } from './contexts/LoansContext'
+import { PurchasesProvider } from './contexts/PurchasesContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
@@ -83,6 +84,7 @@ function App() {
     <AppConfigProvider>
       <ThemeProvider>
         <SettingsProvider>
+        <PurchasesProvider>
         <CardsProvider>
         <LoansProvider>
         <BrowserRouter>
@@ -93,6 +95,7 @@ function App() {
         </BrowserRouter>
         </LoansProvider>
         </CardsProvider>
+        </PurchasesProvider>
         </SettingsProvider>
       </ThemeProvider>
     </AppConfigProvider>
