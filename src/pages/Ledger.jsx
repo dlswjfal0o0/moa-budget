@@ -160,6 +160,7 @@ export default function Ledger() {
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
   // ── 스와이프 삭제 제스처 (물리 기반) ──────────────────
   const rowRefs = useRef(new Map())     // id -> DOM element
+  const deleteBtnRefs = useRef(new Map()) // id -> 삭제 버튼 DOM element
   const rowPosRef = useRef({})          // id -> 현재 translateX(px)
   const rowDragRef = useRef(null)       // 진행 중인 제스처
   const rowSpringRef = useRef(null)
@@ -499,6 +500,11 @@ export default function Ledger() {
     else rowRefs.current.delete(id)
   }
 
+  const setDeleteBtnEl = (id) => (el) => {
+    if (el) deleteBtnRefs.current.set(id, el)
+    else deleteBtnRefs.current.delete(id)
+  }
+
   const cancelRowSpring = () => {
     if (rowSpringRef.current) { rowSpringRef.current.cancel(); rowSpringRef.current = null }
   }
@@ -507,6 +513,14 @@ export default function Ledger() {
     rowPosRef.current[id] = x
     const el = rowRefs.current.get(id)
     if (el) el.style.transform = `translateX(${x}px)`
+    const btn = deleteBtnRefs.current.get(id)
+    if (btn) {
+      // 손가락을 따라 버튼이 끌려 나오는 느낌: 스와이프 진행률에 맞춰 크기/투명도 보간
+      const progress = Math.min(1, Math.max(0, x / ROW_OPEN_X))
+      btn.style.opacity = String(progress)
+      btn.style.transform = `translateY(-50%) scale(${(0.5 + 0.5 * progress).toFixed(3)})`
+      btn.style.pointerEvents = progress > 0.6 ? 'auto' : 'none'
+    }
   }
 
   const settleRow = (id, open, velocity = 0) => {
@@ -956,58 +970,69 @@ export default function Ledger() {
                   const amtColor = t.type === 'income' ? '#2ECC71' : t.type === 'expense' ? '#FF5A5F' : '#C9CDD4'
                   const amtPrefix = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''
                   const selBg = isSelected ? `${themeData.primary}15` : '#fff'
+                  const cardRadius = (!selectionMode && isExpanded) ? '20px 20px 0 0' : 20
                   return (
-                    <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: selBg, boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10,
-                      border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
-                      transition: 'border-color 0.15s, background 0.15s' }}>
-                      {!selectionMode && swipedId === t.id && (
-                        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                          onClick={() => handleDelete(t.id)}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <div key={t.id} style={{ marginBottom: 10 }}>
+                      <div style={{ position: 'relative' }}>
+                        <div
+                          ref={setDeleteBtnEl(t.id)}
+                          onClick={() => handleDelete(t.id)}
+                          style={{ position: 'absolute', right: 13, top: '50%',
+                            transform: `translateY(-50%) scale(${(!selectionMode && swipedId === t.id) ? 1 : 0.5})`,
+                            opacity: (!selectionMode && swipedId === t.id) ? 1 : 0,
+                            pointerEvents: (!selectionMode && swipedId === t.id) ? 'auto' : 'none',
+                            width: 44, height: 44, borderRadius: '50%', background: '#ef4444',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(239,68,68,0.35)' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                             <path d="M10 11v6"/><path d="M14 11v6"/>
                           </svg>
                         </div>
-                      )}
-                      <div
-                        ref={setRowEl(t.id)}
-                        onClick={() => {
-                          if (selectionMode) { handleSelectItem(t.id) }
-                          else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
-                        }}
-                        onPointerDown={e => handleItemPointerDown(e, t)}
-                        onPointerMove={handleItemPointerMove}
-                        onPointerUp={handleItemPointerEnd}
-                        onPointerCancel={handleItemPointerEnd}
-                        style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
-                          transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                          touchAction: 'pan-y', position: 'relative', zIndex: 1, background: selBg }}>
-                        {/* 선택 체크박스 */}
-                        {selectionMode && (
-                          <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                            {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                        <div
+                          ref={setRowEl(t.id)}
+                          onClick={() => {
+                            if (selectionMode) { handleSelectItem(t.id) }
+                            else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
+                          }}
+                          onPointerDown={e => handleItemPointerDown(e, t)}
+                          onPointerMove={handleItemPointerMove}
+                          onPointerUp={handleItemPointerEnd}
+                          onPointerCancel={handleItemPointerEnd}
+                          style={{ position: 'relative', borderRadius: cardRadius, overflow: 'hidden', background: selBg,
+                            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                            border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                            transition: 'border-color 0.15s, background 0.15s',
+                            padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
+                            transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
+                            touchAction: 'pan-y' }}>
+                          {/* 선택 체크박스 */}
+                          {selectionMode && (
+                            <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                              {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                            </div>
+                          )}
+                          {/* 합산 아이콘 */}
+                          <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: themeData.primary + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                            </svg>
                           </div>
-                        )}
-                        {/* 합산 아이콘 */}
-                        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: themeData.primary + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                          </svg>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                            <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: themeData.primary, background: themeData.primary + '15', borderRadius: 9999, padding: '2px 7px', whiteSpace: 'nowrap', flexShrink: 0 }}>합산</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: themeData.primary, background: themeData.primary + '15', borderRadius: 9999, padding: '2px 7px', whiteSpace: 'nowrap', flexShrink: 0 }}>합산</span>
+                            </div>
+                            <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
                           </div>
-                          <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
+                          <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
+                            {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
+                          </p>
                         </div>
-                        <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
-                          {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
-                        </p>
                       </div>
                       {/* 합산 상세 내역 - 일반 내역 스타일 */}
                       {!selectionMode && isExpanded && (
-                        <div style={{ borderTop: '1px solid #F2F4F6', padding: '10px 12px 12px', background: '#F7F8FA' }}>
+                        <div style={{ borderRadius: '0 0 20px 20px', overflow: 'hidden', borderTop: '1px solid #F2F4F6', padding: '10px 12px 12px', background: '#F7F8FA' }}>
                           {(t.mergedItems || []).map((item, idx) => {
                             const subKey = `${t.id}_${item.id || idx}`
                             const isSubSel = selectedSubId === subKey
@@ -1063,73 +1088,84 @@ export default function Ledger() {
                 }
 
                 // ── 일반 내역 아이템 ──────────────────────────
+                const normalCardRadius = (!selectionMode && selectedId === t.id) ? '20px 20px 0 0' : 20
                 return (
-                  <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden',
-                    background: selectionMode && isSelected ? `${themeData.primary}12` : '#fff',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-                    border: selectionMode && isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                  <div key={t.id} style={{
                     marginBottom: txnExitId === t.id ? 0 : 10,
                     maxHeight: txnExitId === t.id ? 0 : 300,
                     opacity: txnExitId === t.id ? 0 : 1,
-                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : 'border-color 0.15s, background 0.15s',
+                    overflow: txnExitId === t.id ? 'hidden' : 'visible',
+                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : undefined,
                     animation: newTxnId === t.id ? 'fadeSlideUp 250ms ease forwards' : undefined }}>
-                    {!selectionMode && swipedId === t.id && (
-                      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => handleDelete(t.id)}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        ref={setDeleteBtnEl(t.id)}
+                        onClick={() => handleDelete(t.id)}
+                        style={{ position: 'absolute', right: 13, top: '50%',
+                          transform: `translateY(-50%) scale(${(!selectionMode && swipedId === t.id) ? 1 : 0.5})`,
+                          opacity: (!selectionMode && swipedId === t.id) ? 1 : 0,
+                          pointerEvents: (!selectionMode && swipedId === t.id) ? 'auto' : 'none',
+                          width: 44, height: 44, borderRadius: '50%', background: '#ef4444',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(239,68,68,0.35)' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                           <path d="M10 11v6"/><path d="M14 11v6"/>
                         </svg>
                       </div>
-                    )}
-                    <div
-                      ref={setRowEl(t.id)}
-                      onPointerDown={e => handleItemPointerDown(e, t)}
-                      onPointerMove={handleItemPointerMove}
-                      onPointerUp={handleItemPointerEnd}
-                      onPointerCancel={handleItemPointerEnd}
-                      onClick={() => {
-                        if (selectionMode) { handleSelectItem(t.id) }
-                        else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
-                      }}
-                      style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
-                        background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
-                        transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                        touchAction: 'pan-y', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
-                      {/* 선택 체크박스 */}
-                      {selectionMode && (
-                        <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                          {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                      <div
+                        ref={setRowEl(t.id)}
+                        onPointerDown={e => handleItemPointerDown(e, t)}
+                        onPointerMove={handleItemPointerMove}
+                        onPointerUp={handleItemPointerEnd}
+                        onPointerCancel={handleItemPointerEnd}
+                        onClick={() => {
+                          if (selectionMode) { handleSelectItem(t.id) }
+                          else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
+                        }}
+                        style={{ position: 'relative', borderRadius: normalCardRadius, overflow: 'hidden',
+                          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                          border: selectionMode && isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                          transition: 'border-color 0.15s, background 0.15s',
+                          padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
+                          background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
+                          transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
+                          touchAction: 'pan-y', cursor: 'pointer', minHeight: 68 }}>
+                        {/* 선택 체크박스 */}
+                        {selectionMode && (
+                          <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                            {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                        )}
+                        {/* 카테고리 아이콘 */}
+                        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+                          background: iconColor + '15',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <CatIcon cat={iconKey} size={20} color={iconColor} />
                         </div>
-                      )}
-                      {/* 카테고리 아이콘 */}
-                      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                        background: iconColor + '15',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <CatIcon cat={iconKey} size={20} color={iconColor} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                          {t.isAutoRegistered && (
-                            <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
-                          )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                            {t.isAutoRegistered && (
+                              <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                            {t.type === 'transfer'
+                              ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
+                              : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
+                          </p>
                         </div>
-                        <p style={{ fontSize: 12, color: '#8B95A1' }}>
-                          {t.type === 'transfer'
-                            ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
-                            : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
+                        <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
+                          color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
+                          {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
                         </p>
                       </div>
-                      <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
-                        color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
-                        {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
-                      </p>
                     </div>
 
                     {/* 수정/숨기기/삭제 - 선택 모드가 아닐 때만 */}
                     {!selectionMode && selectedId === t.id && (
-                      <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
+                      <div style={{ display: 'flex', borderRadius: '0 0 20px 20px', overflow: 'hidden', background: '#fff', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => handleEdit(t)}
                           style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
