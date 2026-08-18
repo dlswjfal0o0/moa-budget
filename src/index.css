@@ -5,11 +5,23 @@
 
 * {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  -webkit-tap-highlight-color: transparent;           
+  -webkit-tap-highlight-color: transparent;
   scrollbar-width: none;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* 텍스트 복붙 방지: 추가/수정, 설정/검색 등 입력 필드(input, textarea)를 제외한
+   모든 텍스트는 선택/복사할 수 없도록 막는다. */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 *::-webkit-scrollbar {
