@@ -34,8 +34,11 @@ export default function BottomNav() {
   const prevIndexRef = useRef(activeIndex)
 
   // 탭 전환 시 pill이 출발/도착 사이를 순간적으로 늘어났다 blur와 함께 수축하며 정착하는
-  // 앱스토어 스타일 "liquid morph" 이동을 흉내낸다. left를 그냥 트랜지션하면 밋밋해서
-  // Web Animations API로 매 전환마다 좌표를 직접 계산해 넣는다.
+  // 앱스토어 스타일 "liquid morph" 이동을 흉내낸다.
+  // left/width를 직접 애니메이션하면 매 프레임 레이아웃을 다시 계산해야 해서(reflow),
+  // 탭 직후 라우트 전환·컴포넌트 마운트로 바쁜 메인 스레드와 경쟁해 버벅이고 탭 반응도
+  // 늦어진다. 그래서 실제 위치(left/width)는 항상 최종 탭 위치로 고정해두고,
+  // 시각적인 늘어남은 GPU 합성만으로 처리되는 transform(translateX+scaleX)으로만 표현한다.
   useEffect(() => {
     const prevIndex = prevIndexRef.current
     prevIndexRef.current = activeIndex
@@ -54,6 +57,9 @@ export default function BottomNav() {
     const dir = endLeft > startLeft ? 1 : -1
     const overshoot = 8
     const lerp = (a, b, t) => a + (b - a) * t
+    // transform-origin: 0% 50% 기준이므로, 원하는 시각적 박스 [L, R]을
+    // (최종 정착 위치인) 기준 박스 [endL, endR] 대비 translateX/scaleX로 환산한다.
+    const toTransform = (L, R) => `translateX(${L - endL}px) scaleX(${(R - L) / colWidth})`
 
     // 대칭으로 늘어나면 방향성 없는 뭉게진 덩어리처럼 보여서 "슬라이드"로 안 읽힌다.
     // 이동 방향 쪽 모서리는 목적지를 향해 먼저 쏘아 나가고(오버슈트 포함),
@@ -75,10 +81,10 @@ export default function BottomNav() {
     // 멈추면 다시 원래 뉴모피즘 회색으로 가라앉힌다.
     indicator.getAnimations().forEach(a => a.cancel())
     indicator.animate([
-      { left: `${startL}px`, width: `${startR - startL}px`, filter: 'blur(0px)', background: '#F2F3F6', offset: 0, easing: 'cubic-bezier(0.2, 0, 0.4, 1)' },
-      { left: `${p1L}px`, width: `${p1R - p1L}px`, filter: 'blur(4px)', background: '#E4E6E9', offset: 0.34, easing: 'cubic-bezier(0.3, 0, 0.3, 1)' },
-      { left: `${p2L}px`, width: `${p2R - p2L}px`, filter: 'blur(1.5px)', background: '#F2F3F6', offset: 0.68, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
-      { left: `${endL}px`, width: `${endR - endL}px`, filter: 'blur(0px)', background: '#F2F3F6', offset: 1 },
+      { transform: toTransform(startL, startR), filter: 'blur(0px)', background: '#F2F3F6', offset: 0, easing: 'cubic-bezier(0.2, 0, 0.4, 1)' },
+      { transform: toTransform(p1L, p1R), filter: 'blur(4px)', background: '#E4E6E9', offset: 0.34, easing: 'cubic-bezier(0.3, 0, 0.3, 1)' },
+      { transform: toTransform(p2L, p2R), filter: 'blur(1.5px)', background: '#F2F3F6', offset: 0.68, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+      { transform: toTransform(endL, endR), filter: 'blur(0px)', background: '#F2F3F6', offset: 1 },
     ], { duration: 380, fill: 'forwards' })
   }, [activeIndex])
 
@@ -95,7 +101,7 @@ export default function BottomNav() {
           position: 'absolute', top: 6, bottom: 6,
           left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
           width: `calc((100% - 12px) / ${tabs.length})`,
-          background: '#F2F3F6', borderRadius: 22,
+          background: '#F2F3F6', borderRadius: 22, transformOrigin: '0% 50%', willChange: 'transform, filter',
           boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.10), inset -3px -3px 6px rgba(255,255,255,0.85)',
           opacity: activeIndex === -1 ? 0 : 1,
           transition: 'opacity 200ms ease',
@@ -110,7 +116,7 @@ export default function BottomNav() {
               style={{
                 flex: 1, minHeight: 48, padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
                 background: 'transparent', borderRadius: 22, position: 'relative', zIndex: 1,
-                border: 'none', cursor: 'pointer',
+                border: 'none', cursor: 'pointer', touchAction: 'manipulation',
               }}>
               <span style={{ display: 'flex', animation: active ? 'navIconPop 400ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none' }}>
                 <Icon name={tab.icon} color={color} />
