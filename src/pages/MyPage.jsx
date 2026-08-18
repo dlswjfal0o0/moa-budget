@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
@@ -689,7 +688,7 @@ export default function MyPage() {
   ]
 
   return (
-    <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+    <div style={{ background: t.bg, minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
@@ -2367,7 +2366,7 @@ export default function MyPage() {
       {/* ── Undo Snackbar ───────────────────────── */}
       <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 900,
+        position: 'fixed', bottom: 'calc(95px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 900,
         transform: undoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: undoSnackbar ? 1 : 0,
         transition: undoSnackbar
@@ -2385,8 +2384,6 @@ export default function MyPage() {
         </button>
       </div>
       </FixedPortal>
-
-      <BottomNav />
     </div>
   )
 }
