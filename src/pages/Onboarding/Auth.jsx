@@ -193,35 +193,31 @@ export default function Auth() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* 이메일 — 실시간 유효성 표시 */}
+          {/* 이메일 */}
           <div style={{ position: 'relative' }}>
             <input
               style={{
                 ...inputStyle,
-                borderColor: touchedEmail && email
-                  ? emailValid ? '#10b981' : '#ef4444'
-                  : '#e8e8e8'
+                paddingRight: email ? 44 : undefined,
+                borderColor: touchedEmail && email && !emailValid ? '#ef4444' : '#e8e8e8'
               }}
               type="email" placeholder="이메일"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onBlur={() => setTouchedEmail(true)}
             />
-            {touchedEmail && email && (
-              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
-                {emailValid ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="6" fill="#10b981"/>
-                    <polyline points="5 12 10 17 19 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="6" fill="#ef4444"/>
-                    <line x1="7" y1="7" x2="17" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-                    <line x1="17" y1="7" x2="7" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-                  </svg>
-                )}
-              </span>
+            {email && (
+              <button
+                type="button"
+                onClick={() => setEmail('')}
+                aria-label="이메일 지우기"
+                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="#D1D5DB"/>
+                  <line x1="8.5" y1="8.5" x2="15.5" y2="15.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="15.5" y1="8.5" x2="8.5" y2="15.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </button>
             )}
           </div>
           {touchedEmail && email && !emailValid && (
