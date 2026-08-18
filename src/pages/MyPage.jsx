@@ -702,14 +702,16 @@ export default function MyPage() {
                   <button onClick={handleNicknameSave} style={{ background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>저장</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                  </div>
                   {isSubscribed && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.25)', borderRadius: 9999, padding: '3px 9px' }}>
+                    <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.25)', borderRadius: 9999, padding: '3px 9px' }}>
                       ✨ Pro 구독자
                     </span>
                   )}
-                  <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
                 </div>
               )}
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{user?.email}</p>
