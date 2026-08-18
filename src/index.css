@@ -168,11 +168,12 @@ input.input-plain:focus, textarea.input-plain:focus {
   to { transform: rotate(360deg); }
 }
 
-/* BottomNav: 탭 전환 시 아이콘이 살짝 튕기며 강조되는 모션 */
+/* BottomNav: 탭 전환 시 pill의 모션 블러가 걷히며 아이콘이 도착하는 것처럼
+   흐릿하게 튕겨 들어와 선명해진다 (인디케이터의 blur 피크 타이밍과 맞춤) */
 @keyframes navIconPop {
-  0%   { transform: scale(1); }
-  45%  { transform: scale(1.18); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(0.9); filter: blur(3px); }
+  45%  { transform: scale(1.18); filter: blur(0px); }
+  100% { transform: scale(1); filter: blur(0px); }
 }
 
 @keyframes cardSuccessPulse {
