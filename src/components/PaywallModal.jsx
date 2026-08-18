@@ -29,9 +29,11 @@ export default function PaywallModal({ open, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 18px' }} />
-          <p style={{ fontSize: 20, fontWeight: 800, color: '#191F28' }}>MOA Pro</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: '#191F28' }}>모아 Pro</p>
           <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 4, marginBottom: 16 }}>
-            결제 알림, 고정지출·대출 관리, 검색, 내보내기 등 더 많은 기능을 이용해보세요.
+            결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
+            <br />
+            더 많은 기능을 이용해보세요.
           </p>
         </div>
 
