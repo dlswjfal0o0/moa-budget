@@ -7,7 +7,6 @@ import { auth, db } from '../firebase/config'
 import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import { useTheme } from '../contexts/ThemeContext'
@@ -306,7 +305,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+    <div style={{ background: themeData.bg || '#F7F8FA', minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
           <LoadError message={loadError} onRetry={() => window.location.reload()} />
@@ -569,7 +568,6 @@ export default function Home() {
           )}
         </div>
       </div>
-      <BottomNav />
 
       {/* 예산 추가 bottom sheet */}
       <BottomSheet open={showAddBudget} maxOpacity={0.4}

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
@@ -350,7 +349,7 @@ export default function Calendar() {
         </div>
 
       {/* ── 스크롤 영역: 날짜 내역 + 요약 + 고정지출 ── */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 선택한 날짜 내역 */}
         {selectedDate && (
@@ -803,7 +802,6 @@ export default function Calendar() {
           onClose={() => setShowYMPicker(false)}
         />
       )}
-      <BottomNav />
     </div>
   )
 }

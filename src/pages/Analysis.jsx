@@ -6,7 +6,6 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import BottomNav from '../components/BottomNav'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { getCategoryColors } from '../styles/theme'
@@ -383,7 +382,7 @@ export default function Analysis() {
   const primaryLight = themeData?.primaryLight || '#EEF2FF'
 
   return (
-    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
+    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }} className={themeName === 'pastel' ? 'theme-pastel-bg' : ''}>
 
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
@@ -945,8 +944,6 @@ export default function Analysis() {
 
         </div>
       )}
-
-      <BottomNav />
     </div>
   )
 }

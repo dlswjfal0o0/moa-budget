@@ -25,25 +25,42 @@ export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
   const { themeData } = useTheme()
+  const activeIndex = tabs.findIndex(tab => tab.path === location.pathname)
 
   return (
     <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 430, background: '#fff',
-        boxShadow: '0 -1px 0 #F2F4F6, 0 -8px 24px rgba(0,0,0,0.04)',
-        display: 'flex', zIndex: 100,
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)', left: '50%', transform: 'translateX(-50%)',
+        width: 'min(calc(100% - 32px), 398px)', background: '#fff',
+        borderRadius: 28,
+        boxShadow: '0 12px 32px rgba(20,24,32,0.12), 0 2px 8px rgba(20,24,32,0.05)',
+        display: 'flex', padding: 6, zIndex: 100,
       }}>
+        <div style={{
+          position: 'absolute', top: 6, bottom: 6,
+          left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
+          width: `calc((100% - 12px) / ${tabs.length})`,
+          background: '#F2F3F6', borderRadius: 22,
+          boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.10), inset -3px -3px 6px rgba(255,255,255,0.85)',
+          opacity: activeIndex === -1 ? 0 : 1,
+          transition: 'left 380ms cubic-bezier(0.34, 1.2, 0.64, 1), opacity 200ms ease',
+          pointerEvents: 'none',
+        }} />
         {tabs.map(tab => {
           const active = location.pathname === tab.path
-          const color = active ? themeData.primary : '#C9CDD4'
+          const color = active ? themeData.primary : '#ABB1BA'
           return (
             <button key={tab.path} onClick={() => { if (!active) { haptic.selection(); navigate(tab.path) } }}
-              style={{ flex: 1, padding: '12px 0 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer',
-                transition: 'opacity 80ms ease' }}>
-              <Icon name={tab.icon} color={color} />
-              <span style={{ fontSize: 11, fontWeight: active ? 700 : 400, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
+              className="pressable-subtle"
+              style={{
+                flex: 1, minHeight: 48, padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                background: 'transparent', borderRadius: 22, position: 'relative', zIndex: 1,
+                border: 'none', cursor: 'pointer',
+              }}>
+              <span style={{ display: 'flex', animation: active ? 'navIconPop 380ms cubic-bezier(0.34, 1.2, 0.64, 1)' : 'none' }}>
+                <Icon name={tab.icon} color={color} />
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
             </button>
           )
         })}

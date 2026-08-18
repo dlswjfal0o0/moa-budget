@@ -9,7 +9,6 @@ import {
   addDoc, updateDoc, deleteDoc, doc, orderBy,
   getDoc, setDoc
 } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
@@ -758,7 +757,7 @@ export default function Ledger() {
   })
 
   return (
-    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
+    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
 
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
@@ -1199,7 +1198,7 @@ export default function Ledger() {
       {!selectionMode && (
         <FixedPortal>
         <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' }); setShowForm(true) }} aria-label="내역 추가"
-          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 105px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
         </FixedPortal>
       )}
 
@@ -1718,7 +1717,7 @@ export default function Ledger() {
       {/* ── 합치기 Undo Snackbar ── */}
       <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
+        position: 'fixed', bottom: 'calc(95px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: mergeUndoSnackbar ? 1 : 0,
         transition: mergeUndoSnackbar
@@ -1743,7 +1742,7 @@ export default function Ledger() {
       {/* ── Undo Snackbar ── */}
       <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
+        position: 'fixed', bottom: 'calc(95px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: txnUndoSnackbar ? 1 : 0,
         transition: txnUndoSnackbar
@@ -1761,8 +1760,6 @@ export default function Ledger() {
         </button>
       </div>
       </FixedPortal>
-
-      <BottomNav />
     </div>
   )
 }
