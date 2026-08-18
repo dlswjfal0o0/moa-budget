@@ -17,6 +17,46 @@ import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
 
+// 'YYYY-MM-DD' 문자열에 n개월을 더함. 말일 넘침은 해당 월의 마지막 날로 보정.
+function addMonthsClamped(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const totalMonths = (m - 1) + n
+  const newYear = y + Math.floor(totalMonths / 12)
+  const newMonth0 = ((totalMonths % 12) + 12) % 12
+  const lastDay = new Date(newYear, newMonth0 + 1, 0).getDate()
+  const newDay = Math.min(d, lastDay)
+  return `${newYear}-${String(newMonth0 + 1).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`
+}
+
+function monthStartStr(year, month0) {
+  return `${year}-${String(month0 + 1).padStart(2, '0')}-01`
+}
+
+function monthEndStr(year, month0) {
+  const lastDay = new Date(year, month0 + 1, 0).getDate()
+  return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+}
+
+function isFullCalendarMonth(startDate, endDate) {
+  if (!startDate?.endsWith('-01')) return false
+  const [y, m] = startDate.split('-').map(Number)
+  return endDate === monthEndStr(y, m - 1)
+}
+
+// 반복 예산의 다음 회차 기간을 계산. 이번 달 1일~말일 형태의 예산은 다음 달 1일~말일로,
+// 그 외(부분 기간)는 시작/종료일을 각각 한 달씩 밀어서 계산한다.
+// (naive하게 말일만 한 달 더하면 6/30 → 7/30처럼 하루씩 밀리는 드리프트가 생김)
+function nextMonthlyPeriod(startDate, endDate) {
+  if (isFullCalendarMonth(startDate, endDate)) {
+    const [y, m] = startDate.split('-').map(Number)
+    const totalMonths = (m - 1) + 1
+    const newYear = y + Math.floor(totalMonths / 12)
+    const newMonth0 = ((totalMonths % 12) + 12) % 12
+    return { startDate: monthStartStr(newYear, newMonth0), endDate: monthEndStr(newYear, newMonth0) }
+  }
+  return { startDate: addMonthsClamped(startDate, 1), endDate: addMonthsClamped(endDate, 1) }
+}
+
 function CustomPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   return (
@@ -90,7 +130,7 @@ export default function Home() {
   })
   const [budgets, setBudgets] = useState([])
   const [showAddBudget, setShowAddBudget] = useState(false)
-  const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
+  const [newBudget, setNewBudget] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [], repeat: 'none', repeatUntil: '' })
   const [budgetInsights, setBudgetInsights] = useState({})
   const [loadingInsightId, setLoadingInsightId] = useState(null)
   // AI 인사이트 캐시 (계정 기준 동기화). localStorage로 즉시 로드 후 Firestore로 덮어씀. 소비/공과금 분석과 동일한 저장소를 공유.
@@ -101,7 +141,7 @@ export default function Home() {
   const [expandedTipIds, setExpandedTipIds] = useState({})
   const [loadError, setLoadError] = useState(null)
   const [editingBudgetId, setEditingBudgetId] = useState(null)
-  const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
+  const [editBudgetData, setEditBudgetData] = useState({ label: '', startDate: '', endDate: '', amount: '', categories: [], repeat: 'none', repeatUntil: '' })
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
   const [fixedExpenses, setFixedExpenses] = useState([])
@@ -178,6 +218,39 @@ export default function Home() {
     if (user) await setDoc(doc(db, 'users', user.uid), { budgets: updated }, { merge: true })
   }
 
+  // 반복 예산(매달/기간 설정) 자동 갱신: 이번 달까지 아직 생성되지 않은 회차를 채워 넣는다.
+  // 각 시리즈(seriesId)의 최신 회차를 템플릿 삼아 다음 달로 한 달씩 밀어가며 생성한다.
+  useEffect(() => {
+    if (!budgets.length) return
+    // 말일 기준(curMonthEnd)으로 멈추면 달력 월에 안 맞는 부분 기간(예: 20일~다음달 20일)
+    // 예산은 항상 월말에 못 미쳐 계속 다음 회차를 만들어버려 같은 달에 중복 카드가 생긴다.
+    // "이번 달 시작일 전에 끝나는 회차만 있다" = 아직 이번 달 회차가 없다는 뜻이므로 그때만 생성한다.
+    const curMonthStart = monthStartStr(now.getFullYear(), now.getMonth())
+    const latestBySeries = {}
+    budgets.forEach(b => {
+      const sid = b.seriesId || b.id
+      if (!latestBySeries[sid] || b.endDate > latestBySeries[sid].endDate) latestBySeries[sid] = b
+    })
+    const toAdd = []
+    Object.values(latestBySeries).forEach(latest => {
+      if (latest.repeat !== 'monthly' && latest.repeat !== 'period') return
+      let cur = latest
+      let guard = 0
+      while (cur.endDate < curMonthStart && guard < 24) {
+        guard++
+        const { startDate: nextStart, endDate: nextEnd } = nextMonthlyPeriod(cur.startDate, cur.endDate)
+        if (cur.repeat === 'period' && cur.repeatUntil && nextStart > cur.repeatUntil) break
+        const seriesId = cur.seriesId || cur.id
+        const newB = { ...cur, id: Date.now() + toAdd.length, startDate: nextStart, endDate: nextEnd, seriesId }
+        toAdd.push(newB)
+        cur = newB
+      }
+    })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (toAdd.length > 0) saveBudgets([...budgets, ...toAdd])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budgets])
+
   // AI 캐시 저장: 로컬 + 계정(Firestore) 동시 반영. kind='budget', key=budget.id
   const persistAiCache = async (kind, key, sig, data) => {
     setAiCache(prev => {
@@ -194,13 +267,16 @@ export default function Home() {
 
   const handleAddBudget = () => {
     if (!newBudget.label || !newBudget.startDate || !newBudget.endDate || !newBudget.amount) return alert('모든 항목을 입력해주세요.')
-    saveBudgets([...budgets, { id: Date.now(), ...newBudget, amount: Number(newBudget.amount) }])
-    setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] })
+    if (newBudget.repeat === 'period' && !newBudget.repeatUntil) return alert('반복 종료일을 입력해주세요.')
+    const id = Date.now()
+    saveBudgets([...budgets, { id, seriesId: id, ...newBudget, amount: Number(newBudget.amount) }])
+    setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [], repeat: 'none', repeatUntil: '' })
     setShowAddBudget(false)
   }
 
   const handleSaveBudget = () => {
     if (!editBudgetData.label || !editBudgetData.startDate || !editBudgetData.endDate || !editBudgetData.amount) return alert('모든 항목을 입력해주세요.')
+    if (editBudgetData.repeat === 'period' && !editBudgetData.repeatUntil) return alert('반복 종료일을 입력해주세요.')
     saveBudgets(budgets.map(b => b.id === editingBudgetId ? { ...b, ...editBudgetData, amount: Number(editBudgetData.amount) } : b))
     setEditingBudgetId(null)
   }
@@ -274,6 +350,11 @@ export default function Home() {
     const card = getCreditCard(t.payment)
     return card?.creditTracking === 'billing'
   }
+  // 예산 관리는 월별로 갱신됨: 이번 달과 겹치는 기간의 예산만 노출하고, 지난 달 데이터는 보존만 함(삭제 X).
+  // 여러 달에 걸친 기간(예: 6/10~7/10)은 겹치는 모든 달에 노출됨.
+  const curMonthStart = monthStartStr(now.getFullYear(), now.getMonth())
+  const curMonthEnd = monthEndStr(now.getFullYear(), now.getMonth())
+  const currentMonthBudgets = budgets.filter(b => b.startDate <= curMonthEnd && b.endDate >= curMonthStart)
   const expenses = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
   const incomes = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'income' && (!showLoan || !t.isLoan))
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0)
@@ -344,10 +425,10 @@ export default function Home() {
               style={{ background: themeData.primary, border: 'none', borderRadius: 12, padding: '7px 16px', color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>+ 추가</button>
           </div>
 
-          {budgets.length === 0 ? (
+          {currentMonthBudgets.length === 0 ? (
             <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '16px 0' }}>예산을 추가해보세요</p>
           ) : (
-            budgets.map(b => {
+            currentMonthBudgets.map(b => {
               const bCats = Array.isArray(b.categories) ? b.categories : []
               // 총 지출과 동일한 신용카드 필터 적용
               const budgetTxns = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
@@ -367,6 +448,11 @@ export default function Home() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: themeData.text || '#191F28' }}>{b.label}</span>
                         {exceeded && <span style={{ fontSize: 11, background: '#FFF1F1', color: '#FF5A5F', borderRadius: 12, padding: '3px 8px', fontWeight: 600 }}>초과</span>}
+                        {(b.repeat === 'monthly' || b.repeat === 'period') && (
+                          <span style={{ fontSize: 11, background: themeData.primary + '15', color: themeData.primary, borderRadius: 12, padding: '3px 8px', fontWeight: 600 }}>
+                            {b.repeat === 'monthly' ? '매달 반복' : '반복 중'}
+                          </span>
+                        )}
                       </div>
                       <span style={{ fontSize: 12, color: '#8B95A1' }}>{b.startDate?.slice(5).replace('-','/')} ~ {b.endDate?.slice(5).replace('-','/')}</span>
                     </div>
@@ -444,7 +530,7 @@ export default function Home() {
                   </div>
                   {expandedBudgetEditId === b.id && (
                     <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
-                      <button onClick={e => { e.stopPropagation(); setEditingBudgetId(b.id); setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount), categories: b.categories || [] }); setExpandedBudgetEditId(null) }}
+                      <button onClick={e => { e.stopPropagation(); setEditingBudgetId(b.id); setEditBudgetData({ label: b.label, startDate: b.startDate, endDate: b.endDate, amount: String(b.amount), categories: b.categories || [], repeat: b.repeat || 'none', repeatUntil: b.repeatUntil || '' }); setExpandedBudgetEditId(null) }}
                         style={{ flex: 1, padding: '14px', border: 'none', background: themeData.card || '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         수정
@@ -571,7 +657,7 @@ export default function Home() {
 
       {/* 예산 추가 bottom sheet */}
       <BottomSheet open={showAddBudget} maxOpacity={0.4}
-        onClose={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}>
+        onClose={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [], repeat: 'none', repeatUntil: '' }) }}>
         <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>예산 추가</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -590,6 +676,26 @@ export default function Home() {
                 <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
                 <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
               </div>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>반복</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['none', '없음'], ['monthly', '매달'], ['period', '기간 설정']].map(([val, label]) => {
+                  const selected = (newBudget.repeat || 'none') === val
+                  return (
+                    <button key={val} className="pressable-subtle" onClick={() => setNewBudget(b => ({ ...b, repeat: val }))}
+                      style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
+                        background: selected ? themeData.primary + '15' : '#fff',
+                        color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              {newBudget.repeat === 'period' && (
+                <input style={{ ...inputStyle, marginTop: 10 }} type="date" value={newBudget.repeatUntil}
+                  onChange={e => setNewBudget(b => ({ ...b, repeatUntil: e.target.value }))} />
+              )}
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
@@ -611,7 +717,7 @@ export default function Home() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
-            <button className="pressable-subtle" onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [] }) }}
+            <button className="pressable-subtle" onClick={() => { setShowAddBudget(false); setNewBudget({ label: '', startDate: '', endDate: '', amount: '', categories: [], repeat: 'none', repeatUntil: '' }) }}
               style={{ flex: 1, height: 56, borderRadius: 16, border: '1.5px solid #E5E8EB', background: '#fff', color: '#8B95A1', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>취소</button>
             <button className="pressable-subtle" onClick={handleAddBudget}
               style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: themeData.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>추가</button>
@@ -639,6 +745,26 @@ export default function Home() {
                 <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
                 <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
               </div>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>반복</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['none', '없음'], ['monthly', '매달'], ['period', '기간 설정']].map(([val, label]) => {
+                  const selected = (editBudgetData.repeat || 'none') === val
+                  return (
+                    <button key={val} className="pressable-subtle" onClick={() => setEditBudgetData(d => ({ ...d, repeat: val }))}
+                      style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: `1.5px solid ${selected ? themeData.primary : '#E5E8EB'}`,
+                        background: selected ? themeData.primary + '15' : '#fff',
+                        color: selected ? themeData.primary : '#8B95A1', fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer' }}>
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              {editBudgetData.repeat === 'period' && (
+                <input style={{ ...inputStyle, marginTop: 10 }} type="date" value={editBudgetData.repeatUntil}
+                  onChange={e => setEditBudgetData(d => ({ ...d, repeatUntil: e.target.value }))} />
+              )}
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>카테고리 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(미선택 시 전체 반영)</span></p>
