@@ -51,7 +51,8 @@ export default function PaywallModal({ open, onClose }) {
           </p>
 
           <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, padding: '4px 0 20px' }}>
-            구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.{' '}
+            구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.
+            <br />
             <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: '#8B95A1' }}>이용약관</a>
             {' · '}
             <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: '#8B95A1' }}>개인정보처리방침</a>
