@@ -5,7 +5,7 @@ import { haptic } from '../utils/haptics'
 import FixedPortal from './FixedPortal'
 
 const Icon = ({ name, color }) => {
-  const p = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", style: { transition: 'stroke 180ms ease' } }
+  const p = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", style: { transition: 'stroke 180ms ease', position: 'relative', zIndex: 1 } }
   if (name === 'calendar') return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
   if (name === 'book') return <svg {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
   if (name === 'home') return <svg {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -27,14 +27,14 @@ const PAD = 6
 export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { themeData } = useTheme()
+  const { themeData, navNeumorphism } = useTheme()
   const activeIndex = tabs.findIndex(tab => tab.path === location.pathname)
   const rowRef = useRef(null)
   const indicatorRef = useRef(null)
   const prevIndexRef = useRef(activeIndex)
 
   // 탭 전환 시 pill이 출발/도착 사이를 순간적으로 늘어났다 blur와 함께 수축하며 정착하는
-  // 앱스토어 스타일 "liquid morph" 이동을 흉내낸다.
+  // 앱스토어 스타일 "liquid morph" 이동을 흉내낸다 (뉴모피즘 모드 전용).
   // left/width를 직접 애니메이션하면 매 프레임 레이아웃을 다시 계산해야 해서(reflow),
   // 탭 직후 라우트 전환·컴포넌트 마운트로 바쁜 메인 스레드와 경쟁해 버벅이고 탭 반응도
   // 늦어진다. 그래서 실제 위치(left/width)는 항상 최종 탭 위치로 고정해두고,
@@ -42,7 +42,7 @@ export default function BottomNav() {
   useEffect(() => {
     const prevIndex = prevIndexRef.current
     prevIndexRef.current = activeIndex
-    if (activeIndex === -1 || prevIndex === -1 || prevIndex === activeIndex) return
+    if (!navNeumorphism || activeIndex === -1 || prevIndex === -1 || prevIndex === activeIndex) return
 
     const row = rowRef.current
     const indicator = indicatorRef.current
@@ -86,7 +86,7 @@ export default function BottomNav() {
       { transform: toTransform(p2L, p2R), filter: 'blur(1.5px)', background: '#F2F3F6', offset: 0.68, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
       { transform: toTransform(endL, endR), filter: 'blur(0px)', background: '#F2F3F6', offset: 1 },
     ], { duration: 380, fill: 'forwards' })
-  }, [activeIndex])
+  }, [activeIndex, navNeumorphism])
 
   return (
     <FixedPortal>
@@ -97,16 +97,18 @@ export default function BottomNav() {
         boxShadow: '0 12px 32px rgba(20,24,32,0.12), 0 2px 8px rgba(20,24,32,0.05)',
         display: 'flex', padding: PAD, zIndex: 100,
       }}>
-        <div ref={indicatorRef} style={{
-          position: 'absolute', top: 6, bottom: 6,
-          left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
-          width: `calc((100% - 12px) / ${tabs.length})`,
-          background: '#F2F3F6', borderRadius: 22, transformOrigin: '0% 50%', willChange: 'transform, filter',
-          boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.10), inset -3px -3px 6px rgba(255,255,255,0.85)',
-          opacity: activeIndex === -1 ? 0 : 1,
-          transition: 'opacity 200ms ease',
-          pointerEvents: 'none',
-        }} />
+        {navNeumorphism && (
+          <div ref={indicatorRef} style={{
+            position: 'absolute', top: 6, bottom: 6,
+            left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
+            width: `calc((100% - 12px) / ${tabs.length})`,
+            background: '#F2F3F6', borderRadius: 22, transformOrigin: '0% 50%', willChange: 'transform, filter',
+            boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.10), inset -3px -3px 6px rgba(255,255,255,0.85)',
+            opacity: activeIndex === -1 ? 0 : 1,
+            transition: 'opacity 200ms ease',
+            pointerEvents: 'none',
+          }} />
+        )}
         {tabs.map(tab => {
           const active = location.pathname === tab.path
           const color = active ? themeData.primary : '#ABB1BA'
@@ -118,10 +120,23 @@ export default function BottomNav() {
                 background: 'transparent', borderRadius: 22, position: 'relative', zIndex: 1,
                 border: 'none', cursor: 'pointer', touchAction: 'manipulation',
               }}>
+              {!navNeumorphism && (
+                // 기본 스타일: 아이콘에 딱 맞는 작은 플랫 하이라이트가 활성 탭에서만
+                // 옅게 나타났다 사라진다. 각 버튼 안에서 독립적으로 opacity/scale만
+                // 트랜지션하므로 레이아웃 계산이 전혀 없어 가볍다.
+                <span aria-hidden style={{
+                  position: 'absolute', top: 2, left: '50%', width: 44, height: 34, borderRadius: 14,
+                  background: '#F0F1F3', boxShadow: '0 1px 3px rgba(20,24,32,0.08)',
+                  opacity: active ? 1 : 0,
+                  transform: `translateX(-50%) scale(${active ? 1 : 0.7})`,
+                  transition: 'opacity 200ms ease, transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1)',
+                  zIndex: 0,
+                }} />
+              )}
               <span style={{ display: 'flex', animation: active ? 'navIconPop 400ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none' }}>
                 <Icon name={tab.icon} color={color} />
               </span>
-              <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease' }}>{tab.label}</span>
+              <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease', position: 'relative', zIndex: 1 }}>{tab.label}</span>
             </button>
           )
         })}
