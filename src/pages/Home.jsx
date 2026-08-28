@@ -8,6 +8,7 @@ import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
+import MonthlyReportSheet from '../components/MonthlyReportSheet'
 import LoadError from '../components/LoadError'
 import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
@@ -105,6 +106,8 @@ export default function Home() {
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
   const [fixedExpenses, setFixedExpenses] = useState([])
+  const [showMonthlyReport, setShowMonthlyReport] = useState(false)
+  const [monthlyReportSummary, setMonthlyReportSummary] = useState(null)
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
@@ -171,6 +174,121 @@ export default function Home() {
         console.error('[Home] 거래내역 로딩 실패', err)
         setLoadError('거래내역을 불러오지 못했어요.')
     })
+  }, [user])
+
+  // 이번 달 첫 방문(로그인) 시 지난달 결산 AI 리포트를 자동으로 띄운다.
+  // "매월 1일"을 따로 검사하지 않는다 — 계정에 저장된 마지막 노출 월(monthlyReportSeenMonth)과 이번 달을 비교하는 것만으로
+  // "1일에 접속하든 5일에 접속하든 그 달의 첫 접속에서 정확히 한 번" 조건을 동시에 만족한다.
+  useEffect(() => {
+    if (!user) return
+    if (localStorage.getItem('moa_demo_mode') === 'true') return
+    ;(async () => {
+      const seenKey = 'moa_monthlyReportSeenMonth'
+      let seenMonth = localStorage.getItem(seenKey)
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid))
+        const remoteSeen = snap.data()?.monthlyReportSeenMonth
+        if (remoteSeen) seenMonth = remoteSeen
+      } catch { /* ignore, localStorage 값으로 폴백 */ }
+      if (seenMonth === monthStr) return
+
+      const lm = now.getMonth() === 0 ? 11 : now.getMonth() - 1
+      const ly = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+      const lastStr = `${ly}-${String(lm + 1).padStart(2, '0')}`
+      const llm = lm === 0 ? 11 : lm - 1
+      const lly = lm === 0 ? ly - 1 : ly
+      const prevStr = `${lly}-${String(llm + 1).padStart(2, '0')}`
+      const lllm = llm === 0 ? 11 : llm - 1
+      const llly = llm === 0 ? lly - 1 : lly
+      const prevPrevStr = `${llly}-${String(lllm + 1).padStart(2, '0')}`
+
+      // 이번 달 첫 방문 여부는 이미 확정됐으니, 팝업을 실제로 띄우든 안 띄우든 이번 달엔 다시 검사하지 않도록 먼저 기록한다.
+      localStorage.setItem(seenKey, monthStr)
+      setDoc(doc(db, 'users', user.uid), { monthlyReportSeenMonth: monthStr }, { merge: true }).catch(() => {})
+
+      try {
+        const [lastSnap, prevSnap, prevPrevSnap] = await Promise.all([
+          getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', lastStr))),
+          getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', prevStr))),
+          getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', prevPrevStr))),
+        ])
+        // 신용카드/대출 집계 제외 규칙 — Home/Analysis의 isCreditExcluded와 동일한 판단 기준
+        const showLoanFlag = localStorage.getItem('moa_showLoan') === 'true'
+        const getCreditCardLocal = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
+        const isCreditExcludedLocal = (t) => {
+          if (t.cardBilling) {
+            const card = getCreditCardLocal(t.payment)
+            return card?.creditTracking !== 'billing'
+          }
+          const card = getCreditCardLocal(t.payment)
+          return card?.creditTracking === 'billing'
+        }
+        const filterValid = (t) => !t.mergedInto && !t.isHidden && !isCreditExcludedLocal(t) && (!showLoanFlag || !t.isLoan)
+        const lastTx = lastSnap.docs.map(d => d.data()).filter(filterValid)
+        const prevTx = prevSnap.docs.map(d => d.data()).filter(filterValid)
+        const prevPrevTx = prevPrevSnap.docs.map(d => d.data()).filter(filterValid)
+        const sumBy = (list, type) => list.filter(t => t.type === type).reduce((s, t) => s + t.amount, 0)
+        const byCategoryOf = (list) => list.filter(t => t.type === 'expense').reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
+        const totalIncome = sumBy(lastTx, 'income')
+        const totalExpense = sumBy(lastTx, 'expense')
+        if (totalIncome === 0 && totalExpense === 0) return // 지난달 내역이 없으면(신규 가입 등) 표시하지 않음
+
+        const lastExpenseTx = lastTx.filter(t => t.type === 'expense')
+        const byCategory = byCategoryOf(lastTx)
+        const incomeByCategory = lastTx.filter(t => t.type === 'income').reduce((acc, t) => { const c = t.category || '기타'; acc[c] = (acc[c] || 0) + t.amount; return acc }, {})
+        // "해당 월 평가" 인사이트에서 여러 달에 걸친 카테고리 추세를 언급할 수 있도록 전월/전전월 카테고리별 지출도 함께 계산
+        const prevByCategory = byCategoryOf(prevTx)
+        const prevPrevByCategory = byCategoryOf(prevPrevTx)
+
+        // 일별 지출 + 최고 지출일 내역
+        const daysInMonth = new Date(ly, lm + 1, 0).getDate()
+        const dailyData = Array.from({ length: daysInMonth }, (_, i) => {
+          const dateStr = `${lastStr}-${String(i + 1).padStart(2, '0')}`
+          return { day: i + 1, amount: lastExpenseTx.filter(t => t.date === dateStr).reduce((s, t) => s + t.amount, 0) }
+        })
+        const maxDaily = dailyData.reduce((max, d) => Math.max(max, d.amount), 0)
+        const topDayEntry = maxDaily > 0 ? dailyData.find(d => d.amount === maxDaily) : null
+        const topDay = topDayEntry ? {
+          day: topDayEntry.day,
+          amount: maxDaily,
+          items: lastExpenseTx
+            .filter(t => t.date === `${lastStr}-${String(topDayEntry.day).padStart(2, '0')}`)
+            .map(t => ({ title: t.title, category: t.category, amount: t.amount })),
+        } : null
+
+        // 해당 월에 걸쳐 있던 예산의 사용 현황 — Home 상단 예산 카드와 동일한 산정 기준(spent 계산)
+        const firstDayStr = `${lastStr}-01`
+        const lastDayStr = `${lastStr}-${String(daysInMonth).padStart(2, '0')}`
+        const budgetsSummary = budgets
+          .filter(b => b.startDate <= lastDayStr && b.endDate >= firstDayStr)
+          .map(b => {
+            const bCats = Array.isArray(b.categories) ? b.categories : []
+            const spent = lastExpenseTx
+              .filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category)))
+              .reduce((s, t) => s + t.amount, 0)
+            const pct = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0
+            return { label: b.label, amount: b.amount, spent, pct }
+          })
+
+        // 고정지출 현황 — 현재 등록된 고정지출 기준(Calendar.jsx의 fixedTotal과 동일한 산정 방식)
+        const fixedExpenseItems = fixedExpenses.map(f => ({ title: f.title, amount: f.amount }))
+        const fixedTotal = fixedExpenseItems.reduce((s, f) => s + f.amount, 0)
+
+        setMonthlyReportSummary({
+          totalIncome, totalExpense, byCategory,
+          lastTotalIncome: sumBy(prevTx, 'income'), lastTotalExpense: sumBy(prevTx, 'expense'),
+          year: ly, month: lm,
+          details: {
+            dailyData, topDay, byCategory, incomeByCategory, prevByCategory, prevPrevByCategory,
+            budgetsSummary, fixedTotal, fixedExpenseItems,
+          },
+        })
+        setShowMonthlyReport(true)
+      } catch (err) {
+        console.error('[Home] 월간 리포트 데이터 로딩 실패', err)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const saveBudgets = async (updated) => {
@@ -667,6 +785,22 @@ export default function Home() {
           </div>
         </div>
       </BottomSheet>
+
+      <MonthlyReportSheet
+        open={showMonthlyReport}
+        onClose={() => setShowMonthlyReport(false)}
+        mode="auto"
+        year={monthlyReportSummary?.year}
+        month={monthlyReportSummary?.month}
+        themeData={themeData}
+        fmt={fmt}
+        user={user}
+        aiCache={aiCache}
+        persistAiCache={persistAiCache}
+        summaryInput={monthlyReportSummary}
+        aiAnalysisStyle={aiAnalysisStyle}
+        aiShowAdvice={aiShowAdvice}
+      />
     </div>
   )
 }
