@@ -283,11 +283,12 @@ export default function MonthlyReportSheet({
         <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 3, marginBottom: 16 }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
-              style={{ flex: 1, padding: '9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+              style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                 fontSize: 13.5, fontWeight: activeTab === t.key ? 700 : 500,
                 background: activeTab === t.key ? primary : 'transparent',
                 color: activeTab === t.key ? '#fff' : textSecondary,
-                transition: 'all 0.15s' }}>
+                transition: 'background 0.15s, color 0.15s' }}>
               {t.label}
               {t.key === 'insight' && loading && (
                 <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: activeTab === t.key ? '#fff' : primary, marginLeft: 5, verticalAlign: 'middle' }} />

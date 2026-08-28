@@ -671,7 +671,7 @@ export default function Analysis() {
                   const [ry, rm] = key.split('-').map(Number)
                   return (
                     <button key={key} onClick={() => setOpenMonthlyReportKey(key)}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      style={{ width: '100%', minHeight: 44, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         background: '#f8f8f8', border: 'none', borderRadius: 12, padding: '12px 14px', marginBottom: 8, cursor: 'pointer', textAlign: 'left' }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: themeData.text || '#191F28' }}>{ry}년 {rm}월</span>
                       <span style={{ fontSize: 13, color: '#5B6572' }}>
