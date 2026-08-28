@@ -22,6 +22,12 @@ export function ThemeProvider({ children }) {
     localStorage.getItem('moa_showUtilities') === 'true'
   )
 
+  // 하단바 눌린 탭 표시 스타일: 기본은 아이콘에 딱 맞는 플랫 하이라이트,
+  // 켜면 기존의 오목한 뉴모피즘 pill 스타일로 바뀐다.
+  const [navNeumorphism, setNavNeumorphism] = useState(() =>
+    localStorage.getItem('moa_navNeumorphism') === 'true'
+  )
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -35,13 +41,18 @@ export function ThemeProvider({ children }) {
                 setShowUtilities(snap.data().showUtilities)
                 localStorage.setItem('moa_showUtilities', String(snap.data().showUtilities))
             }
+
+            if (snap.data().navNeumorphism !== undefined) {
+                setNavNeumorphism(snap.data().navNeumorphism)
+                localStorage.setItem('moa_navNeumorphism', String(snap.data().navNeumorphism))
+            }
         }
     })
     return unsub
   }, [])
 
   return (
-    <ThemeContext.Provider value={{ themeName, setThemeName, themeData, showUtilities, setShowUtilities }}>
+    <ThemeContext.Provider value={{ themeName, setThemeName, themeData, showUtilities, setShowUtilities, navNeumorphism, setNavNeumorphism }}>
       {children}
     </ThemeContext.Provider>
   )

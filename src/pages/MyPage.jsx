@@ -37,7 +37,7 @@ const SI = (props) => <svg width="17" height="17" viewBox="0 0 24 24" fill="none
 export default function MyPage() {
   const navigate = useNavigate()
   const fileRef = useRef()
-  const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities } = useTheme()
+  const { themeName, setThemeName, themeData: t, showUtilities, setShowUtilities, navNeumorphism, setNavNeumorphism } = useTheme()
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
   const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
@@ -1416,7 +1416,7 @@ export default function MyPage() {
                       {settingsChevron}
                     </button>
                     <button onClick={() => setSettingsPage('font-size')}
-                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg={t.primary}><SI><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>글자 크기</p>
@@ -1424,6 +1424,18 @@ export default function MyPage() {
                       </div>
                       {settingsChevron}
                     </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                      <SIcon bg={t.primary}><SI><rect x="3" y="11" width="18" height="6" rx="3"/><circle cx="8" cy="14" r="1.4" fill="#fff" stroke="none"/></SI></SIcon>
+                      <div style={{ flex: 1, textAlign: 'left' }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>하단바 뉴모피즘</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>눌린 탭을 오목한 뉴모피즘 스타일로 표시</p>
+                      </div>
+                      <SToggle on={navNeumorphism} onChange={(val) => {
+                        setNavNeumorphism(val)
+                        localStorage.setItem('moa_navNeumorphism', String(val))
+                        if (user) setDoc(doc(db, 'users', user.uid), { navNeumorphism: val }, { merge: true })
+                      }} primary={t.primary} />
+                    </div>
                   </div>
 
                   {/* 데이터 */}
