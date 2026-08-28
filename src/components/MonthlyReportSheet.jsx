@@ -69,7 +69,7 @@ function CategoryList({ items, total, fmt, textColor, textSecondary }) {
               <span style={{ fontSize: 12, color: textSecondary, fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{fmt(amount)}원 · {pct}%</span>
             </div>
             <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+              <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }} />
             </div>
           </div>
         )
@@ -89,7 +89,7 @@ function SavingsRateRing({ rate }) {
         <path d="M 8 50 A 42 42 0 0 1 92 50" fill="none" stroke="#F2F4F6" strokeWidth="11" strokeLinecap="round" />
         <path d="M 8 50 A 42 42 0 0 1 92 50" fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
           strokeDasharray={Math.PI * 42} strokeDashoffset={Math.PI * 42 * (1 - clamped / 100)}
-          style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }} />
       </svg>
       <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: 15, fontWeight: 700, color, whiteSpace: 'nowrap' }}>
         {rate.toFixed(1)}%
@@ -288,7 +288,7 @@ export default function MonthlyReportSheet({
                 fontSize: 13.5, fontWeight: activeTab === t.key ? 700 : 500,
                 background: activeTab === t.key ? primary : 'transparent',
                 color: activeTab === t.key ? '#fff' : textSecondary,
-                transition: 'background 0.15s, color 0.15s' }}>
+                transition: 'background 0.15s cubic-bezier(0.22, 1, 0.36, 1), color 0.15s cubic-bezier(0.22, 1, 0.36, 1)' }}>
               {t.label}
               {t.key === 'insight' && loading && (
                 <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: activeTab === t.key ? '#fff' : primary, marginLeft: 5, verticalAlign: 'middle' }} />
@@ -385,7 +385,7 @@ export default function MonthlyReportSheet({
                         </span>
                       </div>
                       <div style={{ height: 6, background: '#F2F4F6', borderRadius: 9999, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${Math.min(b.pct, 100)}%`, background: barColor, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+                        <div style={{ height: '100%', width: `${Math.min(b.pct, 100)}%`, background: barColor, borderRadius: 9999, transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }} />
                       </div>
                     </div>
                   )
@@ -458,7 +458,7 @@ export default function MonthlyReportSheet({
                     <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.5, marginBottom: 8 }}>{data.summary}</p>
                     <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                       {levelColors.map((color, i) => (
-                        <div key={i} style={{ width: 15, height: 15, borderRadius: '50%', background: i < filledCount ? color : '#e5e7eb', transition: 'background 0.3s' }} />
+                        <div key={i} style={{ width: 15, height: 15, borderRadius: '50%', background: i < filledCount ? color : '#e5e7eb', transition: 'background 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }} />
                       ))}
                       <span style={{ fontSize: 11, color: textSecondary, marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
                     </div>
