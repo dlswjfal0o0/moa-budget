@@ -656,7 +656,8 @@ export default function Analysis() {
           <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>📅 월간 리포트</p>
             {Object.keys(monthlyReports).length === 0 ? (
-              <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>
+              // #C9CDD4(기존 textMuted)는 흰 배경 대비 약 1.6:1로 WCAG AA(4.5:1) 미달이라 #5B6572로 교체 — 모든 테마 카드 배경에서 4.5:1 이상 확보
+              <p style={{ fontSize: 14, color: '#5B6572', textAlign: 'center', padding: '20px 0' }}>
                 매달 첫 방문 시 지난달 결산 리포트가 자동으로 뜨고, 저장하면 여기서 다시 볼 수 있어요
               </p>
             ) : (
@@ -672,8 +673,8 @@ export default function Analysis() {
                     <button key={key} onClick={() => setOpenMonthlyReportKey(key)}
                       style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         background: '#f8f8f8', border: 'none', borderRadius: 12, padding: '12px 14px', marginBottom: 8, cursor: 'pointer', textAlign: 'left' }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>{ry}년 {rm}월</span>
-                      <span style={{ fontSize: 13, color: '#8B95A1' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: themeData.text || '#191F28' }}>{ry}년 {rm}월</span>
+                      <span style={{ fontSize: 13, color: '#5B6572' }}>
                         수입 {fmt(report.totals?.income || 0)}원 · 지출 {fmt(report.totals?.expense || 0)}원
                       </span>
                     </button>

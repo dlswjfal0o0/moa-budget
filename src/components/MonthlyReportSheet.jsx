@@ -45,14 +45,14 @@ function DailyBarTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div style={{ background: '#fff', borderRadius: 8, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
-      <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{label}일</p>
+      <p style={{ fontSize: 11, color: '#5B6572', marginBottom: 4 }}>{label}일</p>
       <p style={{ fontSize: 14, fontWeight: 700, color: '#FF5A5F' }}>-{payload[0].value.toLocaleString()}원</p>
     </div>
   )
 }
 
 // 카테고리별 금액 목록(가로 바) — 지출/수입 공용
-function CategoryList({ items, total, fmt }) {
+function CategoryList({ items, total, fmt, textColor, textSecondary }) {
   const colorMap = getCategoryColors(items.map(([name]) => name))
   return (
     <div>
@@ -64,9 +64,9 @@ function CategoryList({ items, total, fmt }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                <span style={{ fontSize: 12, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
               </div>
-              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{fmt(amount)}원 · {pct}%</span>
+              <span style={{ fontSize: 12, color: textSecondary, fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{fmt(amount)}원 · {pct}%</span>
             </div>
             <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
@@ -135,6 +135,10 @@ export default function MonthlyReportSheet({
 
   const primary = themeData?.primary || '#4F46E5'
   const primaryLight = themeData?.primaryLight || '#EEF2FF'
+  const textColor = themeData?.text || '#191F28'
+  // 앱이 지원하는 6개 테마의 카드 배경 전부에서 WCAG AA(4.5:1) 이상을 만족하는 보조 텍스트 색.
+  // 기존 #8B95A1/#C9CDD4는 흰 배경 기준으로도 각각 3.0:1/1.6:1로 미달이었다.
+  const textSecondary = '#5B6572'
   const cacheKey = `${year}-${month + 1}`
   const details = mode === 'saved' ? savedReport?.details : summaryInput?.details
 
@@ -262,18 +266,18 @@ export default function MonthlyReportSheet({
 
   // 카드 radius 20 — 앱 전역에서 섹션 카드에 쓰는 값(Home.jsx/Analysis.jsx). 16은 카드 "안쪽"의 강조 블록(목표/응원 메시지 등) 전용으로 남겨둔다.
   const card = { background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }
-  const cardTitle = { fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 12 }
+  const cardTitle = { fontSize: 14, fontWeight: 600, color: textColor, marginBottom: 12 }
   const statCard = { minWidth: 0, background: themeData?.card || '#fff', borderRadius: 20, padding: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }
-  const statLabel = { fontSize: 12, color: '#8B95A1', marginBottom: 4 }
+  const statLabel = { fontSize: 12, color: textSecondary, marginBottom: 4 }
   const statValue = { fontSize: 16, fontWeight: 700, overflowWrap: 'anywhere' }
 
   return (
     <BottomSheet open={open} onClose={onClose} maxOpacity={0.45}>
       <div style={{ padding: '20px 20px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
-        <p style={{ fontSize: 18, fontWeight: 700, color: themeData?.text || '#191F28', marginBottom: 4, marginTop: 8 }}>
+        <p style={{ fontSize: 18, fontWeight: 700, color: textColor, marginBottom: 4, marginTop: 8 }}>
           📅 {year}년 {month + 1}월 리포트
         </p>
-        <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 16 }}>AI가 분석한 지난 한 달 수입·지출 결산이에요</p>
+        <p style={{ fontSize: 13, color: textSecondary, marginBottom: 16 }}>AI가 분석한 지난 한 달 수입·지출 결산이에요</p>
 
         {/* 탭 (iOS 세그먼트 스타일 — Analysis.jsx의 activeAnalysisTab 패턴 재사용) */}
         <div style={{ display: 'flex', background: '#F2F4F6', borderRadius: 9999, padding: 3, marginBottom: 16 }}>
@@ -282,7 +286,7 @@ export default function MonthlyReportSheet({
               style={{ flex: 1, padding: '9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                 fontSize: 13.5, fontWeight: activeTab === t.key ? 700 : 500,
                 background: activeTab === t.key ? primary : 'transparent',
-                color: activeTab === t.key ? '#fff' : '#8B95A1',
+                color: activeTab === t.key ? '#fff' : textSecondary,
                 transition: 'all 0.15s' }}>
               {t.label}
               {t.key === 'insight' && loading && (
@@ -307,11 +311,11 @@ export default function MonthlyReportSheet({
                 </div>
                 <div style={statCard}>
                   <p style={statLabel}>순이익</p>
-                  <p style={{ ...statValue, color: totals.net < 0 ? '#FF5A5F' : (themeData?.text || '#191F28') }}>{fmt(totals.net)}원</p>
+                  <p style={{ ...statValue, color: totals.net < 0 ? '#FF5A5F' : textColor }}>{fmt(totals.net)}원</p>
                 </div>
                 <div style={statCard}>
                   <p style={statLabel}>순잔액</p>
-                  <p style={{ ...statValue, color: netBalance < 0 ? '#FF5A5F' : (themeData?.text || '#191F28') }}>{fmt(netBalance)}원</p>
+                  <p style={{ ...statValue, color: netBalance < 0 ? '#FF5A5F' : textColor }}>{fmt(netBalance)}원</p>
                 </div>
               </div>
             )}
@@ -321,7 +325,7 @@ export default function MonthlyReportSheet({
                 <p style={cardTitle}>저축률</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <SavingsRateRing rate={savingsRate} />
-                  <p style={{ fontSize: 12, color: '#8B95A1', lineHeight: 1.5 }}>권장 저축률 {RECOMMENDED_SAVINGS_RATE}% 대비 {savingsRate >= RECOMMENDED_SAVINGS_RATE ? '양호한' : savingsRate >= 0 ? '조금 아쉬운' : '주의가 필요한'} 수준이에요.</p>
+                  <p style={{ fontSize: 12, color: textSecondary, lineHeight: 1.5 }}>권장 저축률 {RECOMMENDED_SAVINGS_RATE}% 대비 {savingsRate >= RECOMMENDED_SAVINGS_RATE ? '양호한' : savingsRate >= 0 ? '조금 아쉬운' : '주의가 필요한'} 수준이에요.</p>
                 </div>
               </div>
             )}
@@ -331,7 +335,7 @@ export default function MonthlyReportSheet({
               <div style={card}>
                 <p style={cardTitle}>일별 지출</p>
                 {maxDaily === 0 ? (
-                  <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '12px 0' }}>지출 내역이 없어요</p>
+                  <p style={{ fontSize: 13, color: textSecondary, textAlign: 'center', padding: '12px 0' }}>지출 내역이 없어요</p>
                 ) : (
                   <>
                     <ResponsiveContainer width="100%" height={130}>
@@ -348,11 +352,11 @@ export default function MonthlyReportSheet({
                     </ResponsiveContainer>
                     {details.topDay && (
                       <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #F2F4F6' }}>
-                        <p style={{ fontSize: 12.5, color: '#191F28', marginBottom: 6 }}>
+                        <p style={{ fontSize: 12.5, color: textColor, marginBottom: 6 }}>
                           최고 지출일 <span style={{ color: primary, fontWeight: 700 }}>{month + 1}월 {details.topDay.day}일</span> · <span style={{ fontWeight: 700 }}>{fmt(details.topDay.amount)}원</span>
                         </p>
                         {details.topDay.items.map((it, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#8B95A1', padding: '3px 0' }}>
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: textSecondary, padding: '3px 0' }}>
                             <span>{it.title || it.category}{it.title ? ` · ${it.category}` : ''}</span>
                             <span>{fmt(it.amount)}원</span>
                           </div>
@@ -374,8 +378,8 @@ export default function MonthlyReportSheet({
                   return (
                     <div key={i} style={{ marginBottom: i < details.budgetsSummary.length - 1 ? 14 : 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{b.label}</span>
-                        <span style={{ fontSize: 12, color: exceeded ? '#FF5A5F' : '#8B95A1', fontWeight: 600 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: textColor }}>{b.label}</span>
+                        <span style={{ fontSize: 12, color: exceeded ? '#FF5A5F' : textSecondary, fontWeight: 600 }}>
                           {fmt(b.spent)}원 / {fmt(b.amount)}원 ({b.pct}%)
                         </span>
                       </div>
@@ -398,13 +402,13 @@ export default function MonthlyReportSheet({
                 {expenseCategoryEntries.length > 0 && (
                   <div style={{ marginBottom: incomeCategoryEntries.length > 0 ? 16 : 0 }}>
                     <p style={cardTitle}>카테고리별 지출</p>
-                    <CategoryList items={expenseCategoryEntries} total={totals?.expense || 0} fmt={fmt} />
+                    <CategoryList items={expenseCategoryEntries} total={totals?.expense || 0} fmt={fmt} textColor={textColor} textSecondary={textSecondary} />
                   </div>
                 )}
                 {incomeCategoryEntries.length > 0 && (
                   <div>
                     <p style={cardTitle}>카테고리별 수입</p>
-                    <CategoryList items={incomeCategoryEntries} total={totals?.income || 0} fmt={fmt} />
+                    <CategoryList items={incomeCategoryEntries} total={totals?.income || 0} fmt={fmt} textColor={textColor} textSecondary={textSecondary} />
                   </div>
                 )}
               </div>
@@ -414,15 +418,15 @@ export default function MonthlyReportSheet({
               <div style={{ ...card, marginBottom: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <p style={{ ...cardTitle, marginBottom: 0 }}>고정지출 현황</p>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>{fmt(details.fixedTotal)}원</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{fmt(details.fixedTotal)}원</span>
                 </div>
                 {details.fixedExpenseItems?.length > 0 ? details.fixedExpenseItems.map((f, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderTop: i > 0 ? '1px solid #F2F4F6' : 'none' }}>
-                    <span style={{ color: '#191F28' }}>{f.title}</span>
-                    <span style={{ color: '#8B95A1', fontWeight: 600 }}>{fmt(f.amount)}원</span>
+                    <span style={{ color: textColor }}>{f.title}</span>
+                    <span style={{ color: textSecondary, fontWeight: 600 }}>{fmt(f.amount)}원</span>
                   </div>
                 )) : (
-                  <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '8px 0' }}>등록된 고정지출이 없어요</p>
+                  <p style={{ fontSize: 13, color: textSecondary, textAlign: 'center', padding: '8px 0' }}>등록된 고정지출이 없어요</p>
                 )}
               </div>
             )}
@@ -435,8 +439,8 @@ export default function MonthlyReportSheet({
             {loading && (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🤔</div>
-                <p style={{ fontSize: 14, color: '#8B95A1' }}>AI가 이번 달 결산을 분석하고 있어요...</p>
-                <p style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>잠시만 기다려주세요</p>
+                <p style={{ fontSize: 14, color: textSecondary }}>AI가 이번 달 결산을 분석하고 있어요...</p>
+                <p style={{ fontSize: 12, color: textSecondary, marginTop: 4 }}>잠시만 기다려주세요</p>
               </div>
             )}
 
@@ -450,12 +454,12 @@ export default function MonthlyReportSheet({
                   </div>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 14, fontWeight: 600, color: rc.color, marginBottom: 4 }}>{rc.label}</p>
-                    <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5, marginBottom: 8 }}>{data.summary}</p>
+                    <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.5, marginBottom: 8 }}>{data.summary}</p>
                     <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                       {levelColors.map((color, i) => (
                         <div key={i} style={{ width: 15, height: 15, borderRadius: '50%', background: i < filledCount ? color : '#e5e7eb', transition: 'background 0.3s' }} />
                       ))}
-                      <span style={{ fontSize: 11, color: '#8B95A1', marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
+                      <span style={{ fontSize: 11, color: textSecondary, marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
                     </div>
                   </div>
                 </div>
@@ -464,7 +468,7 @@ export default function MonthlyReportSheet({
 
             {raw && (
               <div style={{ background: primaryLight, borderRadius: 16, padding: '14px', marginBottom: 14 }}>
-                <p style={{ fontSize: 14, color: '#191F28', lineHeight: 1.7 }}>{raw}</p>
+                <p style={{ fontSize: 14, color: textColor, lineHeight: 1.7 }}>{raw}</p>
               </div>
             )}
 
@@ -474,7 +478,7 @@ export default function MonthlyReportSheet({
                 {data.insights.map((ins, i) => (
                   <div key={i} style={{ display: 'flex', gap: 9, padding: '8px 0', borderTop: i > 0 ? '1px solid #F2F4F6' : 'none' }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: primary, marginTop: 7, flexShrink: 0 }} />
-                    <p style={{ fontSize: 13, color: '#191F28', lineHeight: 1.6 }}>{typeof ins === 'string' ? ins : String(ins)}</p>
+                    <p style={{ fontSize: 13, color: textColor, lineHeight: 1.6 }}>{typeof ins === 'string' ? ins : String(ins)}</p>
                   </div>
                 ))}
               </div>
@@ -486,14 +490,14 @@ export default function MonthlyReportSheet({
 
                 {data.cuts?.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>💡 절감 포인트</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 8 }}>💡 절감 포인트</p>
                     {data.cuts.map((cut, i) => (
                       <div key={i} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
                           <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 9999 }}>{cut.category}</span>
                           {cut.save > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>최대 {fmt(cut.save)}원 절약</span>}
                         </div>
-                        <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
+                        <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
                       </div>
                     ))}
                   </div>
@@ -501,7 +505,7 @@ export default function MonthlyReportSheet({
 
                 {data.saving_goal > 0 && (
                   <div style={{ background: '#F0FFF4', borderRadius: 16, padding: '12px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, color: '#191F28' }}>🎯 절감 목표</span>
+                    <span style={{ fontSize: 13, color: textColor }}>🎯 절감 목표</span>
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>{fmt(data.saving_goal)}원</span>
                   </div>
                 )}
@@ -520,7 +524,7 @@ export default function MonthlyReportSheet({
                 {data.unusual.map((u, i) => (
                   <div key={i} style={{ display: 'flex', gap: 9, padding: '8px 0', borderTop: i > 0 ? '1px solid #F2F4F6' : 'none' }}>
                     <span style={{ fontSize: 14, lineHeight: '20px', flexShrink: 0 }}>⚡</span>
-                    <p style={{ fontSize: 13, color: '#191F28', lineHeight: 1.6 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
+                    <p style={{ fontSize: 13, color: textColor, lineHeight: 1.6 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
                   </div>
                 ))}
               </div>
@@ -531,7 +535,7 @@ export default function MonthlyReportSheet({
         {mode === 'auto' && data && (
           <button onClick={handleSave} disabled={saved || saving}
             style={{ width: '100%', marginTop: 16, padding: '14px', borderRadius: 14, border: 'none', cursor: saved || saving ? 'default' : 'pointer',
-              background: saved ? '#e5e7eb' : primary, color: saved ? '#8B95A1' : '#fff', fontSize: 15, fontWeight: 700 }}>
+              background: saved ? '#e5e7eb' : primary, color: saved ? textSecondary : '#fff', fontSize: 15, fontWeight: 700 }}>
             {saved ? '저장됨 ✓' : saving ? '저장 중...' : '이 리포트 저장하기'}
           </button>
         )}
