@@ -57,7 +57,7 @@ export default function SettingsNeu(props) {
     themeData, themeName, THEMES, handleThemeChange,
     settingsPage, setSettingsPage, settingsDirection, settingsPageTitle,
     user,
-    neumorphism, setNeumorphism, navNeumorphism, setNavNeumorphism,
+    neumorphism, setNeumorphism,
     rolloverBudget, setRolloverBudget,
     weekStartDay, setWeekStartDay, sortOrder, setSortOrder,
     showCardBilling, setShowCardBilling,
@@ -142,7 +142,7 @@ export default function SettingsNeu(props) {
                   {settingsChevron}
                 </button>
                 <button onClick={() => setSettingsPage('font-size')}
-                  style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
+                  style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
                   <NeuSIcon><NeuSI color={primary}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" /></NeuSI></NeuSIcon>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>글자 크기</p>
@@ -150,15 +150,6 @@ export default function SettingsNeu(props) {
                   </div>
                   {settingsChevron}
                 </button>
-                <ToggleRow title="뉴모피즘 (베타)" desc="앱 전체를 소프트 UI(음각/양각) 스타일로 표시"
-                  on={neumorphism} onChange={val => { setNeumorphism(val); if (user) setDoc(doc(db, 'users', user.uid), { neumorphism: val }, { merge: true }) }}
-                  primary={primary} borderBottom />
-                <ToggleRow title="하단바 뉴모피즘" desc="눌린 탭을 오목한 뉴모피즘 스타일로 표시"
-                  on={navNeumorphism} onChange={val => {
-                    setNavNeumorphism(val)
-                    localStorage.setItem('moa_navNeumorphism', String(val))
-                    if (user) setDoc(doc(db, 'users', user.uid), { navNeumorphism: val }, { merge: true })
-                  }} primary={primary} />
               </div>
 
               <SectionLabel>데이터</SectionLabel>
@@ -377,6 +368,15 @@ export default function SettingsNeu(props) {
                     </button>
                   )
                 })}
+              </div>
+
+              <SectionLabel>화면 스타일</SectionLabel>
+              <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden' }}>
+                <ToggleRow title="뉴모피즘 (베타)" desc="앱 전체와 하단바를 소프트 UI(음각/양각) 스타일로 표시"
+                  on={neumorphism} onChange={val => {
+                    setNeumorphism(val)
+                    if (user) setDoc(doc(db, 'users', user.uid), { neumorphism: val, navNeumorphism: val }, { merge: true })
+                  }} primary={primary} />
               </div>
             </div>
           )}

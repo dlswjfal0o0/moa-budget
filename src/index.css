@@ -238,8 +238,9 @@ input.neu-inset:focus, textarea.neu-inset:focus {
    변수는 :root에 둔다 — BottomSheet(FixedPortal)처럼 포탈로 body 직속에
    렌더링되는 요소는 .neu-page의 DOM 트리 밖에 있어 자손 선택자로는
    변수를 상속받지 못하기 때문. .neu-card/.neu-btn/.neu-inset/.neu-chip이
-   이 변수로 같은 광원 방향의 양각/음각 그림자를 낸다. 토글(SToggle)은
-   어느 화면에서든 독립적으로 동작해야 해서 변수에 기대지 않고 고정값을 쓴다. */
+   이 변수로 같은 광원 방향의 양각/음각 그림자를 낸다.
+   아래는 초기 렌더(JS 실행 전) 깜빡임 방지용 기본값이며, 실제 값은
+   ThemeContext가 선택된 테마 색상에 맞춰 document.documentElement에 덮어쓴다. */
 :root {
   --neu-bg: #EAEEF3;
   --neu-dark: rgba(163, 177, 198, 0.55);
@@ -281,17 +282,16 @@ input.neu-inset:focus, textarea.neu-inset:focus {
   box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
 }
 
-/* 토글(SToggle) — 어느 화면에서든 독립 동작하도록 고정 색상 사용 */
 .neu-toggle-track {
   width: 48px; height: 28px; border-radius: 9999px; position: relative;
   cursor: pointer; flex-shrink: 0;
-  background: #EAEEF3;
-  box-shadow: inset 3px 3px 6px rgba(163,177,198,0.5), inset -3px -3px 6px rgba(255,255,255,0.85);
+  background: var(--neu-bg);
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
 }
 .neu-toggle-thumb {
   width: 22px; height: 22px; border-radius: 50%; position: absolute; top: 3px;
-  background: #EAEEF3;
-  box-shadow: 2px 2px 5px rgba(163,177,198,0.55), -2px -2px 5px rgba(255,255,255,0.95);
+  background: var(--neu-bg);
+  box-shadow: 2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light);
   transition: left 200ms cubic-bezier(0.4, 0, 0.2, 1);
   display: flex; align-items: center; justify-content: center;
 }
