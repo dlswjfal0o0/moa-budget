@@ -116,25 +116,28 @@ export default function BottomNav() {
             <button key={tab.path} onClick={() => { if (!active) { haptic.selection(); navigate(tab.path) } }}
               className="pressable-subtle"
               style={{
-                flex: 1, minHeight: 48, padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                flex: 1, minHeight: 48, padding: '6px 2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: navNeumorphism ? 3 : 4,
                 background: 'transparent', borderRadius: 22, position: 'relative', zIndex: 1,
                 border: 'none', cursor: 'pointer', touchAction: 'manipulation',
               }}>
-              {!navNeumorphism && (
-                // 기본 스타일: 아이콘에 딱 맞는 작은 플랫 하이라이트가 활성 탭에서만
-                // 옅게 나타났다 사라진다. 각 버튼 안에서 독립적으로 opacity/scale만
-                // 트랜지션하므로 레이아웃 계산이 전혀 없어 가볍다.
-                <span aria-hidden style={{
-                  position: 'absolute', top: 2, left: '50%', width: 44, height: 34, borderRadius: 14,
-                  background: '#F0F1F3', boxShadow: '0 1px 3px rgba(20,24,32,0.08)',
-                  opacity: active ? 1 : 0,
-                  transform: `translateX(-50%) scale(${active ? 1 : 0.7})`,
-                  transition: 'opacity 200ms ease, transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1)',
-                  zIndex: 0,
-                }} />
-              )}
-              <span style={{ display: 'flex', animation: active ? 'navIconPop 400ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none' }}>
-                <Icon name={tab.icon} color={color} />
+              <span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {!navNeumorphism && (
+                  // 기본 스타일: 아이콘에 딱 맞는 작은 플랫 하이라이트가 활성 탭에서만
+                  // 옅게 나타났다 사라진다. 크기를 아이콘 박스(22x22) 기준 inset으로
+                  // 정하기 때문에 라벨의 줄 높이/폰트와 무관하게 항상 아이콘 범위 안에만
+                  // 그려진다 — 고정 px로 추측하면 라벨과 겹치는 버그가 생기기 쉽다.
+                  <span aria-hidden style={{
+                    position: 'absolute', inset: '-3px -11px', borderRadius: 14,
+                    background: '#F0F1F3', boxShadow: '0 1px 3px rgba(20,24,32,0.08)',
+                    opacity: active ? 1 : 0,
+                    transform: `scale(${active ? 1 : 0.7})`,
+                    transition: 'opacity 200ms ease, transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1)',
+                    zIndex: 0,
+                  }} />
+                )}
+                <span style={{ display: 'flex', position: 'relative', zIndex: 1, animation: active ? 'navIconPop 400ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none' }}>
+                  <Icon name={tab.icon} color={color} />
+                </span>
               </span>
               <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color, letterSpacing: '-0.2px', transition: 'color 180ms ease, font-weight 180ms ease', position: 'relative', zIndex: 1 }}>{tab.label}</span>
             </button>
