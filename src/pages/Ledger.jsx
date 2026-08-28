@@ -19,6 +19,7 @@ import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
 import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
+import LedgerNeu from './LedgerNeu'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -40,7 +41,7 @@ const formatTime = (time) => {
 }
 
 // ── 카테고리 SVG 아이콘 ──────────────────────────────
-const CatIcon = ({ cat, size = 18, color = '#888' }) => {
+export const CatIcon = ({ cat, size = 18, color = '#888' }) => {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   switch (cat) {
     case '식비': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
@@ -69,7 +70,8 @@ const CatIcon = ({ cat, size = 18, color = '#888' }) => {
 }
 
 // 키워드 → 아이콘 키 자동 매핑
-const guessIconKey = (name) => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const guessIconKey = (name) => {
   // 정확한 카테고리명 우선 매핑
   const exact = {
     '환불': '환전', '환급': '환전', '반품': '환전', '캐시백': '환전', '리워드': '환전',
@@ -121,7 +123,7 @@ const Toggle = ({ on, onChange }) => {
 }
 
 // ── 뒤로가기 아이콘 ──────────────────────────────────
-const BackIcon = () => (
+export const BackIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
   </svg>
@@ -134,7 +136,7 @@ const SectionLabel = ({ children }) => (
 )
 
 export default function Ledger() {
-  const { themeData } = useTheme()
+  const { themeData, neumorphism } = useTheme()
   const { cards: userCardsList } = useCards()
   const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
@@ -755,6 +757,54 @@ export default function Ledger() {
     color: active ? '#fff' : '#8B95A1',
     transition: 'all 0.2s',
   })
+
+  if (neumorphism) {
+    return (
+      <LedgerNeu
+        themeData={themeData} loadError={loadError}
+        selectionMode={selectionMode} exitSelectionMode={exitSelectionMode}
+        selectedIds={selectedIds} setSelectedIds={setSelectedIds} filtered={filtered}
+        showSearch={showSearch} setShowSearch={setShowSearch}
+        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+        searchCategory={searchCategory} setSearchCategory={setSearchCategory}
+        allSearchCategories={allSearchCategories}
+        hiddenTransactions={hiddenTransactions} setShowHiddenView={setShowHiddenView} showHiddenView={showHiddenView}
+        period={period} setPeriod={setPeriod} setWeekOffset={setWeekOffset}
+        formatWeekLabel={formatWeekLabel}
+        viewMonth={viewMonth} viewYear={viewYear} setShowYMPicker={setShowYMPicker} showYMPicker={showYMPicker}
+        setViewYear={setViewYear} setViewMonth={setViewMonth}
+        prevMonth={prevMonth} nextMonth={nextMonth}
+        customStart={customStart} setCustomStart={setCustomStart} customEnd={customEnd} setCustomEnd={setCustomEnd}
+        totalExpense={totalExpense} totalIncome={totalIncome} fmt={fmt}
+        tab={tab} setTab={setTab}
+        sortOrder={sortOrder} setSortOrder={setSortOrder}
+        dateGroups={dateGroups} sortedDates={sortedDates}
+        isCreditExcluded={isCreditExcluded} showLoan={showLoan}
+        expandedMergeId={expandedMergeId} setExpandedMergeId={setExpandedMergeId}
+        selectedSubId={selectedSubId} setSelectedSubId={setSelectedSubId}
+        selectedId={selectedId} setSelectedId={setSelectedId}
+        swipedId={swipedId} settleRow={settleRow}
+        setDeleteBtnEl={setDeleteBtnEl} setRowEl={setRowEl}
+        handleItemPointerDown={handleItemPointerDown} handleItemPointerMove={handleItemPointerMove} handleItemPointerEnd={handleItemPointerEnd}
+        handleSelectItem={handleSelectItem}
+        handleDelete={handleDelete} handleEdit={handleEdit} handleHide={handleHide} handleUnhide={handleUnhide}
+        txnExitId={txnExitId} newTxnId={newTxnId}
+        transactions={transactions} categories={categories}
+        setEditItem={setEditItem} setForm={setForm} setShowForm={setShowForm} showForm={showForm}
+        getMergedNet={getMergedNet} getSelectedTxns={getSelectedTxns}
+        showMergeModal={showMergeModal} setShowMergeModal={setShowMergeModal}
+        mergeTitle={mergeTitle} setMergeTitle={setMergeTitle} handleMerge={handleMerge}
+        deleteConfirmTxnId={deleteConfirmTxnId} setDeleteConfirmTxnId={setDeleteConfirmTxnId} confirmDeleteTxn={confirmDeleteTxn}
+        mergeUndoSnackbar={mergeUndoSnackbar} handleUndoMerge={handleUndoMerge}
+        txnUndoSnackbar={txnUndoSnackbar} handleUndoTxn={handleUndoTxn}
+        editItem={editItem} form={form} handleSubmit={handleSubmit} formSaveState={formSaveState}
+        userCardsList={userCardsList} userAccountsList={userAccountsList} userPayments={userPayments}
+        showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
+        showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
+        showCardBilling={showCardBilling} loans={loans}
+      />
+    )
+  }
 
   return (
     <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>

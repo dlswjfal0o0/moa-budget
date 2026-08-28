@@ -76,6 +76,15 @@ input.input-plain:focus, textarea.input-plain:focus {
   box-shadow: none !important;
 }
 
+/* 뉴모피즘 입력창(.neu-inset) 포커스 — 각진 파란 테두리/외곽 그림자 대신
+   기존 음각 그림자를 유지한 채 안쪽 테두리에 옅은 컬러 링만 더한다.
+   --neu-focus는 사용처(BudgetForm 등)에서 테마 primary 색으로 지정. */
+input.neu-inset:focus, textarea.neu-inset:focus {
+  border-color: transparent !important;
+  box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light),
+    inset 0 0 0 2px var(--neu-focus, rgba(49,130,246,0.35)) !important;
+}
+
 /* ── Press feedback (native-feel touch-down/up) ──────
    :active는 JS state/re-render 없이 터치 즉시 반응하고,
    연타해도 별도 큐가 쌓이지 않아 버튼 눌림 표현의 기본값으로 사용한다. */
@@ -222,4 +231,71 @@ input.input-plain:focus, textarea.input-plain:focus {
 .theme-pastel-purple-bg {
   background-color: #FFFFFF !important;
   background-image: none !important;
+}
+
+/* ── 뉴모피즘 테마 (베타) ──────────────────────────────
+   설정 > 디스플레이의 "뉴모피즘" 토글로 켜는 소프트 UI 스킨.
+   변수는 :root에 둔다 — BottomSheet(FixedPortal)처럼 포탈로 body 직속에
+   렌더링되는 요소는 .neu-page의 DOM 트리 밖에 있어 자손 선택자로는
+   변수를 상속받지 못하기 때문. .neu-card/.neu-btn/.neu-inset/.neu-chip이
+   이 변수로 같은 광원 방향의 양각/음각 그림자를 낸다. 토글(SToggle)은
+   어느 화면에서든 독립적으로 동작해야 해서 변수에 기대지 않고 고정값을 쓴다. */
+:root {
+  --neu-bg: #EAEEF3;
+  --neu-dark: rgba(163, 177, 198, 0.55);
+  --neu-light: rgba(255, 255, 255, 0.9);
+}
+.neu-page {
+  background: var(--neu-bg);
+}
+.neu-card {
+  background: var(--neu-bg);
+  box-shadow: 8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light);
+}
+.neu-inset {
+  background: var(--neu-bg);
+  box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light);
+}
+.neu-btn {
+  background: var(--neu-bg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light);
+  transition: box-shadow 150ms ease, transform 100ms ease;
+}
+.neu-btn:active {
+  box-shadow: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light);
+  transform: scale(0.98);
+}
+.neu-chip {
+  background: var(--neu-bg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
+  transition: box-shadow 150ms ease, transform 100ms ease;
+}
+.neu-chip:active {
+  transform: scale(0.98);
+}
+.neu-chip.selected {
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
+}
+
+/* 토글(SToggle) — 어느 화면에서든 독립 동작하도록 고정 색상 사용 */
+.neu-toggle-track {
+  width: 48px; height: 28px; border-radius: 9999px; position: relative;
+  cursor: pointer; flex-shrink: 0;
+  background: #EAEEF3;
+  box-shadow: inset 3px 3px 6px rgba(163,177,198,0.5), inset -3px -3px 6px rgba(255,255,255,0.85);
+}
+.neu-toggle-thumb {
+  width: 22px; height: 22px; border-radius: 50%; position: absolute; top: 3px;
+  background: #EAEEF3;
+  box-shadow: 2px 2px 5px rgba(163,177,198,0.55), -2px -2px 5px rgba(255,255,255,0.95);
+  transition: left 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; align-items: center; justify-content: center;
+}
+.neu-toggle-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  transition: background 200ms ease;
 }

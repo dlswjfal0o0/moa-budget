@@ -28,6 +28,16 @@ export function ThemeProvider({ children }) {
     localStorage.getItem('moa_navNeumorphism') === 'true'
   )
 
+  // 앱 전체 뉴모피즘 테마(베타): 켜면 지원된 화면이 소프트 UI 스타일의
+  // 별도 버전으로 표시된다. 아직 지원하지 않는 화면은 기존 디자인을 그대로 유지.
+  const [neumorphism, setNeumorphismState] = useState(() =>
+    localStorage.getItem('moa_neumorphism') === 'true'
+  )
+  const setNeumorphism = (val) => {
+    setNeumorphismState(val)
+    localStorage.setItem('moa_neumorphism', String(val))
+  }
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -46,13 +56,18 @@ export function ThemeProvider({ children }) {
                 setNavNeumorphism(snap.data().navNeumorphism)
                 localStorage.setItem('moa_navNeumorphism', String(snap.data().navNeumorphism))
             }
+
+            if (snap.data().neumorphism !== undefined) {
+                setNeumorphismState(snap.data().neumorphism)
+                localStorage.setItem('moa_neumorphism', String(snap.data().neumorphism))
+            }
         }
     })
     return unsub
   }, [])
 
   return (
-    <ThemeContext.Provider value={{ themeName, setThemeName, themeData, showUtilities, setShowUtilities, navNeumorphism, setNavNeumorphism }}>
+    <ThemeContext.Provider value={{ themeName, setThemeName, themeData, showUtilities, setShowUtilities, navNeumorphism, setNavNeumorphism, neumorphism, setNeumorphism }}>
       {children}
     </ThemeContext.Provider>
   )

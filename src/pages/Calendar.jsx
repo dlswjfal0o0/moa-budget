@@ -11,9 +11,10 @@ import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
+import CalendarNeu from './CalendarNeu'
 
 export default function Calendar() {
-  const { themeData } = useTheme()
+  const { themeData, neumorphism } = useTheme()
   const { cards } = useCards()
   const settings = useSettings()
   const navigate = useNavigate()
@@ -270,6 +271,32 @@ export default function Calendar() {
     const db_ = parseInt(b.dueDate?.split('-')[2] || '99')
     return da - db_
   })
+
+  if (neumorphism) {
+    return (
+      <CalendarNeu
+        themeData={themeData} loadError={loadError}
+        viewYear={viewYear} setViewYear={setViewYear} viewMonth={viewMonth} setViewMonth={setViewMonth}
+        showYMPicker={showYMPicker} setShowYMPicker={setShowYMPicker}
+        days={days} firstDay={firstDay} byDate={byDate} todayStr={todayStr}
+        selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+        fixedDueDays={fixedDueDays}
+        selectedTxs={selectedTxs} isCreditExcluded={isCreditExcluded} showLoan={showLoan}
+        weekExpense={weekExpense} weekIncome={weekIncome} totalExpense={totalExpense} totalIncome={totalIncome}
+        fmt={fmt}
+        fixedExpenses={fixedExpenses} fixedTotal={fixedTotal} sortedFixed={sortedFixed} currentMonthKey={currentMonthKey}
+        setShowAddFixed={setShowAddFixed}
+        expandedFixedId={expandedFixedId} setExpandedFixedId={setExpandedFixedId}
+        handleToggleFixed={handleToggleFixed} handleDeleteFixed={handleDeleteFixed}
+        setEditingFixedId={setEditingFixedId} setEditFixedData={setEditFixedData}
+        editingFixedId={editingFixedId} editFixedData={editFixedData} handleSaveFixed={handleSaveFixed}
+        showAddFixed={showAddFixed} newFixed={newFixed} setNewFixed={setNewFixed} EMPTY_FIXED={EMPTY_FIXED} handleAddFixed={handleAddFixed}
+        categories={categories} accNames={accNames} userCards={userCards}
+        showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
+        showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
+      />
+    )
+  }
 
   return (
     <div style={{
