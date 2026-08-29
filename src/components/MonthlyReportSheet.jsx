@@ -44,7 +44,7 @@ function catText(byCategory, fmt) {
 function DailyBarTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', borderRadius: 8, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
       <p style={{ fontSize: 11, color: '#5B6572', marginBottom: 4 }}>{label}일</p>
       <p style={{ fontSize: 14, fontWeight: 700, color: '#FF5A5F' }}>-{payload[0].value.toLocaleString()}원</p>
     </div>
@@ -68,7 +68,7 @@ function CategoryList({ items, total, fmt, textColor, textSecondary }) {
               </div>
               <span style={{ fontSize: 12, color: textSecondary, fontWeight: 600, marginLeft: 4, flexShrink: 0 }}>{fmt(amount)}원 · {pct}%</span>
             </div>
-            <div style={{ height: 5, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
+            <div style={{ height: 6, background: `${color}22`, borderRadius: 9999, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 9999, transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }} />
             </div>
           </div>
@@ -86,7 +86,8 @@ function SavingsRateRing({ rate }) {
   return (
     <div style={{ position: 'relative', width: 100, height: 56, flexShrink: 0 }}>
       <svg width="100" height="56" viewBox="0 0 100 56">
-        <path d="M 8 50 A 42 42 0 0 1 92 50" fill="none" stroke="#F2F4F6" strokeWidth="11" strokeLinecap="round" />
+        {/* 트랙을 현재 상태 색의 옅은 톤으로 — 채워지지 않은 구간도 같은 색 계열이라 전체 아크에서 상태가 읽힌다 */}
+        <path d="M 8 50 A 42 42 0 0 1 92 50" fill="none" stroke={`${color}22`} strokeWidth="11" strokeLinecap="round" />
         <path d="M 8 50 A 42 42 0 0 1 92 50" fill="none" stroke={color} strokeWidth="11" strokeLinecap="round"
           strokeDasharray={Math.PI * 42} strokeDashoffset={Math.PI * 42 * (1 - clamped / 100)}
           style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }} />
@@ -340,13 +341,13 @@ export default function MonthlyReportSheet({
                 ) : (
                   <>
                     <ResponsiveContainer width="100%" height={130}>
-                      <BarChart data={details.dailyData} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
-                        <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#bbb' }} tickLine={false} axisLine={false} interval={4} />
+                      <BarChart data={details.dailyData} margin={{ top: 0, right: 0, left: 10, bottom: 0 }} barCategoryGap="30%">
+                        <XAxis dataKey="day" tick={{ fontSize: 9, fill: textSecondary }} tickLine={false} axisLine={{ stroke: '#F2F4F6' }} interval={4} />
                         <YAxis hide />
-                        <Tooltip content={<DailyBarTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} />
-                        <Bar dataKey="amount" radius={[3, 3, 0, 0]}>
+                        <Tooltip content={<DailyBarTooltip />} wrapperStyle={{ zIndex: 1000, pointerEvents: 'none' }} cursor={{ fill: `${primary}0D` }} />
+                        <Bar dataKey="amount" radius={[4, 4, 0, 0]} maxBarSize={16}>
                           {details.dailyData.map((entry, i) => (
-                            <Cell key={i} fill={entry.amount > 0 && entry.amount === maxDaily ? primary : '#d8d8d8'} />
+                            <Cell key={i} fill={entry.amount > 0 && entry.amount === maxDaily ? primary : `${textColor}1F`} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -384,7 +385,7 @@ export default function MonthlyReportSheet({
                           {fmt(b.spent)}원 / {fmt(b.amount)}원 ({b.pct}%)
                         </span>
                       </div>
-                      <div style={{ height: 6, background: '#F2F4F6', borderRadius: 9999, overflow: 'hidden' }}>
+                      <div style={{ height: 6, background: `${barColor}22`, borderRadius: 9999, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.min(b.pct, 100)}%`, background: barColor, borderRadius: 9999, transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }} />
                       </div>
                     </div>
