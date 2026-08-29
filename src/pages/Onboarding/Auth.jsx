@@ -22,6 +22,24 @@ import { Sentry } from '../../utils/sentry'
 // 원하는 주소로 바꿔도 되며, 심사 메모(App Review Information)에 아이디/비번을 적어주면 됩니다.
 const DEMO_ACCOUNT_EMAIL = 'appreview@moa-budget.com'
 
+// 약관/연령 동의용 커스텀 체크박스. 네이티브 accentColor는 브라우저마다
+// 렌더링이 달라 보여서, 체크마크 드로잉 + 스프링 팝 애니메이션을 직접 그린다.
+function CheckBox({ checked, onChange, children, style }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', ...style }}>
+      <span className="checkbox-box">
+        <input type="checkbox" checked={checked} onChange={onChange} />
+        <span className="checkbox-visual" aria-hidden="true">
+          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+            <path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </span>
+      <span style={{ fontSize: 13, color: '#666', lineHeight: 1.4, marginTop: 1 }}>{children}</span>
+    </label>
+  )
+}
+
 export default function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -350,39 +368,25 @@ export default function Auth() {
 
           {/* 연령 확인 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
           {mode === 'signup' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', ...stagger() }}>
-              <input
-                type="checkbox"
-                checked={ageConfirmed}
-                onChange={e => setAgeConfirmed(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: 13, color: '#666' }}>만 14세 이상입니다</span>
-            </label>
+            <CheckBox checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} style={stagger()}>
+              만 14세 이상입니다
+            </CheckBox>
           )}
 
           {/* 약관 동의 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
           {mode === 'signup' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', ...stagger() }}>
-              <input
-                type="checkbox"
-                checked={termsConfirmed}
-                onChange={e => setTermsConfirmed(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: 13, color: '#666' }}>
-                <span
-                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
-                  style={{ color: '#3182F6', textDecoration: 'underline' }}
-                >이용약관</span>
-                {' '}및{' '}
-                <span
-                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
-                  style={{ color: '#3182F6', textDecoration: 'underline' }}
-                >개인정보 처리방침</span>
-                에 동의합니다
-              </span>
-            </label>
+            <CheckBox checked={termsConfirmed} onChange={e => setTermsConfirmed(e.target.checked)} style={stagger()}>
+              <span
+                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
+                style={{ color: '#3182F6', textDecoration: 'underline' }}
+              >이용약관</span>
+              {' '}및{' '}
+              <span
+                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
+                style={{ color: '#3182F6', textDecoration: 'underline' }}
+              >개인정보 처리방침</span>
+              에 동의합니다
+            </CheckBox>
           )}
 
         </div>

@@ -108,6 +108,63 @@ input.neu-inset:focus, textarea.neu-inset:focus {
   animation: spin 0.6s linear infinite;
 }
 
+/* ── Custom Checkbox (회원가입 약관/연령 동의 등) ──────
+   네이티브 accentColor는 브라우저마다 렌더링이 달라 보여서,
+   체크마크를 직접 그리고 체크 시 살짝 튀어오르는 팝을 준다. */
+.checkbox-box {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+.checkbox-box input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.checkbox-box .checkbox-visual {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1.5px solid #d1d6db;
+  background: #fff;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.checkbox-box .checkbox-visual svg path {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  transition: stroke-dashoffset 200ms ease 40ms;
+}
+.checkbox-box input:hover + .checkbox-visual {
+  border-color: #3182F6;
+}
+.checkbox-box input:focus-visible + .checkbox-visual {
+  box-shadow: 0 0 0 3px rgba(49,130,246,0.18);
+}
+.checkbox-box input:active + .checkbox-visual {
+  transform: scale(0.9);
+}
+.checkbox-box input:checked + .checkbox-visual {
+  background: #3182F6;
+  border-color: #3182F6;
+  animation: checkboxPop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.checkbox-box input:checked + .checkbox-visual svg path {
+  stroke-dashoffset: 0;
+}
+@keyframes checkboxPop {
+  0%   { transform: scale(0.8); }
+  100% { transform: scale(1); }
+}
+
 /* ── Reduced Motion ───────────────────────────────────
    불필요한 이동/스케일/스프링은 없애되, 로딩 스피너처럼
    상태 전달에 필요한 모션은 유지한다. */
