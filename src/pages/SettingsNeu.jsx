@@ -5,10 +5,11 @@ import BottomSheet from '../components/BottomSheet'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
+import { getColoredShadow } from '../utils/neuColors'
 
 function NeuSIcon({ bg, children }) {
   return (
-    <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, boxShadow: getColoredShadow(bg).raisedSm, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       {children}
     </div>
   )

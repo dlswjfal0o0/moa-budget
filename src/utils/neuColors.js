@@ -36,3 +36,25 @@ export function getNeuPalette(primaryHex) {
     light: 'rgba(255,255,255,0.9)',
   }
 }
+
+// primary 색상 자체를 배경으로 쓰는 "컬러 하이라이트" 요소(배너, 헤더, 아이콘 배지)용
+// 그림자 색. primary보다 어둡게/밝게 튼 같은 색상 계열 그림자를 만들어, solid 컬러를
+// 유지하면서도 뉴모피즘 특유의 양각(raised)/음각(inset) 느낌을 낼 수 있게 한다.
+export function getColoredShadow(primaryHex) {
+  let dark = 'rgba(0,0,0,0.35)'
+  let light = 'rgba(255,255,255,0.4)'
+  if (primaryHex && typeof primaryHex === 'string' && primaryHex.startsWith('#')) {
+    const [h, s, l] = hexToHsl(primaryHex)
+    dark = `hsla(${h.toFixed(1)}, ${s.toFixed(0)}%, ${Math.max(l - 20, 5).toFixed(0)}%, 0.45)`
+    light = `hsla(${h.toFixed(1)}, ${Math.max(s - 15, 0).toFixed(0)}%, ${Math.min(l + 20, 96).toFixed(0)}%, 0.55)`
+  }
+  return {
+    dark, light,
+    raised: `6px 6px 14px ${dark}, -6px -6px 14px ${light}`,
+    raisedSm: `3px 3px 7px ${dark}, -3px -3px 7px ${light}`,
+    inset: `inset 4px 4px 9px ${dark}, inset -4px -4px 9px ${light}`,
+    // 화면 가장자리까지 꽉 차는 배너용 — 위/좌우는 화면 밖이라 안 보이므로 아래쪽으로만
+    // 은은하게 떨어지는 컬러 그림자로 "떠 있는" 느낌을 낸다.
+    drop: `0 12px 24px -8px ${dark}`,
+  }
+}
