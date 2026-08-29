@@ -1,5 +1,6 @@
 import YearMonthPicker from '../components/YearMonthPicker'
 import LoadError from '../components/LoadError'
+import { getColoredShadow } from '../utils/neuColors'
 
 const neuInputStyle = {
   width: '100%', padding: '14px 16px', borderRadius: 14, border: 'none',
@@ -19,6 +20,7 @@ function NeuChip({ selected, onClick, children, activeColor, style }) {
 // 고정지출 추가/수정 시트 공용 폼
 function FixedExpenseForm({ title, data, setData, categories, accNames, userCards, primary,
   showCardSelector, setShowCardSelector, showAccountSelector, setShowAccountSelector, onCancel, onSubmit, submitLabel }) {
+  const coloredShadow = getColoredShadow(primary)
   return (
     <div className="neu-page" style={{ width: '100%', maxWidth: 430, margin: '0 auto', borderRadius: '28px 28px 0 0', maxHeight: '90dvh', display: 'flex', flexDirection: 'column', '--neu-focus': primary + '59' }}
       onClick={e => e.stopPropagation()}>
@@ -142,7 +144,7 @@ function FixedExpenseForm({ title, data, setData, categories, accNames, userCard
       <div style={{ padding: '12px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onCancel} className="neu-btn" style={{ flex: 1, height: 56, borderRadius: 16, color: '#8B95A1', fontSize: 15 }}>취소</button>
-          <button onClick={onSubmit} className="neu-btn" style={{ flex: 2, height: 56, borderRadius: 16, color: primary, fontSize: 15, fontWeight: 700 }}>{submitLabel}</button>
+          <button onClick={onSubmit} style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>{submitLabel}</button>
         </div>
       </div>
     </div>
@@ -173,6 +175,7 @@ export default function CalendarNeu(props) {
   } = props
 
   const primary = themeData.primary
+  const coloredShadow = getColoredShadow(primary)
 
   return (
     <div className="neu-page" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -300,7 +303,7 @@ export default function CalendarNeu(props) {
                 </span>
               )}
             </div>
-            <button onClick={() => setShowAddFixed(true)} className="neu-btn" style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 600 }}>
+            <button onClick={() => setShowAddFixed(true)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>
               + 추가
             </button>
           </div>

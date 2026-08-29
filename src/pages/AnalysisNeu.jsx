@@ -2,6 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { UtilityIcon, UtilityChart } from './Analysis'
+import { getColoredShadow } from '../utils/neuColors'
 
 const UTILITY_STYLES = {
   관리비: { color: '#6B7280' },
@@ -56,6 +57,7 @@ export default function AnalysisNeu(props) {
     editingUtility, setEditingUtility,
     newUtility, setNewUtility, saveUtilities,
   } = props
+  const coloredShadow = getColoredShadow(primary)
 
   return (
     <div className="neu-page" style={{ minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
@@ -86,11 +88,11 @@ export default function AnalysisNeu(props) {
           <div className="neu-inset" style={{ display: 'flex', borderRadius: 9999, padding: 4 }}>
             {['소비', '공과금'].map(tab => (
               <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
-                className={activeAnalysisTab === tab ? 'neu-btn' : ''}
                 style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
                   fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
-                  background: activeAnalysisTab === tab ? undefined : 'transparent',
-                  color: activeAnalysisTab === tab ? primary : '#8B95A1' }}>
+                  background: activeAnalysisTab === tab ? primary : 'transparent',
+                  boxShadow: activeAnalysisTab === tab ? coloredShadow.raisedSm : 'none',
+                  color: activeAnalysisTab === tab ? '#fff' : '#8B95A1' }}>
                 {tab}
               </button>
             ))}
@@ -215,8 +217,8 @@ export default function AnalysisNeu(props) {
           <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>AI 소비 분석</p>
-              <button onClick={getAiFeedback} disabled={loadingAi} className="neu-btn"
-                style={{ padding: '7px 16px', borderRadius: 9999, color: loadingAi ? '#8B95A1' : primary, fontSize: 13, fontWeight: 500, cursor: loadingAi ? 'not-allowed' : 'pointer' }}>
+              <button onClick={getAiFeedback} disabled={loadingAi}
+                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', background: loadingAi ? '#E5E8EB' : primary, color: loadingAi ? '#8B95A1' : '#fff', boxShadow: loadingAi ? 'none' : coloredShadow.raisedSm, fontSize: 13, fontWeight: 500, cursor: loadingAi ? 'not-allowed' : 'pointer' }}>
                 {loadingAi ? '분석 중...' : '✨ AI 분석'}
               </button>
             </div>
@@ -401,18 +403,18 @@ export default function AnalysisNeu(props) {
         <div style={{ padding: '16px 20px 100px' }}>
 
           {/* 총합 배너 */}
-          <div className="neu-card" style={{ borderRadius: 20, padding: '18px 20px', marginBottom: 16 }}>
-            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>이번 달 공과금 합계</p>
-            <p style={{ fontSize: 26, fontWeight: 700, color: primary, marginBottom: prevMonthTotal > 0 || currentMonthTotal === 0 ? 6 : 0 }}>
+          <div style={{ background: primary, borderRadius: 20, padding: '18px 20px', marginBottom: 16, boxShadow: coloredShadow.drop }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>이번 달 공과금 합계</p>
+            <p style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: prevMonthTotal > 0 || currentMonthTotal === 0 ? 6 : 0 }}>
               {fmt(currentMonthTotal)}원
             </p>
             {prevMonthTotal > 0 && (
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
                 전월 대비 {utilityTotalDiff > 0 ? '+' : ''}{fmt(utilityTotalDiff)}원 {utilityTotalDiff > 0 ? '증가' : '감소'}
               </p>
             )}
             {currentMonthTotal === 0 && (
-              <p style={{ fontSize: 12, color: '#8B95A1' }}>이번 달 공과금을 입력해주세요</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>이번 달 공과금을 입력해주세요</p>
             )}
           </div>
 
@@ -514,8 +516,8 @@ export default function AnalysisNeu(props) {
           <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>AI 공과금 분석</p>
-              <button onClick={getUtilityAI} disabled={loadingUtilityAI} className="neu-btn"
-                style={{ padding: '7px 16px', borderRadius: 9999, color: loadingUtilityAI ? '#8B95A1' : primary, fontSize: 13, cursor: loadingUtilityAI ? 'not-allowed' : 'pointer' }}>
+              <button onClick={getUtilityAI} disabled={loadingUtilityAI}
+                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', background: loadingUtilityAI ? '#E5E8EB' : primary, color: loadingUtilityAI ? '#8B95A1' : '#fff', boxShadow: loadingUtilityAI ? 'none' : coloredShadow.raisedSm, fontSize: 13, cursor: loadingUtilityAI ? 'not-allowed' : 'pointer' }}>
                 {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
               </button>
             </div>
@@ -596,7 +598,7 @@ export default function AnalysisNeu(props) {
                     const filtered = utilities.filter(u => !(u.type === newUtility.type && u.year === viewYear && u.month === viewMonth + 1))
                     saveUtilities([...filtered, entry])
                     setShowAddUtility(false); setEditingUtility(null)
-                  }} className="neu-btn" style={{ flex: 1, height: 56, borderRadius: 16, color: primary, fontSize: 15, fontWeight: 700 }}>저장</button>
+                  }} style={{ flex: 1, height: 56, borderRadius: 16, border: 'none', background: primary, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>저장</button>
                 </div>
               </div>
             </div>

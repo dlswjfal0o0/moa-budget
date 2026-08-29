@@ -148,7 +148,7 @@ export default function MyPageNeu(props) {
               <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>카드</p>
               {cards.length > 0 && <span style={{ fontSize: 12, color: primary, background: `${primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{cards.length}개</span>}
             </div>
-            <button onClick={() => setShowAddCard(true)} className="neu-btn" style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 600 }}>+ 추가</button>
+            <button onClick={() => setShowAddCard(true)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>+ 추가</button>
           </div>
           {cards.map(card => {
             const cardUsed = getCardUsed(card)
@@ -259,7 +259,7 @@ export default function MyPageNeu(props) {
                   </svg>
                 )}
               </button>
-              <button onClick={() => setShowAddAccount(true)} className="neu-btn" style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 600 }}>+ 추가</button>
+              <button onClick={() => setShowAddAccount(true)} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>+ 추가</button>
             </div>
           </div>
           {accounts.map(acc => (
@@ -328,7 +328,7 @@ export default function MyPageNeu(props) {
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => setEditingAccountId(null)} className="neu-btn" style={{ flex: 1, height: 56, borderRadius: 16, color: '#8B95A1', fontSize: 15, fontWeight: 600 }}>취소</button>
-                <button onClick={handleSaveAccount} className="neu-btn" style={{ flex: 2, height: 56, borderRadius: 16, color: primary, fontSize: 15, fontWeight: 700 }}>저장</button>
+                <button onClick={handleSaveAccount} style={{ flex: 2, height: 56, borderRadius: 16, background: primary, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>저장</button>
               </div>
             </div>
           </BottomSheet>
@@ -352,7 +352,7 @@ export default function MyPageNeu(props) {
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => { setShowAddAccount(false); setNewAccount({ name: '', balance: '', number: '' }) }} className="neu-btn" style={{ flex: 1, height: 56, borderRadius: 16, color: '#8B95A1', fontSize: 15, fontWeight: 600 }}>취소</button>
-                <button onClick={handleAddAccount} className="neu-btn" style={{ flex: 2, height: 56, borderRadius: 16, color: primary, fontSize: 15, fontWeight: 700 }}>추가</button>
+                <button onClick={handleAddAccount} style={{ flex: 2, height: 56, borderRadius: 16, background: primary, color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>추가</button>
               </div>
             </div>
           </BottomSheet>
@@ -368,7 +368,7 @@ export default function MyPageNeu(props) {
               <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>현금</p>
             </div>
             {!editingCash && (
-              <button onClick={() => { setEditingCash(true); setCashInput(String(cash || '')) }} className="neu-btn" style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 600 }}>수정</button>
+              <button onClick={() => { setEditingCash(true); setCashInput(String(cash || '')) }} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>수정</button>
             )}
           </div>
           <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 10 }}>직접 보유한 현금 자산</p>
@@ -377,7 +377,7 @@ export default function MyPageNeu(props) {
               <input type="number" className="neu-inset" value={cashInput} onChange={e => setCashInput(e.target.value)} style={neuInputStyle} placeholder="현금 잔액 입력" autoFocus />
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={() => setEditingCash(false)} className="neu-btn" style={{ flex: 1, padding: 10, borderRadius: 16, fontSize: 13, color: '#8B95A1' }}>취소</button>
-                <button onClick={handleCashSave} className="neu-btn" style={{ flex: 1, padding: 10, borderRadius: 16, fontSize: 13, fontWeight: 600, color: primary }}>저장</button>
+                <button onClick={handleCashSave} style={{ flex: 1, padding: 10, borderRadius: 16, background: primary, color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>저장</button>
               </div>
             </div>
           ) : (
@@ -396,7 +396,7 @@ export default function MyPageNeu(props) {
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>대출</p>
                 {loans.length > 0 && <span style={{ fontSize: 12, color: primary, background: `${primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
               </div>
-              <button onClick={() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }} className="neu-btn" style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 600 }}>+ 추가</button>
+              <button onClick={() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>+ 추가</button>
             </div>
             {loans.length === 0 && <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
             {loans.map(loan => {
@@ -602,13 +602,15 @@ export default function MyPageNeu(props) {
                 {showValidationMsg && (
                   <p style={{ fontSize: 12, fontWeight: 500, color: '#FF5A5F', textAlign: 'center', marginBottom: 8 }}>지출 추적 방식을 선택해주세요</p>
                 )}
-                <button onClick={isEdit ? handleSaveCard : handleAddCard} disabled={!isValid || !!cardSaveState} className="neu-btn"
-                  style={{ width: '100%', height: 56, borderRadius: 16,
-                    color: cardSaveState === 'success' ? '#22c55e' : (isValid ? primary : '#8B95A1'),
+                <button onClick={isEdit ? handleSaveCard : handleAddCard} disabled={!isValid || !!cardSaveState}
+                  style={{ width: '100%', height: 56, borderRadius: 16, border: 'none',
+                    background: cardSaveState === 'success' ? '#22c55e' : (isValid ? primary : '#E5E8EB'),
+                    color: isValid ? '#fff' : '#B0B8C1',
+                    boxShadow: isValid ? coloredShadow.raised : 'none',
                     fontSize: 16, fontWeight: 700, cursor: (isValid && !cardSaveState) ? 'pointer' : 'not-allowed',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   {cardSaveState === 'loading' ? (
-                    <><div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(0,0,0,0.15)', borderTopColor: 'currentColor', borderRadius: '50%', flexShrink: 0 }} />저장 중...</>
+                    <><div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />저장 중...</>
                   ) : cardSaveState === 'success' ? (
                     <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>저장 완료</>
                   ) : (isEdit ? '저장하기' : '추가하기')}
@@ -622,21 +624,21 @@ export default function MyPageNeu(props) {
       {/* 카드 상세 모달 */}
       <BottomSheet open={!!selectedCard} onClose={() => setSelectedCard(null)} maxOpacity={0.4} background="transparent" zIndex={400}>
         <div className="neu-page" style={{ borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 430, maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div className="neu-card" style={{ borderRadius: '28px 28px 0 0', padding: '24px 20px 20px', flexShrink: 0 }}>
+          <div style={{ background: primary, color: '#fff', borderRadius: '28px 28px 0 0', padding: '24px 20px 20px', flexShrink: 0, boxShadow: coloredShadow.drop }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{displayCard.name}</p>
-              <button onClick={() => setSelectedCard(null)} aria-label="닫기" className="neu-btn" style={{ borderRadius: 8, padding: '4px 10px', color: '#8B95A1', fontSize: 14 }}>✕</button>
+              <p style={{ fontSize: 18, fontWeight: 700 }}>{displayCard.name}</p>
+              <button onClick={() => setSelectedCard(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
             </div>
-            <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, color: primary }}>**** **** **** {displayCard.cardNumber || '****'}</p>
+            <p style={{ fontSize: 18, letterSpacing: 4, marginBottom: 14, opacity: 0.9 }}>**** **** **** {displayCard.cardNumber || '****'}</p>
             <div style={{ display: 'flex', gap: 24 }}>
               <div>
-                <p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>유효기간</p>
-                <p style={{ fontSize: 13, color: '#191F28' }}>{displayCard.expiry || '--/--'}</p>
+                <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>유효기간</p>
+                <p style={{ fontSize: 13 }}>{displayCard.expiry || '--/--'}</p>
               </div>
               {displayCard.linkedAccount && (
                 <div>
-                  <p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>연동 계좌</p>
-                  <p style={{ fontSize: 13, color: '#191F28' }}>{displayCard.linkedAccount}</p>
+                  <p style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>연동 계좌</p>
+                  <p style={{ fontSize: 13 }}>{displayCard.linkedAccount}</p>
                 </div>
               )}
             </div>
@@ -753,7 +755,7 @@ export default function MyPageNeu(props) {
                   setCards(updated); saveToFirestore({ cards: updated })
                   setSelectedCard(prev => ({ ...prev, benefits: [...(prev.benefits || []), val] }))
                   document.getElementById('benefitInput').value = ''
-                }} className="neu-btn" style={{ padding: '11px 16px', borderRadius: 16, color: primary, fontSize: 13, fontWeight: 600 }}>추가</button>
+                }} style={{ background: primary, color: '#fff', border: 'none', padding: '11px 16px', borderRadius: 16, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>추가</button>
               </div>
             </div>
           )}
@@ -769,12 +771,12 @@ export default function MyPageNeu(props) {
         return (
           <BottomSheet open={!!selectedAccount} onClose={() => setSelectedAccount(null)} maxOpacity={0.4} background="transparent" zIndex={400}>
             <div className="neu-page" style={{ width: '100%', borderRadius: '28px 28px 0 0', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-              <div className="neu-card" style={{ borderRadius: '28px 28px 0 0', padding: '20px 20px 18px', flexShrink: 0 }}>
+              <div style={{ background: primary, color: '#fff', borderRadius: '28px 28px 0 0', padding: '20px 20px 18px', flexShrink: 0, boxShadow: coloredShadow.drop }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <p style={{ fontSize: 17, fontWeight: 700, color: '#191F28' }}>{displayAccount.name}</p>
-                  <button onClick={() => setSelectedAccount(null)} aria-label="닫기" className="neu-btn" style={{ borderRadius: 8, padding: '4px 10px', color: '#8B95A1', fontSize: 14 }}>✕</button>
+                  <p style={{ fontSize: 17, fontWeight: 700 }}>{displayAccount.name}</p>
+                  <button onClick={() => setSelectedAccount(null)} aria-label="닫기" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 14 }}>✕</button>
                 </div>
-                {displayAccount.number && (<p style={{ fontSize: 13, color: '#8B95A1', letterSpacing: 1 }}>{maskAccountNumber(displayAccount.number)}</p>)}
+                {displayAccount.number && (<p style={{ fontSize: 13, opacity: 0.85, letterSpacing: 1 }}>{maskAccountNumber(displayAccount.number)}</p>)}
               </div>
 
               <div style={{ padding: '12px 16px 12px', flexShrink: 0 }}>
@@ -900,8 +902,8 @@ export default function MyPageNeu(props) {
               </div>
 
               <div style={{ padding: '12px 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', flexShrink: 0 }}>
-                <button onClick={isEdit ? handleSaveLoan : handleAddLoan} disabled={!isValid} className="neu-btn"
-                  style={{ width: '100%', height: 56, borderRadius: 16, color: isValid ? primary : '#8B95A1', fontSize: 16, fontWeight: 700, cursor: isValid ? 'pointer' : 'not-allowed' }}>
+                <button onClick={isEdit ? handleSaveLoan : handleAddLoan} disabled={!isValid}
+                  style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: isValid ? primary : '#E5E8EB', color: isValid ? '#fff' : '#B0B8C1', boxShadow: isValid ? coloredShadow.raised : 'none', fontSize: 16, fontWeight: 700, cursor: isValid ? 'pointer' : 'not-allowed' }}>
                   {isEdit ? '저장하기' : '추가하기'}
                 </button>
               </div>
@@ -945,37 +947,37 @@ export default function MyPageNeu(props) {
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', padding: 20, WebkitOverflowScrolling: 'touch' }}>
-                <div className="neu-card" style={{ borderRadius: 24, padding: '24px 20px', marginBottom: 20 }}>
+                <div style={{ background: primary, color: '#fff', borderRadius: 24, padding: '24px 20px', marginBottom: 20, boxShadow: coloredShadow.drop }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                     <div>
-                      <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
-                      <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1, color: '#FF5A5F' }}>-{fmt(totalWithInterest)}원</p>
+                      <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
+                      <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}>-{fmt(totalWithInterest)}원</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 6 }}>잔여 원금</p>
-                      <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{fmt(loan.remainingPrincipal)}원</p>
+                      <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 원금</p>
+                      <p style={{ fontSize: 18, fontWeight: 700 }}>{fmt(loan.remainingPrincipal)}원</p>
                     </div>
                   </div>
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, color: '#8B95A1' }}>상환 진행률</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>{Math.round(progress)}%</span>
+                      <span style={{ fontSize: 12, opacity: 0.75 }}>상환 진행률</span>
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>{Math.round(progress)}%</span>
                     </div>
-                    <div className="neu-inset" style={{ height: 6, borderRadius: 9999, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${progress}%`, background: primary, borderRadius: 9999, transition: 'width 0.6s' }} />
+                    <div style={{ height: 6, background: 'rgba(255,255,255,0.25)', borderRadius: 9999, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${progress}%`, background: '#fff', borderRadius: 9999, transition: 'width 0.6s' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                      <span style={{ fontSize: 11, color: '#8B95A1' }}>누적 상환 {fmt(repaid)}원</span>
-                      <span style={{ fontSize: 11, color: '#8B95A1' }}>원금 {fmt(loan.principal)}원</span>
+                      <span style={{ fontSize: 11, opacity: 0.65 }}>누적 상환 {fmt(repaid)}원</span>
+                      <span style={{ fontSize: 11, opacity: 0.65 }}>원금 {fmt(loan.principal)}원</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                    {loan.rate != null && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
-                    {loan.monthlyPayment && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{fmt(loan.monthlyPayment)}원</p></div>}
-                    {loan.paymentDay && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>매월 {loan.paymentDay}일</p></div>}
-                    {loan.startDate && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{loan.startDate}</p></div>}
-                    {loan.maturityDate && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{loan.maturityDate}</p></div>}
-                    {loan.rate != null && <div><p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{fmt(monthlyInterest)}원</p></div>}
+                    {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600 }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
+                    {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(loan.monthlyPayment)}원</p></div>}
+                    {loan.paymentDay && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600 }}>매월 {loan.paymentDay}일</p></div>}
+                    {loan.startDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.startDate}</p></div>}
+                    {loan.maturityDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.maturityDate}</p></div>}
+                    {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(monthlyInterest)}원</p></div>}
                   </div>
                 </div>
 
@@ -1034,7 +1036,7 @@ export default function MyPageNeu(props) {
           <p style={{ fontSize: 14, color: '#8B95A1', lineHeight: 1.65, marginBottom: 28 }}>이 카드와 연결된 정보는 유지되지만<br />카드 관리 목록에서는 제거됩니다.</p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setDeleteConfirmCard(null)} className="neu-btn" style={{ flex: 1, height: 52, borderRadius: 16, color: '#191F28', fontSize: 16, fontWeight: 600 }}>취소</button>
-            <button onClick={() => confirmDeleteCard(deleteConfirmCard.id)} className="neu-btn" style={{ flex: 1, height: 52, borderRadius: 16, color: '#FF5A5F', fontSize: 16, fontWeight: 700 }}>삭제</button>
+            <button onClick={() => confirmDeleteCard(deleteConfirmCard.id)} style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: getColoredShadow('#FF5A5F').raised }}>삭제</button>
           </div>
         </div>
       </BottomSheet>

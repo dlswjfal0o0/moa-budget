@@ -23,6 +23,7 @@ const neuInputStyle = {
 
 // 예산 추가/수정 시트의 공용 폼 (뉴모피즘 스타일)
 function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, submitLabel, title }) {
+  const coloredShadow = getColoredShadow(primary)
   return (
     <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 32px)', '--neu-focus': primary + '59' }}>
       <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 24 }}>{title}</p>
@@ -84,8 +85,8 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
         <button onClick={onCancel} className="neu-btn"
           style={{ flex: 1, height: 56, borderRadius: 16, color: '#8B95A1', fontSize: 16, fontWeight: 600 }}>취소</button>
-        <button onClick={onSubmit} className="neu-btn"
-          style={{ flex: 2, height: 56, borderRadius: 16, color: primary, fontSize: 16, fontWeight: 700 }}>{submitLabel}</button>
+        <button onClick={onSubmit}
+          style={{ flex: 2, height: 56, borderRadius: 16, border: 'none', background: primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>{submitLabel}</button>
       </div>
     </div>
   )
@@ -138,8 +139,8 @@ export default function HomeNeu({
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>예산 관리</p>
-            <button onClick={() => setShowAddBudget(true)} className="neu-btn"
-              style={{ borderRadius: 12, padding: '7px 16px', color: primary, fontSize: 13, fontWeight: 700 }}>+ 추가</button>
+            <button onClick={() => setShowAddBudget(true)}
+              style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>+ 추가</button>
           </div>
 
           {budgetsWithStats.length === 0 ? (
