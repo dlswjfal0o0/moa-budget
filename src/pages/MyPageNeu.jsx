@@ -2,7 +2,7 @@ import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 
-const NEU_BG = '#EAEEF3'
+const NEU_BG = 'var(--neu-bg)'
 
 const neuInputStyle = {
   width: '100%', padding: '14px 16px', borderRadius: 14, border: 'none',
@@ -71,47 +71,52 @@ export default function MyPageNeu(props) {
         </div>
       )}
 
-      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 0' }}>
+      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지) */}
+      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+            <div onClick={() => fileRef.current.click()} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)' }}>
+                {profileImg ? <img src={profileImg} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#fff' }}>{nickname[0] || '?'}</span>}
+              </div>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </div>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfileImg} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {editingNick ? (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input value={nickname} onChange={e => setNickname(e.target.value)}
+                    style={{ ...neuInputStyle, background: 'rgba(255,255,255,0.9)', flex: 1, padding: '8px 12px' }} />
+                  <button onClick={handleNicknameSave} style={{ background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>저장</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nickname}</p>
+                  <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                </div>
+              )}
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+            </div>
+          </div>
 
-        {/* 프로필 */}
-        <div className="neu-card" style={{ borderRadius: 24, padding: 20, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div onClick={() => fileRef.current.click()} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
-            <div className="neu-inset" style={{ width: 64, height: 64, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, overflow: 'hidden' }}>
-              {profileImg ? <img src={profileImg} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: primary, fontWeight: 700 }}>{nickname[0] || '?'}</span>}
-            </div>
-            <div className="neu-btn" style={{ position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </div>
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfileImg} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {editingNick ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input className="neu-inset" value={nickname} onChange={e => setNickname(e.target.value)}
-                  style={{ ...neuInputStyle, flex: 1, padding: '8px 12px' }} />
-                <button onClick={handleNicknameSave} className="neu-btn" style={{ borderRadius: 8, padding: '8px 12px', color: primary, fontSize: 13 }}>저장</button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nickname}</p>
-                <button onClick={() => setEditingNick(true)} className="neu-chip" style={{ borderRadius: 9999, padding: '3px 10px', color: '#8B95A1', fontSize: 11 }}>수정</button>
-              </div>
-            )}
-            <p style={{ fontSize: 13, color: '#8B95A1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
-          </div>
           {!editingNick && (
-            <button onClick={() => setSettingsPage('root')} aria-label="설정" className="neu-btn"
-              style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1', flexShrink: 0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={() => setSettingsPage('root')} aria-label="설정"
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 12, width: 36, height: 36, padding: 0, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
             </button>
           )}
         </div>
+      </div>
+
+      <div style={{ padding: '16px 20px 0' }}>
 
         {/* 총 자산 */}
         <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 16 }}>

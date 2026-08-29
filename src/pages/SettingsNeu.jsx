@@ -6,9 +6,9 @@ import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 
-function NeuSIcon({ children }) {
+function NeuSIcon({ bg, children }) {
   return (
-    <div className="neu-inset" style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       {children}
     </div>
   )
@@ -80,7 +80,7 @@ export default function SettingsNeu(props) {
   const primary = themeData.primary
 
   return (
-    <BottomSheet variant="full" showHandle={false} background="#EAEEF3"
+    <BottomSheet variant="full" showHandle={false} background="var(--neu-bg)"
       open={!!settingsPage} onClose={() => setSettingsPage(null)}>
       <div className="neu-page" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px', flexShrink: 0 }}>
@@ -100,16 +100,16 @@ export default function SettingsNeu(props) {
               <SectionLabel>기능</SectionLabel>
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
                 {[
-                  { label: '홈', desc: '표시 옵션', page: 'home', icon: <NeuSI color={primary}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></NeuSI> },
-                  { label: '가계부', desc: '주 시작 요일, 정렬 순서, 표시 옵션', page: 'ledger', icon: <NeuSI color={primary}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></NeuSI> },
-                  { label: '분석', desc: '탭 구성 옵션', page: 'analysis', icon: <NeuSI color={primary}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></NeuSI> },
-                  { label: 'MY', desc: '기능 관리', page: 'my', icon: <NeuSI color={primary}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></NeuSI> },
-                  { label: 'AI 분석', desc: '분석 스타일, 조언 표시', page: 'ai', icon: <NeuSI color={primary}><path d="M12 2a5 5 0 0 0-5 5c0 1.6.8 3 2 3.87V13a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.13c1.2-.87 2-2.27 2-3.87a5 5 0 0 0-5-5z" /><line x1="9" y1="19" x2="15" y2="19" /><line x1="10" y1="22" x2="14" y2="22" /></NeuSI> },
-                  { label: '알림', desc: '다가오는 결제 알림', page: 'notifications', icon: <NeuSI color={primary}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></NeuSI> },
+                  { label: '홈', desc: '표시 옵션', page: 'home', icon: <NeuSI color="#fff"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></NeuSI> },
+                  { label: '가계부', desc: '주 시작 요일, 정렬 순서, 표시 옵션', page: 'ledger', icon: <NeuSI color="#fff"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></NeuSI> },
+                  { label: '분석', desc: '탭 구성 옵션', page: 'analysis', icon: <NeuSI color="#fff"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></NeuSI> },
+                  { label: 'MY', desc: '기능 관리', page: 'my', icon: <NeuSI color="#fff"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></NeuSI> },
+                  { label: 'AI 분석', desc: '분석 스타일, 조언 표시', page: 'ai', icon: <NeuSI color="#fff"><path d="M12 2a5 5 0 0 0-5 5c0 1.6.8 3 2 3.87V13a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2.13c1.2-.87 2-2.27 2-3.87a5 5 0 0 0-5-5z" /><line x1="9" y1="19" x2="15" y2="19" /><line x1="10" y1="22" x2="14" y2="22" /></NeuSI> },
+                  { label: '알림', desc: '다가오는 결제 알림', page: 'notifications', icon: <NeuSI color="#fff"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></NeuSI> },
                 ].map((item, i, arr) => (
                   <button key={item.page} onClick={() => setSettingsPage(item.page)}
                     style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid rgba(163,177,198,0.25)' : 'none' }}>
-                    <NeuSIcon>{item.icon}</NeuSIcon>
+                    <NeuSIcon bg={primary}>{item.icon}</NeuSIcon>
                     <div style={{ flex: 1, textAlign: 'left' }}>
                       <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{item.label}</p>
                       <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>{item.desc}</p>
@@ -121,7 +121,7 @@ export default function SettingsNeu(props) {
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
                 <button onClick={() => setSettingsPage('categories')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></NeuSI></NeuSIcon>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>카테고리 관리</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>지출 · 수입 카테고리 편집</p>
@@ -134,7 +134,7 @@ export default function SettingsNeu(props) {
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
                 <button onClick={() => setSettingsPage('theme')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-                  <NeuSIcon><NeuSI color={primary}><circle cx="13.5" cy="6.5" r="1.5" fill={primary} stroke="none" /><circle cx="17.5" cy="10.5" r="1.5" fill={primary} stroke="none" /><circle cx="8.5" cy="7.5" r="1.5" fill={primary} stroke="none" /><circle cx="6.5" cy="12.5" r="1.5" fill={primary} stroke="none" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><circle cx="13.5" cy="6.5" r="1.5" fill="#fff" stroke="none" /><circle cx="17.5" cy="10.5" r="1.5" fill="#fff" stroke="none" /><circle cx="8.5" cy="7.5" r="1.5" fill="#fff" stroke="none" /><circle cx="6.5" cy="12.5" r="1.5" fill="#fff" stroke="none" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" /></NeuSI></NeuSIcon>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>테마</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 색상 테마 변경</p>
@@ -143,7 +143,7 @@ export default function SettingsNeu(props) {
                 </button>
                 <button onClick={() => setSettingsPage('font-size')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color={primary}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" /></NeuSI></NeuSIcon>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>글자 크기</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 전체 글자 크기 조절</p>
@@ -156,7 +156,7 @@ export default function SettingsNeu(props) {
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
                 <button onClick={() => setSettingsPage('export')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></NeuSI></NeuSIcon>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>데이터 내보내기</p>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>엑셀 · PDF 파일로 저장</p>
@@ -169,33 +169,33 @@ export default function SettingsNeu(props) {
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
                 <button onClick={() => window.open('https://gratis-corn-b7d.notion.site/moa-374125b81f2380b18331dce2355b06d3?source=copy_link', '_blank')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-                  <NeuSIcon><NeuSI color={primary}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>이용 방법</p>
                   {settingsChevron}
                 </button>
                 <button onClick={() => setSettingsPage('updates')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>업데이트 내용</p>
                   <span style={{ fontSize: 12, color: '#8B95A1', marginRight: 6 }}>v{APP_VERSION}</span>
                   {settingsChevron}
                 </button>
                 <button onClick={() => window.location.href = 'mailto:moa.studio030@gmail.com?subject=모아 앱 피드백'}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>피드백 보내기</p>
                   {settingsChevron}
                 </button>
                 <div style={{ height: 1, background: 'rgba(163,177,198,0.25)', margin: '0 16px' }} />
                 <button onClick={() => window.open('https://moa-budget.vercel.app/terms.html', '_blank')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>이용약관</p>
                   {settingsChevron}
                 </button>
                 <button onClick={() => window.open('https://moa-budget.vercel.app/privacy.html', '_blank')}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color={primary}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg={primary}><NeuSI color="#fff"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>개인정보 처리방침</p>
                   {settingsChevron}
                 </button>
@@ -207,12 +207,12 @@ export default function SettingsNeu(props) {
                   Object.keys(localStorage).filter(k => k.startsWith('moa_')).forEach(k => localStorage.removeItem(k))
                   signOut(auth).finally(() => { window.location.href = '/' })
                 }} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-                  <NeuSIcon><NeuSI color="#6B7280"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg="#6B7280"><NeuSI color="#fff"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>로그아웃</p>
                 </button>
                 <button onClick={() => { setDeleteChecked(false); setSettingsPage('delete-account') }}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-                  <NeuSIcon><NeuSI color="#EF4444"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></NeuSI></NeuSIcon>
+                  <NeuSIcon bg="#EF4444"><NeuSI color="#fff"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></NeuSI></NeuSIcon>
                   <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#FF3B30', textAlign: 'left' }}>계정 탈퇴</p>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
