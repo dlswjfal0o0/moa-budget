@@ -2,6 +2,7 @@ import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import { TipIcon } from './Home'
+import { getColoredShadow } from '../utils/neuColors'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -99,6 +100,7 @@ export default function HomeNeu({
   transactions, navigate,
 }) {
   const primary = themeData.primary
+  const coloredShadow = getColoredShadow(primary)
 
   return (
     <div className="neu-page" style={{ minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
@@ -108,11 +110,11 @@ export default function HomeNeu({
         </div>
       )}
 
-      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지) */}
-      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff' }}>
+      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지, 컬러 소프트 UI 그림자 적용) */}
+      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff', boxShadow: coloredShadow.drop }}>
         <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth() + 1}월</p>
         <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 24, opacity: 0.95 }}>이번 달 현황</p>
-        <div style={{ background: 'rgba(0,0,0,0.14)', borderRadius: 20, padding: '20px 24px' }}>
+        <div style={{ background: 'rgba(0,0,0,0.14)', borderRadius: 20, padding: '20px 24px', boxShadow: coloredShadow.inset }}>
           <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 8, fontWeight: 500 }}>이번 달 잔액</p>
           <p style={{ fontSize: 38, fontWeight: 700, marginBottom: 20, letterSpacing: '-1px', lineHeight: 1.1 }}>
             {fmt(totalIncome - totalExpense)}원

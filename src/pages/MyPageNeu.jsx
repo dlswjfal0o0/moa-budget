@@ -1,6 +1,7 @@
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import { getColoredShadow } from '../utils/neuColors'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -60,6 +61,7 @@ export default function MyPageNeu(props) {
   } = props
 
   const primary = themeData.primary
+  const coloredShadow = getColoredShadow(primary)
   const accountsSum = accounts.reduce((s, a) => s + getAccountBalance(a), 0)
 
   return (
@@ -71,8 +73,8 @@ export default function MyPageNeu(props) {
         </div>
       )}
 
-      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지) */}
-      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>
+      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지, 컬러 소프트 UI 그림자 적용) */}
+      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px', boxShadow: coloredShadow.drop }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
             <div onClick={() => fileRef.current.click()} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
