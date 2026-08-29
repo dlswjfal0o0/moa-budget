@@ -3,7 +3,7 @@ import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import { TipIcon } from './Home'
 
-const NEU_BG = '#EAEEF3'
+const NEU_BG = 'var(--neu-bg)'
 
 function NeuPieTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -108,23 +108,24 @@ export default function HomeNeu({
         </div>
       )}
 
-      {/* 헤더 — 뉴모피즘 잔액 카드 */}
-      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 0' }}>
-        <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth() + 1}월</p>
-        <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>이번 달 현황</p>
-        <div className="neu-card" style={{ borderRadius: 24, padding: '24px 24px' }}>
-          <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 8, fontWeight: 500 }}>이번 달 잔액</p>
-          <p style={{ fontSize: 34, fontWeight: 700, marginBottom: 20, letterSpacing: '-1px', lineHeight: 1.1, color: primary }}>
+      {/* 헤더 — 테마 색상 하이라이트 배너 (뉴모피즘 on에서도 유지) */}
+      <div style={{ background: primary, padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 24px 28px', color: '#fff' }}>
+        <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 4, fontWeight: 500 }}>{now.getFullYear()}년 {now.getMonth() + 1}월</p>
+        <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 24, opacity: 0.95 }}>이번 달 현황</p>
+        <div style={{ background: 'rgba(0,0,0,0.14)', borderRadius: 20, padding: '20px 24px' }}>
+          <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 8, fontWeight: 500 }}>이번 달 잔액</p>
+          <p style={{ fontSize: 38, fontWeight: 700, marginBottom: 20, letterSpacing: '-1px', lineHeight: 1.1 }}>
             {fmt(totalIncome - totalExpense)}원
           </p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 16, padding: '12px 16px' }}>
-              <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4, fontWeight: 500 }}>수입</p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
+          <div style={{ display: 'flex', gap: 0 }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>수입</p>
+              <p style={{ fontSize: 17, fontWeight: 700 }}>+{fmt(totalIncome)}원</p>
             </div>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 16, padding: '12px 16px' }}>
-              <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4, fontWeight: 500 }}>지출</p>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
+            <div style={{ width: 1, background: 'rgba(255,255,255,0.2)', margin: '0 20px' }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>지출</p>
+              <p style={{ fontSize: 17, fontWeight: 700 }}>-{fmt(totalExpense)}원</p>
             </div>
           </div>
         </div>

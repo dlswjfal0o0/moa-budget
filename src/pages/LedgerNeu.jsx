@@ -6,7 +6,7 @@ import SToggle from '../components/SToggle'
 import { getCategoryColor } from '../styles/theme'
 import { CatIcon, BackIcon, guessIconKey } from './Ledger'
 
-const NEU_BG = '#EAEEF3'
+const NEU_BG = 'var(--neu-bg)'
 
 const formatTime = (time) => {
   if (!time) return ''
