@@ -13,6 +13,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
+import HomeNeu from './HomeNeu'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -68,7 +69,7 @@ function CustomPieTooltip({ active, payload }) {
   )
 }
 
-function TipIcon({ type, color = '#3182F6' }) {
+export function TipIcon({ type, color = '#3182F6' }) {
   const p = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   switch (type) {
     case 'food': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
@@ -116,7 +117,7 @@ function _BudgetCard({ budget, spent, themeData, fmt }) {
 
 export default function Home() {
   const navigate = useNavigate()
-  const { themeData } = useTheme()
+  const { themeData, neumorphism } = useTheme()
   const { cards } = useCards()
   const { categories, aiAnalysisStyle, aiShowAdvice } = useSettings()
   const [user, setUser] = useState(null)
@@ -383,6 +384,48 @@ export default function Home() {
     width: '100%', padding: '14px 16px', borderRadius: 12,
     border: '1.5px solid #E5E8EB', fontSize: 15, outline: 'none',
     background: '#F7F8FA', color: '#191F28', boxSizing: 'border-box'
+  }
+
+  // 뉴모피즘 화면(HomeNeu)에 넘길 예산별 파생 데이터. 기존 카드 렌더링(map 내부)과
+  // 동일한 신용카드 필터/집계 규칙을 따르되, 프레젠테이션 컴포넌트가 재계산하지 않도록 미리 합쳐 둔다.
+  const budgetsWithStats = currentMonthBudgets.map(b => {
+    const bCats = Array.isArray(b.categories) ? b.categories : []
+    const budgetTxns = transactions.filter(t => !t.mergedInto && !t.isHidden && t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan))
+    const spent = budgetTxns.filter(t => t.date >= b.startDate && t.date <= b.endDate && (bCats.length === 0 || bCats.includes(t.category))).reduce((s, t) => s + t.amount, 0)
+    const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
+    const exceeded = spent > b.amount
+    const color = exceeded ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary
+    return { ...b, spent, pct, exceeded, color, aiText: budgetInsights[b.id] }
+  })
+
+  if (neumorphism) {
+    return (
+      <HomeNeu
+        loadError={loadError}
+        themeData={themeData}
+        now={now}
+        fmt={fmt}
+        totalIncome={totalIncome}
+        totalExpense={totalExpense}
+        budgets={budgets}
+        budgetsWithStats={budgetsWithStats}
+        showAddBudget={showAddBudget} setShowAddBudget={setShowAddBudget}
+        newBudget={newBudget} setNewBudget={setNewBudget}
+        allExpenseCategories={allExpenseCategories}
+        handleAddBudget={handleAddBudget}
+        editingBudgetId={editingBudgetId} setEditingBudgetId={setEditingBudgetId}
+        editBudgetData={editBudgetData} setEditBudgetData={setEditBudgetData}
+        handleSaveBudget={handleSaveBudget}
+        expandedBudgetEditId={expandedBudgetEditId} setExpandedBudgetEditId={setExpandedBudgetEditId}
+        expandedTipIds={expandedTipIds} setExpandedTipIds={setExpandedTipIds}
+        loadingInsightId={loadingInsightId} getAiInsight={getAiInsight}
+        saveBudgets={saveBudgets}
+        upcomingPayments={upcomingPayments}
+        categoryData={categoryData} colorMap={colorMap}
+        transactions={transactions}
+        navigate={navigate}
+      />
+    )
   }
 
   return (

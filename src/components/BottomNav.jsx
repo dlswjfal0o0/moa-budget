@@ -27,7 +27,7 @@ const PAD = 6
 export default function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { themeData, navNeumorphism } = useTheme()
+  const { themeData, neumorphism: navNeumorphism } = useTheme()
   const activeIndex = tabs.findIndex(tab => tab.path === location.pathname)
   const rowRef = useRef(null)
   const indicatorRef = useRef(null)
