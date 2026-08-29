@@ -97,7 +97,7 @@ export default function BottomNav() {
         boxShadow: '0 12px 32px rgba(20,24,32,0.12), 0 2px 8px rgba(20,24,32,0.05)',
         display: 'flex', padding: PAD, zIndex: 100,
       }}>
-        {navNeumorphism && (
+        {navNeumorphism ? (
           <div ref={indicatorRef} style={{
             position: 'absolute', top: 6, bottom: 6,
             left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
@@ -106,6 +106,20 @@ export default function BottomNav() {
             boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.10), inset -3px -3px 6px rgba(255,255,255,0.85)',
             opacity: activeIndex === -1 ? 0 : 1,
             transition: 'opacity 200ms ease',
+            pointerEvents: 'none',
+          }} />
+        ) : (
+          // 기본(플랫) 스타일: 뉴모피즘 pill과 같은 크기·위치의 인디케이터 하나가
+          // 탭 사이를 슬라이드한다. translateX(%)는 요소 자기 자신의 너비 기준이라
+          // JS 없이도 정확히 한 칸씩 이동하고, transform만 쓰므로 reflow가 없다.
+          <div style={{
+            position: 'absolute', top: 6, bottom: 6, left: 6,
+            width: `calc((100% - 12px) / ${tabs.length})`,
+            background: '#F0F1F3', borderRadius: 22,
+            boxShadow: '0 1px 3px rgba(20,24,32,0.08)',
+            opacity: activeIndex === -1 ? 0 : 1,
+            transform: `translateX(${Math.max(activeIndex, 0) * 100}%)`,
+            transition: 'transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1), opacity 200ms ease',
             pointerEvents: 'none',
           }} />
         )}
@@ -120,18 +134,6 @@ export default function BottomNav() {
                 background: 'transparent', borderRadius: 22, position: 'relative', zIndex: 1,
                 border: 'none', cursor: 'pointer', touchAction: 'manipulation',
               }}>
-              {!navNeumorphism && (
-                // 기본 스타일: 뉴모피즘 pill과 같은 크기(버튼 전체, inset:0)로 깔되
-                // 오목한 그림자 없이 옅은 flat 배경만 활성 탭에서 나타났다 사라진다.
-                <span aria-hidden style={{
-                  position: 'absolute', inset: 0, borderRadius: 22,
-                  background: '#F0F1F3', boxShadow: '0 1px 3px rgba(20,24,32,0.08)',
-                  opacity: active ? 1 : 0,
-                  transform: `scale(${active ? 1 : 0.7})`,
-                  transition: 'opacity 200ms ease, transform 320ms cubic-bezier(0.34, 1.4, 0.64, 1)',
-                  zIndex: 0,
-                }} />
-              )}
               <span style={{ display: 'flex', position: 'relative', zIndex: 1, animation: active ? 'navIconPop 400ms cubic-bezier(0.22, 1, 0.36, 1)' : 'none' }}>
                 <Icon name={tab.icon} color={color} />
               </span>
