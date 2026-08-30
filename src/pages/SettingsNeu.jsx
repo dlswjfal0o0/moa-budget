@@ -23,14 +23,16 @@ function SectionLabel({ children }) {
 }
 
 function SegTabs({ options, value, onChange, primary }) {
+  const coloredShadow = getColoredShadow(primary)
   return (
     <div className="neu-inset" style={{ display: 'flex', borderRadius: 16, padding: 4, marginBottom: 20 }}>
       {options.map(opt => {
         const sel = value === opt.val
         return (
-          <button key={opt.val} onClick={() => onChange(opt.val)} className={sel ? 'neu-btn' : ''}
+          <button key={opt.val} onClick={() => onChange(opt.val)}
             style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14,
-              fontWeight: sel ? 700 : 500, color: sel ? primary : '#8B95A1', background: sel ? undefined : 'transparent' }}>
+              fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
+              background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>
             {opt.label}
           </button>
         )
@@ -499,8 +501,8 @@ export default function SettingsNeu(props) {
                 </div>
                 <p style={{ fontSize: 14, color: '#191F28', textAlign: 'left' }}>위 내용을 확인했으며, 탈퇴에 동의합니다</p>
               </button>
-              <button onClick={() => deleteChecked && setShowDeleteModal(true)} disabled={!deleteChecked} className={deleteChecked ? 'neu-btn' : 'neu-inset'}
-                style={{ width: '100%', padding: 16, borderRadius: 18, color: deleteChecked ? '#FF3B30' : '#8B95A1', fontSize: 16, fontWeight: 700, cursor: deleteChecked ? 'pointer' : 'not-allowed' }}>
+              <button onClick={() => deleteChecked && setShowDeleteModal(true)} disabled={!deleteChecked} className={deleteChecked ? undefined : 'neu-inset'}
+                style={{ width: '100%', padding: 16, borderRadius: 18, border: 'none', background: deleteChecked ? '#FF3B30' : undefined, color: deleteChecked ? '#fff' : '#8B95A1', boxShadow: deleteChecked ? getColoredShadow('#FF3B30').raised : undefined, fontSize: 16, fontWeight: 700, cursor: deleteChecked ? 'pointer' : 'not-allowed' }}>
                 다음 단계로
               </button>
             </div>

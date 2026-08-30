@@ -518,9 +518,9 @@ export default function MyPageNeu(props) {
                       const sel = data.cardType === opt.val
                       return (
                         <button key={opt.val} onClick={() => setData(c => ({ ...c, cardType: opt.val, creditTracking: opt.val === 'debit' ? '' : c.creditTracking }))}
-                          className={sel ? 'neu-btn' : ''}
                           style={{ flex: 1, height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 15,
-                            fontWeight: sel ? 700 : 500, color: sel ? primary : '#8B95A1', background: sel ? undefined : 'transparent' }}>
+                            fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
+                            background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>
                           {opt.label}
                         </button>
                       )
@@ -872,8 +872,8 @@ export default function MyPageNeu(props) {
                         {[{ val: 'simple', label: '단리' }, { val: 'compound', label: '복리' }].map(opt => {
                           const sel = loanForm.rateType === opt.val
                           return (
-                            <button key={opt.val} onClick={() => setLoanForm(f => ({ ...f, rateType: opt.val }))} className={sel ? 'neu-btn' : ''}
-                              style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? primary : '#8B95A1', background: sel ? undefined : 'transparent' }}>
+                            <button key={opt.val} onClick={() => setLoanForm(f => ({ ...f, rateType: opt.val }))}
+                              style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1', background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>
                               {opt.label}
                             </button>
                           )
