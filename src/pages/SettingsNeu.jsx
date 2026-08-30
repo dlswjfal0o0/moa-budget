@@ -79,6 +79,7 @@ export default function SettingsNeu(props) {
   } = props
 
   const primary = themeData.primary
+  const coloredShadow = getColoredShadow(primary)
 
   return (
     <BottomSheet variant="full" showHandle={false} background="var(--neu-bg)"
@@ -348,7 +349,7 @@ export default function SettingsNeu(props) {
                   const updated = { ...categories, [settingsCatTab]: [...(categories[settingsCatTab] || []), settingsNewCatName.trim()] }
                   setCategories(updated)
                   setSettingsNewCatName('')
-                }} className="neu-btn" style={{ padding: '12px 18px', borderRadius: 16, color: primary, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>추가</button>
+                }} style={{ background: primary, color: '#fff', border: 'none', padding: '12px 18px', borderRadius: 16, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>추가</button>
               </div>
             </div>
           )}

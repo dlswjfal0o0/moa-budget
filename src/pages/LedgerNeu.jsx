@@ -5,6 +5,7 @@ import YearMonthPicker from '../components/YearMonthPicker'
 import SToggle from '../components/SToggle'
 import { getCategoryColor } from '../styles/theme'
 import { CatIcon, BackIcon, guessIconKey } from './Ledger'
+import { getColoredShadow } from '../utils/neuColors'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -75,6 +76,9 @@ export default function LedgerNeu(props) {
   } = props
 
   const primary = themeData.primary
+  const coloredShadow = getColoredShadow(primary)
+  const submitColor = formSaveState === 'success' ? '#22c55e' : (form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : primary)
+  const submitShadow = getColoredShadow(submitColor)
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
   const emptyForm = () => ({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
 
@@ -485,8 +489,8 @@ export default function LedgerNeu(props) {
       {/* ── FAB ── */}
       {!selectionMode && (
         <FixedPortal>
-        <button onClick={() => { setEditItem(null); setForm(emptyForm()); setShowForm(true) }} aria-label="내역 추가" className="neu-btn"
-          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 105px)', right: 20, width: 56, height: 56, borderRadius: 24, color: primary, fontSize: 28, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+        <button onClick={() => { setEditItem(null); setForm(emptyForm()); setShowForm(true) }} aria-label="내역 추가"
+          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 105px)', right: 20, width: 56, height: 56, borderRadius: 24, background: primary, color: '#fff', border: 'none', fontSize: 28, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: coloredShadow.raised }}>+</button>
         </FixedPortal>
       )}
 
@@ -807,14 +811,13 @@ export default function LedgerNeu(props) {
 
             <button onClick={handleSubmit}
               disabled={!!formSaveState}
-              className="neu-btn"
-              style={{ width: '100%', height: 56, borderRadius: 16,
-                color: formSaveState === 'success' ? '#22c55e' : (form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : primary),
+              style={{ width: '100%', height: 56, borderRadius: 16, border: 'none',
+                background: submitColor, color: '#fff', boxShadow: submitShadow.raised,
                 fontSize: 16, fontWeight: 700, cursor: formSaveState ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               {formSaveState === 'loading' ? (
                 <>
-                  <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(0,0,0,0.15)', borderTopColor: 'currentColor', borderRadius: '50%', flexShrink: 0 }} />
+                  <div className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }} />
                   저장 중...
                 </>
               ) : formSaveState === 'success' ? (
@@ -933,8 +936,8 @@ export default function LedgerNeu(props) {
               style={{ width: '100%', padding: '14px 16px', borderRadius: 16, border: 'none', fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#191F28', marginBottom: 24 }}
             />
 
-            <button onClick={handleMerge} className="neu-btn"
-              style={{ width: '100%', height: 56, borderRadius: 16, color: primary, fontSize: 16, fontWeight: 700 }}>
+            <button onClick={handleMerge}
+              style={{ width: '100%', height: 56, borderRadius: 16, border: 'none', background: primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: coloredShadow.raised }}>
               확인
             </button>
         </div>
@@ -950,8 +953,8 @@ export default function LedgerNeu(props) {
                 style={{ flex: 1, height: 52, borderRadius: 16, color: '#191F28', fontSize: 16, fontWeight: 600 }}>
                 취소
               </button>
-              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)} className="neu-btn"
-                style={{ flex: 1, height: 52, borderRadius: 16, color: '#FF5A5F', fontSize: 16, fontWeight: 700 }}>
+              <button onClick={() => confirmDeleteTxn(deleteConfirmTxnId)}
+                style={{ flex: 1, height: 52, borderRadius: 16, border: 'none', background: '#FF5A5F', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: getColoredShadow('#FF5A5F').raised }}>
                 삭제
               </button>
             </div>
