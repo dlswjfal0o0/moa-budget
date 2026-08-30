@@ -162,11 +162,16 @@ export default function LedgerNeu(props) {
           </div>
         )}
 
-        {showSearch ? null : <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {['주간', '월간', '직접'].map(p => (
-            <NeuChip key={p} selected={period === p} onClick={() => { setPeriod(p); setWeekOffset(0) }} activeColor={primary}
-              style={{ flex: 1, borderRadius: 12, padding: '10px 0', textAlign: 'center' }}>{p}</NeuChip>
-          ))}
+        {showSearch ? null : <div className="neu-inset" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, marginBottom: 16 }}>
+          {['주간', '월간', '직접'].map(p => {
+            const sel = period === p
+            return (
+              <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
+                style={{ flex: 1, borderRadius: 12, padding: '10px 0', textAlign: 'center', border: 'none', cursor: 'pointer',
+                  fontSize: 14, fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
+                  background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>{p}</button>
+            )
+          })}
         </div>}
 
         {!showSearch && period === '주간' && (
@@ -512,9 +517,11 @@ export default function LedgerNeu(props) {
           <div style={{ flex: 1 }}>
             <button
               onClick={() => selectedIds.size >= 2 && setShowMergeModal(true)}
-              className={selectedIds.size >= 2 ? 'neu-btn' : 'neu-inset'}
-              style={{ width: '100%', height: 52, borderRadius: 16, fontSize: 15, fontWeight: 700, cursor: selectedIds.size >= 2 ? 'pointer' : 'not-allowed',
-                color: selectedIds.size >= 2 ? primary : '#8B95A1' }}>
+              className={selectedIds.size >= 2 ? undefined : 'neu-inset'}
+              style={{ width: '100%', height: 52, borderRadius: 16, border: 'none', fontSize: 15, fontWeight: 700, cursor: selectedIds.size >= 2 ? 'pointer' : 'not-allowed',
+                background: selectedIds.size >= 2 ? primary : undefined,
+                color: selectedIds.size >= 2 ? '#fff' : '#8B95A1',
+                boxShadow: selectedIds.size >= 2 ? coloredShadow.raised : 'none' }}>
               {selectedIds.size < 2 ? '2개 이상 선택하세요' : `합치기 (${selectedIds.size}개)`}
             </button>
           </div>
@@ -541,10 +548,10 @@ export default function LedgerNeu(props) {
               ].map(({ type, label }) => (
                 <button key={type}
                   onClick={() => setForm(f => ({ ...f, type, category: type === 'expense' ? categories.expense[0] : type === 'income' ? categories.income[0] : '이체', cardBilling: false, toAccount: '' }))}
-                  className={form.type === type ? 'neu-btn' : ''}
                   style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: form.type === type ? 700 : 500,
-                    background: form.type === type ? undefined : 'transparent',
-                    color: form.type === type ? (type === 'expense' ? '#FF5A5F' : type === 'income' ? '#2ECC71' : primary) : '#8B95A1' }}>
+                    background: form.type === type ? (type === 'expense' ? '#FF5A5F' : type === 'income' ? '#2ECC71' : primary) : 'transparent',
+                    color: form.type === type ? '#fff' : '#8B95A1',
+                    boxShadow: form.type === type ? getColoredShadow(type === 'expense' ? '#FF5A5F' : type === 'income' ? '#2ECC71' : primary).raisedSm : 'none' }}>
                   {label}
                 </button>
               ))}
