@@ -2,6 +2,7 @@ import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import LockedFeature, { ProBadge } from '../components/LockedFeature'
+import { usePurchases } from '../contexts/PurchasesContext'
 import { getColoredShadow } from '../utils/neuColors'
 
 const NEU_BG = 'var(--neu-bg)'
@@ -28,7 +29,7 @@ function BackIcon() {
 export default function MyPageNeu(props) {
   const {
     themeData, loadError, fileRef,
-    isPro, isSubscribed, isTrialActive, trialDaysLeft, setShowPaywall,
+    setShowPaywall,
     profileImg, handleProfileImg,
     nickname, setNickname, editingNick, setEditingNick, handleNicknameSave,
     user, setSettingsPage,
@@ -62,6 +63,7 @@ export default function MyPageNeu(props) {
     undoSnackbar, handleUndo,
   } = props
 
+  const { isPro, isSubscribed, isTrialActive, trialDaysLeft } = usePurchases()
   const primary = themeData.primary
   const coloredShadow = getColoredShadow(primary)
   const accountsSum = accounts.reduce((s, a) => s + getAccountBalance(a), 0)
@@ -425,15 +427,15 @@ export default function MyPageNeu(props) {
                 <button onClick={() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }} style={{ background: primary, color: '#fff', border: 'none', borderRadius: 12, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>+ 추가</button>
               )}
             </div>
-            {!isPro && (
+            {!isPro ? (
               <LockedFeature
                 title="대출 / 상환 관리"
                 description="대출 원금, 이자, 상환 일정을 한 곳에서 관리해보세요."
                 onPress={() => setShowPaywall(true)}
               />
-            )}
-            {isPro && loans.length === 0 && <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
-            {isPro && loans.map(loan => {
+            ) : loans.length === 0 ? (
+              <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>
+            ) : loans.map(loan => {
               const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
               const repaid = loan.principal - loan.remainingPrincipal
               const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0

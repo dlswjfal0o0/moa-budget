@@ -393,7 +393,7 @@ export default function Analysis() {
       <>
       <AnalysisNeu
         showUtilities={showUtilities} loadError={loadError}
-        isPro={isPro} setShowPaywall={setShowPaywall}
+        setShowPaywall={setShowPaywall}
         viewMonth={viewMonth} viewYear={viewYear} setViewYear={setViewYear} setViewMonth={setViewMonth}
         monthSlideDir={monthSlideDir} triggerMonthSlide={triggerMonthSlide}
         activeAnalysisTab={activeAnalysisTab} setActiveAnalysisTab={setActiveAnalysisTab}
@@ -414,7 +414,7 @@ export default function Analysis() {
         editingUtility={editingUtility} setEditingUtility={setEditingUtility}
         newUtility={newUtility} setNewUtility={setNewUtility} saveUtilities={saveUtilities}
       />
-      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
       </>
     )
   }

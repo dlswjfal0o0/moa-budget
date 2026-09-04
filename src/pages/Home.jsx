@@ -414,7 +414,7 @@ export default function Home() {
       <HomeNeu
         loadError={loadError}
         themeData={themeData}
-        isPro={isPro} setShowPaywall={setShowPaywall}
+        setShowPaywall={setShowPaywall}
         now={now}
         fmt={fmt}
         totalIncome={totalIncome}
@@ -437,7 +437,7 @@ export default function Home() {
         transactions={transactions}
         navigate={navigate}
       />
-      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
       </>
     )
   }

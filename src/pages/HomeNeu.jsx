@@ -2,6 +2,7 @@ import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import LockedFeature from '../components/LockedFeature'
+import { useIsPro } from '../contexts/PurchasesContext'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -94,13 +95,14 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
 }
 
 export default function HomeNeu({
-  loadError, themeData, isPro, setShowPaywall, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
+  loadError, themeData, setShowPaywall, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
   showAddBudget, setShowAddBudget, newBudget, setNewBudget, allExpenseCategories,
   handleAddBudget, editingBudgetId, setEditingBudgetId, editBudgetData, setEditBudgetData, handleSaveBudget,
   expandedBudgetEditId, setExpandedBudgetEditId, expandedTipIds, setExpandedTipIds,
   loadingInsightId, getAiInsight, saveBudgets, upcomingPayments, categoryData, colorMap,
   transactions, navigate,
 }) {
+  const isPro = useIsPro()
   const primary = themeData.primary
   const coloredShadow = getColoredShadow(primary)
 

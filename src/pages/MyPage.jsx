@@ -1214,7 +1214,7 @@ export default function MyPage() {
       settingsPage={settingsPage} setSettingsPage={setSettingsPage} settingsDirection={settingsDirection} settingsPageTitle={settingsPageTitle}
       user={user}
       neumorphism={neumorphism} setNeumorphism={setNeumorphism}
-      isPro={isPro} isSubscribed={isSubscribed} isTrialActive={isTrialActive} trialDaysLeft={trialDaysLeft} setShowPaywall={setShowPaywall}
+      setShowPaywall={setShowPaywall}
       rolloverBudget={rolloverBudget} setRolloverBudget={setRolloverBudget}
       weekStartDay={weekStartDay} setWeekStartDay={setWeekStartDay} sortOrder={sortOrder} setSortOrder={setSortOrder}
       showCardBilling={showCardBilling} setShowCardBilling={setShowCardBilling}
@@ -1258,7 +1258,7 @@ export default function MyPage() {
       <>
       <MyPageNeu
         themeData={t} loadError={loadError} fileRef={fileRef}
-        isPro={isPro} isSubscribed={isSubscribed} isTrialActive={isTrialActive} trialDaysLeft={trialDaysLeft} setShowPaywall={setShowPaywall}
+        setShowPaywall={setShowPaywall}
         profileImg={profileImg} handleProfileImg={handleProfileImg}
         nickname={nickname} setNickname={setNickname} editingNick={editingNick} setEditingNick={setEditingNick} handleNicknameSave={handleNicknameSave}
         user={user} setSettingsPage={setSettingsPage}
@@ -1295,7 +1295,7 @@ export default function MyPage() {
       />
       {neuSettingsSheet}
       {deleteAccountSheet}
-      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
       </>
     )
   }

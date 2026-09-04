@@ -1,6 +1,7 @@
 import YearMonthPicker from '../components/YearMonthPicker'
 import LoadError from '../components/LoadError'
 import LockedFeature from '../components/LockedFeature'
+import { useIsPro } from '../contexts/PurchasesContext'
 import { getColoredShadow } from '../utils/neuColors'
 
 const neuInputStyle = {
@@ -155,7 +156,7 @@ function FixedExpenseForm({ title, data, setData, categories, accNames, userCard
 export default function CalendarNeu(props) {
   const {
     themeData, loadError,
-    isPro, setShowPaywall,
+    setShowPaywall,
     viewYear, setViewYear, viewMonth, setViewMonth,
     showYMPicker, setShowYMPicker,
     days, firstDay, byDate, todayStr,
@@ -176,6 +177,7 @@ export default function CalendarNeu(props) {
     showAccountSelector, setShowAccountSelector,
   } = props
 
+  const isPro = useIsPro()
   const primary = themeData.primary
   const coloredShadow = getColoredShadow(primary)
 

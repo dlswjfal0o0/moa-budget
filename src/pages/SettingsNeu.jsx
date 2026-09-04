@@ -5,6 +5,7 @@ import BottomSheet from '../components/BottomSheet'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
 import { ProBadge } from '../components/LockedFeature'
+import { useIsPro } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -62,7 +63,7 @@ export default function SettingsNeu(props) {
     settingsPage, setSettingsPage, settingsDirection, settingsPageTitle,
     user,
     neumorphism, setNeumorphism,
-    isPro, setShowPaywall,
+    setShowPaywall,
     rolloverBudget, setRolloverBudget,
     weekStartDay, setWeekStartDay, sortOrder, setSortOrder,
     showCardBilling, setShowCardBilling,
@@ -82,6 +83,7 @@ export default function SettingsNeu(props) {
     deleteChecked, setDeleteChecked, setShowDeleteModal,
   } = props
 
+  const isPro = useIsPro()
   const primary = themeData.primary
   const coloredShadow = getColoredShadow(primary)
 
