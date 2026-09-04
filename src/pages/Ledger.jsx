@@ -183,9 +183,30 @@ export default function Ledger() {
   // ── 검색 & 숨기기 state ─────────────────────────────
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchCategory, setSearchCategory] = useState(null)
+  const [searchType, setSearchType] = useState('전체') // '전체' | '지출' | '수입' | '이체'
+  const [searchCategories, setSearchCategories] = useState([]) // 다중 선택
+  const [searchPayment, setSearchPayment] = useState(null) // 단일 선택, null = 전체
+  const [searchPeriod, setSearchPeriod] = useState('전체') // '전체' | '주간' | '월간' | '직접'
+  const [searchWeekOffset, setSearchWeekOffset] = useState(0)
+  const [searchViewMonth, setSearchViewMonth] = useState(now.getMonth())
+  const [searchViewYear, setSearchViewYear] = useState(now.getFullYear())
+  const [searchCustomStart, setSearchCustomStart] = useState('')
+  const [searchCustomEnd, setSearchCustomEnd] = useState('')
+  const [showSearchFilter, setShowSearchFilter] = useState(false)
   const [showHiddenView, setShowHiddenView] = useState(false)
   const searchInputRef = useRef(null)
+  const resetSearchFilters = () => {
+    setSearchQuery('')
+    setSearchType('전체')
+    setSearchCategories([])
+    setSearchPayment(null)
+    setSearchPeriod('전체')
+    setSearchWeekOffset(0)
+    setSearchViewMonth(now.getMonth())
+    setSearchViewYear(now.getFullYear())
+    setSearchCustomStart('')
+    setSearchCustomEnd('')
+  }
   // 전체화면 시트가 다 열리기 전에 포커스를 주면 WKWebView가 키보드를 위해
   // 문서를 스크롤하면서 sticky 헤더와 어긋나 보이는 문제가 있어, 진입 애니메이션이
   // 끝난 뒤에 포커스한다. Pro가 아니면 잠금 화면이라 포커스할 필요가 없다.
@@ -326,24 +347,66 @@ export default function Ledger() {
     if (tab === '소비') filtered = filtered.filter(t => t.type === 'expense')
     if (tab === '수입') filtered = filtered.filter(t => t.type === 'income')
     if (tab === '이체') filtered = filtered.filter(t => t.type === 'transfer')
-    // 검색 필터
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      filtered = filtered.filter(t =>
-        t.title?.toLowerCase().includes(q) ||
-        t.memo?.toLowerCase().includes(q) ||
-        t.category?.toLowerCase().includes(q)
-      )
-    }
-    if (searchCategory) {
-      filtered = filtered.filter(t => t.category === searchCategory)
-    }
     filtered.sort((a, b) => {
       const aKey = `${a.date} ${a.time || '00:00'}`
       const bKey = `${b.date} ${b.time || '00:00'}`
       return sortOrder === 'desc' ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey)
     })
     return filtered
+  }
+
+  // ── 검색 전용 기간 네비게이션 (기본 화면의 period/viewMonth와 독립) ──
+  const getSearchWeekRange = () => {
+    const base = new Date()
+    base.setDate(base.getDate() + searchWeekOffset * 7)
+    const start = getWeekStart(base, weekStartDay)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
+    return { start: toDateStr(start), end: toDateStr(end) }
+  }
+  const searchWeekRange = getSearchWeekRange()
+  const formatSearchWeekLabel = () => {
+    const { start, end } = searchWeekRange
+    const s = new Date(start), e = new Date(end)
+    return `${s.getMonth()+1}/${s.getDate()} ~ ${e.getMonth()+1}/${e.getDate()}`
+  }
+  const prevSearchMonth = () => { if (searchViewMonth === 0) { setSearchViewYear(y => y-1); setSearchViewMonth(11) } else setSearchViewMonth(m => m-1) }
+  const nextSearchMonth = () => { if (searchViewMonth === 11) { setSearchViewYear(y => y+1); setSearchViewMonth(0) } else setSearchViewMonth(m => m+1) }
+
+  const SEARCH_TYPE_MAP = { '전체': null, '지출': 'expense', '수입': 'income', '이체': 'transfer' }
+
+  const getSearchFiltered = () => {
+    let list = [...transactions].filter(t => !t.mergedInto && !t.isHidden)
+    if (searchPeriod === '주간') {
+      list = list.filter(t => t.date >= searchWeekRange.start && t.date <= searchWeekRange.end)
+    } else if (searchPeriod === '월간') {
+      const monthStr = `${searchViewYear}-${String(searchViewMonth+1).padStart(2,'0')}`
+      list = list.filter(t => t.date?.startsWith(monthStr))
+    } else if (searchPeriod === '직접' && searchCustomStart && searchCustomEnd) {
+      list = list.filter(t => t.date >= searchCustomStart && t.date <= searchCustomEnd)
+    }
+    const typeVal = SEARCH_TYPE_MAP[searchType]
+    if (typeVal) list = list.filter(t => t.type === typeVal)
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = list.filter(t =>
+        t.title?.toLowerCase().includes(q) ||
+        t.memo?.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q)
+      )
+    }
+    if (searchCategories.length > 0) {
+      list = list.filter(t => searchCategories.includes(t.category))
+    }
+    if (searchPayment) {
+      list = list.filter(t => t.payment === searchPayment)
+    }
+    list.sort((a, b) => {
+      const aKey = `${a.date} ${a.time || '00:00'}`
+      const bKey = `${b.date} ${b.time || '00:00'}`
+      return sortOrder === 'desc' ? bKey.localeCompare(aKey) : aKey.localeCompare(bKey)
+    })
+    return list
   }
 
   const autoUpdateUtility = async (title, amount, date) => {
@@ -741,6 +804,7 @@ export default function Ledger() {
   const filtered = getFiltered()
   const hiddenTransactions = transactions.filter(t => !t.mergedInto && t.isHidden)
   const allSearchCategories = [...new Set([...categories.expense, ...categories.income])]
+  const allSearchPayments = [...new Set(transactions.map(t => t.payment).filter(Boolean))]
 
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => userCardsList.find(c => c.name === p && c.cardType === 'credit')
@@ -756,19 +820,18 @@ export default function Ledger() {
   const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
-  const dateGroups = filtered.reduce((acc, t) => {
-    const d = t.date || '날짜 없음'
-    if (!acc[d]) acc[d] = []
-    acc[d].push(t)
-    return acc
-  }, {})
-
-  const sortedDates = Object.keys(dateGroups).sort((a, b) =>
-    sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
-  )
-
   // ── 내역 리스트 콘텐츠 (기본 화면 / 검색 전체화면에서 공유) ──
-  const listContent = filtered.length === 0 ? (
+  const renderTxnList = (list) => {
+    const dateGroups = list.reduce((acc, t) => {
+      const d = t.date || '날짜 없음'
+      if (!acc[d]) acc[d] = []
+      acc[d].push(t)
+      return acc
+    }, {})
+    const sortedDates = Object.keys(dateGroups).sort((a, b) =>
+      sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
+    )
+    return list.length === 0 ? (
     <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
   ) : (
     sortedDates.map(date => (
@@ -1005,7 +1068,10 @@ export default function Ledger() {
         })}
       </div>
     ))
-  )
+    )
+  }
+
+  const filteredContent = renderTxnList(filtered)
 
   // ── 세그먼트 버튼 공통 스타일 ──
   // eslint-disable-next-line no-unused-vars
@@ -1150,7 +1216,7 @@ export default function Ledger() {
 
       {/* ── 내역 리스트 ── */}
       <div style={{ padding: '8px 24px', paddingBottom: selectionMode ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : undefined }}>
-        {listContent}
+        {filteredContent}
       </div>
 
       {/* ── FAB (선택 모드 아닐 때만) ── */}
@@ -1557,13 +1623,13 @@ export default function Ledger() {
 
       {/* ── 검색 (전체화면) ── */}
       <BottomSheet variant="full" open={showSearch} showHandle={false} background={themeData.bg}
-        onClose={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }}>
+        onClose={() => { setShowSearch(false); resetSearchFilters() }}>
         <div>
           {!isPro && (
             <div style={{ position: 'fixed', inset: 0, zIndex: 20, background: 'rgba(25,31,40,0.72)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
               display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0' }}>
-                <button onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }} aria-label="뒤로가기"
+                <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#fff' }}>
                   <BackIcon />
                 </button>
@@ -1581,7 +1647,7 @@ export default function Ledger() {
           )}
           <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 14px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <button onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }} aria-label="뒤로가기"
+              <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#191F28', flexShrink: 0 }}>
                 <BackIcon />
               </button>
@@ -1591,6 +1657,7 @@ export default function Ledger() {
                 </svg>
                 <input
                   ref={searchInputRef}
+                  className="input-plain"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addRecentSearch(searchQuery) }}
@@ -1602,37 +1669,61 @@ export default function Ledger() {
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
                 )}
               </div>
-            </div>
-            {/* 카테고리 아이콘 탭 */}
-            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 2px 4px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-              <button onClick={() => setSearchCategory(null)}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                <div style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: searchCategory === null ? themeData.primary : '#F2F4F6', transition: 'background 0.15s' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={searchCategory === null ? '#fff' : '#8B95A1'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: searchCategory === null ? 700 : 500, color: searchCategory === null ? themeData.primary : '#8B95A1' }}>전체</span>
+              <button onClick={() => setShowSearchFilter(true)} aria-label="필터"
+                style={{ position: 'relative', width: 40, height: 40, borderRadius: 12, border: 'none', background: '#F2F4F6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill={themeData.bg}/>
+                  <line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2" fill={themeData.bg}/>
+                  <line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill={themeData.bg}/>
+                </svg>
+                {(searchPeriod !== '전체' || searchPayment) && (
+                  <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: themeData.primary }} />
+                )}
               </button>
-              {allSearchCategories.map(cat => {
-                const active = searchCategory === cat
-                return (
-                  <button key={cat} onClick={() => setSearchCategory(active ? null : cat)}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: active ? themeData.primary : '#F2F4F6', transition: 'background 0.15s' }}>
-                      <CatIcon cat={cat} size={20} color={active ? '#fff' : '#8B95A1'} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? themeData.primary : '#8B95A1' }}>{cat}</span>
-                  </button>
-                )
-              })}
             </div>
+            {/* 유형 탭 */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {['전체', '지출', '수입', '이체'].map(t => (
+                <button key={t} onClick={() => { setSearchType(t); setSearchCategories([]) }}
+                  style={{ padding: '7px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: searchType === t ? 700 : 500,
+                    background: searchType === t ? '#191F28' : '#F2F4F6',
+                    color: searchType === t ? '#fff' : '#8B95A1', transition: 'all 0.15s' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            {/* 카테고리 아이콘 탭 (다중 선택, 유형별) */}
+            {searchType !== '이체' && (
+              <div style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 2px 4px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <button onClick={() => setSearchCategories([])}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <div style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: searchCategories.length === 0 ? themeData.primary : '#F2F4F6', transition: 'background 0.15s' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={searchCategories.length === 0 ? '#fff' : '#8B95A1'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: searchCategories.length === 0 ? 700 : 500, color: searchCategories.length === 0 ? themeData.primary : '#8B95A1' }}>전체</span>
+                </button>
+                {(searchType === '지출' ? categories.expense : searchType === '수입' ? categories.income : allSearchCategories).map(cat => {
+                  const active = searchCategories.includes(cat)
+                  return (
+                    <button key={cat} onClick={() => setSearchCategories(prev => active ? prev.filter(c => c !== cat) : [...prev, cat])}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      <div style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: active ? themeData.primary : '#F2F4F6', transition: 'background 0.15s' }}>
+                        <CatIcon cat={cat} size={20} color={active ? '#fff' : '#8B95A1'} />
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? themeData.primary : '#8B95A1' }}>{cat}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           <div style={{ padding: '8px 24px 24px' }}>
-            {!searchQuery.trim() && !searchCategory ? (
+            {!searchQuery.trim() && searchType === '전체' && searchCategories.length === 0 && !searchPayment && searchPeriod === '전체' ? (
               /* ── 최근 검색어 ── */
               <div style={{ paddingTop: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -1657,7 +1748,71 @@ export default function Ledger() {
                   ))
                 )}
               </div>
-            ) : listContent}
+            ) : renderTxnList(getSearchFiltered())}
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* ── 검색 필터: 기간 / 결제수단 ── */}
+      <BottomSheet open={showSearchFilter} onClose={() => setShowSearchFilter(false)} background="#fff">
+        <div style={{ padding: '24px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>검색 필터</p>
+
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 10 }}>기간</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {['전체', '주간', '월간', '직접'].map(p => (
+              <button key={p} onClick={() => setSearchPeriod(p)}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  background: searchPeriod === p ? themeData.primary : '#F2F4F6',
+                  color: searchPeriod === p ? '#fff' : '#8B95A1',
+                  fontSize: 13, fontWeight: searchPeriod === p ? 700 : 500, transition: 'all 0.2s' }}>{p}</button>
+            ))}
+          </div>
+          {searchPeriod === '주간' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 20 }}>
+              <button onClick={() => setSearchWeekOffset(o => o-1)} aria-label="이전 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatSearchWeekLabel()}</p>
+              <button onClick={() => setSearchWeekOffset(o => o+1)} aria-label="다음 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+            </div>
+          )}
+          {searchPeriod === '월간' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 20 }}>
+              <button onClick={prevSearchMonth} aria-label="이전 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{searchViewYear}년 {searchViewMonth + 1}월</p>
+              <button onClick={nextSearchMonth} aria-label="다음 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+            </div>
+          )}
+          {searchPeriod === '직접' && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <input type="date" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
+                style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
+              <span style={{ display: 'flex', alignItems: 'center', color: '#888', fontSize: 13 }}>~</span>
+              <input type="date" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
+                style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
+            </div>
+          )}
+
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 10 }}>결제수단</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+            <button onClick={() => setSearchPayment(null)}
+              style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: !searchPayment ? 700 : 500,
+                background: !searchPayment ? themeData.primary : '#F2F4F6', color: !searchPayment ? '#fff' : '#8B95A1' }}>전체</button>
+            {allSearchPayments.map(p => (
+              <button key={p} onClick={() => setSearchPayment(p)}
+                style={{ padding: '8px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: searchPayment === p ? 700 : 500,
+                  background: searchPayment === p ? themeData.primary : '#F2F4F6', color: searchPayment === p ? '#fff' : '#8B95A1' }}>{p}</button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setSearchPeriod('전체'); setSearchWeekOffset(0); setSearchViewMonth(now.getMonth()); setSearchViewYear(now.getFullYear()); setSearchCustomStart(''); setSearchCustomEnd(''); setSearchPayment(null) }}
+              style={{ flex: 1, padding: '14px', borderRadius: 16, border: 'none', cursor: 'pointer', background: '#F2F4F6', color: '#8B95A1', fontSize: 15, fontWeight: 700 }}>
+              초기화
+            </button>
+            <button onClick={() => setShowSearchFilter(false)}
+              style={{ flex: 2, padding: '14px', borderRadius: 16, border: 'none', cursor: 'pointer', background: themeData.primary, color: '#fff', fontSize: 15, fontWeight: 700 }}>
+              적용
+            </button>
           </div>
         </div>
       </BottomSheet>
