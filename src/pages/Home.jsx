@@ -410,9 +410,11 @@ export default function Home() {
 
   if (neumorphism) {
     return (
+      <>
       <HomeNeu
         loadError={loadError}
         themeData={themeData}
+        setShowPaywall={setShowPaywall}
         now={now}
         fmt={fmt}
         totalIncome={totalIncome}
@@ -435,6 +437,8 @@ export default function Home() {
         transactions={transactions}
         navigate={navigate}
       />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
+      </>
     )
   }
 
