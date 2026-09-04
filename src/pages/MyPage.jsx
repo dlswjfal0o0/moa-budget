@@ -16,6 +16,9 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import LockedFeature, { ProBadge } from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
+import { usePurchases } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 import MyPageNeu from './MyPageNeu'
 import SettingsNeu from './SettingsNeu'
@@ -43,6 +46,8 @@ export default function MyPage() {
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
   const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
+  const { isPro, isSubscribed, isTrialActive, trialDaysLeft } = usePurchases()
+  const [showPaywall, setShowPaywall] = useState(false)
   const [notifyPermissionError, setNotifyPermissionError] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   // BottomSheet가 닫히는 애니메이션 동안에도 카드 정보가 유지되도록 마지막 값을 보존한다
@@ -1097,7 +1102,7 @@ export default function MyPage() {
               {settingsPage === 'export' && (
                 <div style={{ padding: '20px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <button onClick={exportToExcel} disabled={exporting}
+                    <button onClick={() => isPro ? exportToExcel() : setShowPaywall(true)} disabled={exporting}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 14, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1106,12 +1111,15 @@ export default function MyPage() {
                         </svg>
                       </div>
                       <div style={{ textAlign: 'left', flex: 1 }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                          {!isPro && <ProBadge />}
+                        </div>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .xlsx 파일로 저장</p>
                       </div>
                       {settingsChevron}
                     </button>
-                    <button onClick={exportToPDF} disabled={exporting}
+                    <button onClick={() => isPro ? exportToPDF() : setShowPaywall(true)} disabled={exporting}
                       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', borderRadius: 20, border: 'none', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1120,7 +1128,10 @@ export default function MyPage() {
                         </svg>
                       </div>
                       <div style={{ textAlign: 'left', flex: 1 }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                          {!isPro && <ProBadge />}
+                        </div>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .pdf 파일로 저장</p>
                       </div>
                       {settingsChevron}
@@ -1319,9 +1330,16 @@ export default function MyPage() {
                   <button onClick={handleNicknameSave} style={{ background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>저장</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
-                  <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                  </div>
+                  {isSubscribed && (
+                    <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.25)', borderRadius: 9999, padding: '3px 9px' }}>
+                      ✨ Pro 구독자
+                    </span>
+                  )}
                 </div>
               )}
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{user?.email}</p>
@@ -1342,6 +1360,22 @@ export default function MyPage() {
       </div>
 
       <div style={{ padding: '16px 24px' }}>
+
+        {/* 무료체험 종료 임박 배너 */}
+        {isTrialActive && trialDaysLeft <= 3 && (
+          <div style={{ background: t.card, borderRadius: 20, padding: '16px 18px', marginBottom: 16, border: `1.5px solid ${t.primary}`, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#191F28' }}>
+                무료체험 종료까지 {trialDaysLeft}일 남았습니다.
+              </p>
+              <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>구독하면 Pro 기능을 계속 이용할 수 있어요.</p>
+            </div>
+            <button onClick={() => setShowPaywall(true)}
+              style={{ background: t.primary, border: 'none', borderRadius: 12, padding: '9px 16px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+              구독하기
+            </button>
+          </div>
+        )}
 
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
@@ -1583,9 +1617,10 @@ export default function MyPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {TRACKING_OPTS.map(opt => {
                         const sel = data.creditTracking === opt.val
+                        const locked = opt.val === 'billing' && !isPro
                         return (
                           <button key={opt.val}
-                            onClick={() => setData(c => ({ ...c, creditTracking: opt.val }))}
+                            onClick={() => locked ? setShowPaywall(true) : setData(c => ({ ...c, creditTracking: opt.val }))}
                             style={{ width: '100%', textAlign: 'left', padding: '18px 16px', borderRadius: 22,
                               border: `2px solid ${sel ? t.primary : '#E5E8EB'}`,
                               background: sel ? `${t.primary}0D` : '#fff',
@@ -1603,7 +1638,10 @@ export default function MyPage() {
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 {/* 제목 + 라디오 */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                  <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms', lineHeight: 1.4 }}>{opt.titleNode(sel, t.primary)}</p>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <p style={{ fontSize: 15, fontWeight: 700, color: sel ? t.primary : '#191F28', transition: 'color 150ms', lineHeight: 1.4 }}>{opt.titleNode(sel, t.primary)}</p>
+                                    {locked && <ProBadge />}
+                                  </div>
                                   <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginLeft: 10,
                                     border: `2px solid ${sel ? t.primary : '#D1D6DB'}`,
                                     background: sel ? t.primary : 'transparent',
@@ -1884,12 +1922,19 @@ export default function MyPage() {
                   <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
                 <p style={{ fontSize: 18, fontWeight: 700, color: t.text || '#111' }}>대출</p>
-                {loans.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
+                {isPro && loans.length > 0 && <span style={{ fontSize: 12, color: t.primary, background: `${t.primary}15`, borderRadius: 9999, padding: '2px 8px', fontWeight: 600 }}>{loans.length}개</span>}
               </div>
-              {smallBtn(() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }, '+ 추가', t.primary, '#fff')}
+              {isPro && smallBtn(() => { setLoanForm(EMPTY_LOAN); setShowAddLoan(true) }, '+ 추가', t.primary, '#fff')}
             </div>
-            {loans.length === 0 && <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
-            {loans.map(loan => {
+            {!isPro && (
+              <LockedFeature
+                title="대출 / 상환 관리"
+                description="대출 원금, 이자, 상환 일정을 한 곳에서 관리해보세요."
+                onPress={() => setShowPaywall(true)}
+              />
+            )}
+            {isPro && loans.length === 0 && <p style={{ fontSize: 14, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>등록된 대출이 없어요</p>}
+            {isPro && loans.map(loan => {
               const monthlyInterest = calcMonthlyInterest(loan.remainingPrincipal, loan.rate, loan.rateType)
               const repaid = loan.principal - loan.remainingPrincipal
               const progress = loan.principal > 0 ? Math.min((repaid / loan.principal) * 100, 100) : 0
@@ -1953,6 +1998,8 @@ export default function MyPage() {
 
 
       {deleteAccountSheet}
+
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
 
 
       {/* 카드 상세 모달 */}

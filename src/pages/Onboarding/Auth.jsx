@@ -12,9 +12,22 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
-import { auth } from '../../firebase/config'
+import { auth, db } from '../../firebase/config'
+import { doc, setDoc } from 'firebase/firestore'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
+
+const isNative = () => {
+  try { return window.Capacitor?.isNativePlatform?.() ?? false } catch { return false }
+}
+
+// 신규 가입 시 1개월 무료체험 시작 기록 + 전체화면 안내 팝업 1회 노출 플래그.
+// Pro 게이팅은 네이티브 앱에서만 적용되므로(웹은 항상 무료), 웹 가입에서는 건너뛴다.
+const startFreeTrial = async (uid) => {
+  if (!isNative()) return
+  await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
+  localStorage.setItem('moa_show_trial_popup', 'true')
+}
 
 // App Store 심사용 데모 계정.
 // 이 이메일로 로그인하면 데모 데이터가 자동으로 로드됩니다(심사자 전용).
@@ -118,6 +131,7 @@ export default function Auth() {
       }
       // 신규 가입자는 AI 분석 스타일 온보딩으로, 기존 로그인은 바로 홈으로
       if (mode === 'signup' && !isDemoAccount) {
+        await startFreeTrial(auth.currentUser.uid)
         navigate('/onboarding/ai-style', { replace: true })
       } else {
         navigate('/home', { replace: true })
@@ -150,6 +164,7 @@ export default function Auth() {
       const result = await signInWithCredential(auth, authCredential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+      if (isNewUser) await startFreeTrial(result.user.uid)
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch (e) {
       console.error('[Auth] Google 로그인 실패:', e.code, e.message)
@@ -176,6 +191,7 @@ export default function Auth() {
       const signInResult = await signInWithCredential(auth, credential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser
+      if (isNewUser) await startFreeTrial(signInResult.user.uid)
       navigate(isNewUser ? '/onboarding/ai-style' : '/home', { replace: true })
     } catch (e) {
       console.error('[Auth] Apple 로그인 실패:', e.code || e.message, e)
@@ -216,35 +232,31 @@ export default function Auth() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* 이메일 — 실시간 유효성 표시 */}
+          {/* 이메일 */}
           <div style={{ position: 'relative', ...stagger() }}>
             <input
               style={{
                 ...inputStyle,
-                borderColor: touchedEmail && email
-                  ? emailValid ? '#10b981' : '#ef4444'
-                  : '#e8e8e8'
+                paddingRight: email ? 44 : undefined,
+                borderColor: touchedEmail && email && !emailValid ? '#ef4444' : '#e8e8e8'
               }}
               type="email" placeholder="이메일"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onBlur={() => setTouchedEmail(true)}
             />
-            {touchedEmail && email && (
-              <span key={emailValid ? 'valid' : 'invalid'} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', animation: 'iconPop 320ms cubic-bezier(0.34,1.56,0.64,1)' }}>
-                {emailValid ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="6" fill="#10b981"/>
-                    <polyline points="5 12 10 17 19 8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="6" fill="#ef4444"/>
-                    <line x1="7" y1="7" x2="17" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-                    <line x1="17" y1="7" x2="7" y2="17" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/>
-                  </svg>
-                )}
-              </span>
+            {email && (
+              <button
+                type="button"
+                onClick={() => setEmail('')}
+                aria-label="이메일 지우기"
+                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="#D1D5DB"/>
+                  <line x1="8.5" y1="8.5" x2="15.5" y2="15.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="15.5" y1="8.5" x2="8.5" y2="15.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </button>
             )}
           </div>
           {touchedEmail && email && !emailValid && (
@@ -413,7 +425,8 @@ export default function Auth() {
           {loading ? '처리 중' : mode === 'signup' ? '이메일로 가입' : '로그인'}
         </button>
 
-        {/* 데모 체험 버튼 — 베타 빌드 또는 로컬 개발 환경에서만 노출 */}
+        {/* 베타 테스트 로그인 — npm run build:beta(VITE_BETA=true)로 만든 TestFlight용 빌드와
+            로컬 개발 서버에서만 노출된다. 앱스토어 심사/배포용 빌드(npm run build)에는 절대 포함되지 않음. */}
         {(import.meta.env.DEV || import.meta.env.VITE_BETA === 'true') && (
           <button
             className="pressable-subtle"
@@ -428,7 +441,7 @@ export default function Auth() {
               cursor: 'pointer', marginTop: 8,
               ...stagger()
             }}>
-            🛠 개발 로그인 (시뮬레이터 전용)
+            🛠 베타 테스트 로그인
           </button>
         )}
 

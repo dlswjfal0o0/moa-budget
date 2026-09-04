@@ -29,3 +29,4 @@ dist_*
 
 # fastlane build output (ios/App/fastlane/Fastfile's build_app output_directory)
 ios/App/build
+.capgo_key_v2

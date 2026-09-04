@@ -457,7 +457,7 @@ export default function Ledger() {
         const ref = await addDoc(collection(db, 'transactions'), data)
         savedId = ref.id
       }
-      if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+      if (isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
 
       // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
       if (editItem) {
@@ -824,6 +824,7 @@ export default function Ledger() {
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => userCardsList.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       const card = getCreditCard(t.payment)
       return card?.creditTracking !== 'billing'
