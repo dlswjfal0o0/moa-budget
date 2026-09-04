@@ -5,11 +5,23 @@
 
 * {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  -webkit-tap-highlight-color: transparent;           
+  -webkit-tap-highlight-color: transparent;
   scrollbar-width: none;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* 텍스트 복붙 방지: 추가/수정, 설정/검색 등 입력 필드(input, textarea)를 제외한
+   모든 텍스트는 선택/복사할 수 없도록 막는다. */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 *::-webkit-scrollbar {
@@ -64,6 +76,15 @@ input.input-plain:focus, textarea.input-plain:focus {
   box-shadow: none !important;
 }
 
+/* 뉴모피즘 입력창(.neu-inset) 포커스 — 각진 파란 테두리/외곽 그림자 대신
+   기존 음각 그림자를 유지한 채 안쪽 테두리에 옅은 컬러 링만 더한다.
+   --neu-focus는 사용처(BudgetForm 등)에서 테마 primary 색으로 지정. */
+input.neu-inset:focus, textarea.neu-inset:focus {
+  border-color: transparent !important;
+  box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light),
+    inset 0 0 0 2px var(--neu-focus, rgba(49,130,246,0.35)) !important;
+}
+
 /* ── Press feedback (native-feel touch-down/up) ──────
    :active는 JS state/re-render 없이 터치 즉시 반응하고,
    연타해도 별도 큐가 쌓이지 않아 버튼 눌림 표현의 기본값으로 사용한다. */
@@ -85,6 +106,63 @@ input.input-plain:focus, textarea.input-plain:focus {
 
 .spin-loader {
   animation: spin 0.6s linear infinite;
+}
+
+/* ── Custom Checkbox (회원가입 약관/연령 동의 등) ──────
+   네이티브 accentColor는 브라우저마다 렌더링이 달라 보여서,
+   체크마크를 직접 그리고 체크 시 살짝 튀어오르는 팝을 준다. */
+.checkbox-box {
+  position: relative;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+.checkbox-box input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.checkbox-box .checkbox-visual {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1.5px solid #d1d6db;
+  background: #fff;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.checkbox-box .checkbox-visual svg path {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  transition: stroke-dashoffset 200ms ease 40ms;
+}
+.checkbox-box input:hover + .checkbox-visual {
+  border-color: #3182F6;
+}
+.checkbox-box input:focus-visible + .checkbox-visual {
+  box-shadow: 0 0 0 3px rgba(49,130,246,0.18);
+}
+.checkbox-box input:active + .checkbox-visual {
+  transform: scale(0.9);
+}
+.checkbox-box input:checked + .checkbox-visual {
+  background: #3182F6;
+  border-color: #3182F6;
+  animation: checkboxPop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.checkbox-box input:checked + .checkbox-visual svg path {
+  stroke-dashoffset: 0;
+}
+@keyframes checkboxPop {
+  0%   { transform: scale(0.8); }
+  100% { transform: scale(1); }
 }
 
 /* ── Reduced Motion ───────────────────────────────────
@@ -168,6 +246,14 @@ input.input-plain:focus, textarea.input-plain:focus {
   to { transform: rotate(360deg); }
 }
 
+/* BottomNav: 탭 전환 시 pill의 모션 블러가 걷히며 아이콘이 도착하는 것처럼
+   흐릿하게 튕겨 들어와 선명해진다 (인디케이터의 blur 피크 타이밍과 맞춤) */
+@keyframes navIconPop {
+  0%   { transform: scale(0.9); filter: blur(3px); }
+  45%  { transform: scale(1.18); filter: blur(0px); }
+  100% { transform: scale(1); filter: blur(0px); }
+}
+
 @keyframes cardSuccessPulse {
   0%   { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
   40%  { box-shadow: 0 4px 28px rgba(0,0,0,0.12); }
@@ -183,6 +269,18 @@ input.input-plain:focus, textarea.input-plain:focus {
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 로그인 화면 유효성 체크/에러 아이콘 — 살짝의 오버슈트로 톡 튀어나오는 느낌 */
+@keyframes iconPop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
 /* ───────────────────────────────────────────────── */
 
 .theme-pastel-blue-bg,
@@ -190,4 +288,71 @@ input.input-plain:focus, textarea.input-plain:focus {
 .theme-pastel-purple-bg {
   background-color: #FFFFFF !important;
   background-image: none !important;
+}
+
+/* ── 뉴모피즘 테마 (베타) ──────────────────────────────
+   설정 > 디스플레이의 "뉴모피즘" 토글로 켜는 소프트 UI 스킨.
+   변수는 :root에 둔다 — BottomSheet(FixedPortal)처럼 포탈로 body 직속에
+   렌더링되는 요소는 .neu-page의 DOM 트리 밖에 있어 자손 선택자로는
+   변수를 상속받지 못하기 때문. .neu-card/.neu-btn/.neu-inset/.neu-chip이
+   이 변수로 같은 광원 방향의 양각/음각 그림자를 낸다.
+   아래는 초기 렌더(JS 실행 전) 깜빡임 방지용 기본값이며, 실제 값은
+   ThemeContext가 선택된 테마 색상에 맞춰 document.documentElement에 덮어쓴다. */
+:root {
+  --neu-bg: #EAEEF3;
+  --neu-dark: rgba(163, 177, 198, 0.55);
+  --neu-light: rgba(255, 255, 255, 0.9);
+}
+.neu-page {
+  background: var(--neu-bg);
+}
+.neu-card {
+  background: var(--neu-bg);
+  box-shadow: 8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light);
+}
+.neu-inset {
+  background: var(--neu-bg);
+  box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light);
+}
+.neu-btn {
+  background: var(--neu-bg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light);
+  transition: box-shadow 150ms ease, transform 100ms ease;
+}
+.neu-btn:active {
+  box-shadow: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light);
+  transform: scale(0.98);
+}
+.neu-chip {
+  background: var(--neu-bg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light);
+  transition: box-shadow 150ms ease, transform 100ms ease;
+}
+.neu-chip:active {
+  transform: scale(0.98);
+}
+.neu-chip.selected {
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
+}
+
+.neu-toggle-track {
+  width: 48px; height: 28px; border-radius: 9999px; position: relative;
+  cursor: pointer; flex-shrink: 0;
+  background: var(--neu-bg);
+  box-shadow: inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light);
+}
+.neu-toggle-thumb {
+  width: 22px; height: 22px; border-radius: 50%; position: absolute; top: 3px;
+  background: var(--neu-bg);
+  box-shadow: 2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light);
+  transition: left 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; align-items: center; justify-content: center;
+}
+.neu-toggle-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  transition: background 200ms ease;
 }

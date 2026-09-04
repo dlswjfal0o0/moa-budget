@@ -9,7 +9,6 @@ import {
   addDoc, updateDoc, deleteDoc, doc, orderBy,
   getDoc, setDoc
 } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
@@ -21,6 +20,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
+import LedgerNeu from './LedgerNeu'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -42,7 +42,7 @@ const formatTime = (time) => {
 }
 
 // ── 카테고리 SVG 아이콘 ──────────────────────────────
-const CatIcon = ({ cat, size = 18, color = '#888' }) => {
+export const CatIcon = ({ cat, size = 18, color = '#888' }) => {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   switch (cat) {
     case '식비': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
@@ -71,7 +71,8 @@ const CatIcon = ({ cat, size = 18, color = '#888' }) => {
 }
 
 // 키워드 → 아이콘 키 자동 매핑
-const guessIconKey = (name) => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const guessIconKey = (name) => {
   // 정확한 카테고리명 우선 매핑
   const exact = {
     '환불': '환전', '환급': '환전', '반품': '환전', '캐시백': '환전', '리워드': '환전',
@@ -123,7 +124,7 @@ const Toggle = ({ on, onChange }) => {
 }
 
 // ── 뒤로가기 아이콘 ──────────────────────────────────
-const BackIcon = () => (
+export const BackIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
   </svg>
@@ -136,7 +137,7 @@ const SectionLabel = ({ children }) => (
 )
 
 export default function Ledger() {
-  const { themeData } = useTheme()
+  const { themeData, neumorphism } = useTheme()
   const { cards: userCardsList } = useCards()
   const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
@@ -162,6 +163,7 @@ export default function Ledger() {
   const [form, setForm] = useState({ type: 'expense', title: '', amount: '', category: '식비', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
   // ── 스와이프 삭제 제스처 (물리 기반) ──────────────────
   const rowRefs = useRef(new Map())     // id -> DOM element
+  const deleteBtnRefs = useRef(new Map()) // id -> 삭제 버튼 DOM element
   const rowPosRef = useRef({})          // id -> 현재 translateX(px)
   const rowDragRef = useRef(null)       // 진행 중인 제스처
   const rowSpringRef = useRef(null)
@@ -347,6 +349,21 @@ export default function Ledger() {
     if (tab === '소비') filtered = filtered.filter(t => t.type === 'expense')
     if (tab === '수입') filtered = filtered.filter(t => t.type === 'income')
     if (tab === '이체') filtered = filtered.filter(t => t.type === 'transfer')
+    // 검색 필터 — LedgerNeu(뉴모피즘 테마)는 자체 전체화면 검색 UI 없이
+    // 이 filtered를 그대로 사용하므로 여기서도 반영해야 한다. 일반 Ledger는
+    // 검색을 별도 전체화면 오버레이(getSearchFiltered)로 처리하므로 영향 없음
+    // (검색 종료 시 searchQuery/searchCategories가 초기화됨).
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      filtered = filtered.filter(t =>
+        t.title?.toLowerCase().includes(q) ||
+        t.memo?.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q)
+      )
+    }
+    if (searchCategories.length > 0) {
+      filtered = filtered.filter(t => searchCategories.includes(t.category))
+    }
     filtered.sort((a, b) => {
       const aKey = `${a.date} ${a.time || '00:00'}`
       const bKey = `${b.date} ${b.time || '00:00'}`
@@ -596,6 +613,11 @@ export default function Ledger() {
     else rowRefs.current.delete(id)
   }
 
+  const setDeleteBtnEl = (id) => (el) => {
+    if (el) deleteBtnRefs.current.set(id, el)
+    else deleteBtnRefs.current.delete(id)
+  }
+
   const cancelRowSpring = () => {
     if (rowSpringRef.current) { rowSpringRef.current.cancel(); rowSpringRef.current = null }
   }
@@ -604,6 +626,14 @@ export default function Ledger() {
     rowPosRef.current[id] = x
     const el = rowRefs.current.get(id)
     if (el) el.style.transform = `translateX(${x}px)`
+    const btn = deleteBtnRefs.current.get(id)
+    if (btn) {
+      // 손가락을 따라 버튼이 끌려 나오는 느낌: 스와이프 진행률에 맞춰 크기/투명도 보간
+      const progress = Math.min(1, Math.max(0, x / ROW_OPEN_X))
+      btn.style.opacity = String(progress)
+      btn.style.transform = `translateY(-50%) scale(${(0.5 + 0.5 * progress).toFixed(3)})`
+      btn.style.pointerEvents = progress > 0.6 ? 'auto' : 'none'
+    }
   }
 
   const settleRow = (id, open, velocity = 0) => {
@@ -820,6 +850,20 @@ export default function Ledger() {
   const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
+  // LedgerNeu(뉴모피즘 테마)는 자체 전체화면 검색 UI 없이 이 dateGroups/sortedDates와
+  // 단일 선택 카테고리(searchCategory)를 그대로 props로 받아 쓴다.
+  const dateGroups = filtered.reduce((acc, t) => {
+    const d = t.date || '날짜 없음'
+    if (!acc[d]) acc[d] = []
+    acc[d].push(t)
+    return acc
+  }, {})
+  const sortedDates = Object.keys(dateGroups).sort((a, b) =>
+    sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
+  )
+  const searchCategory = searchCategories[0] ?? null
+  const setSearchCategory = (cat) => setSearchCategories(cat ? [cat] : [])
+
   // ── 내역 리스트 콘텐츠 (기본 화면 / 검색 전체화면에서 공유) ──
   const renderTxnList = (list) => {
     const dateGroups = list.reduce((acc, t) => {
@@ -832,243 +876,265 @@ export default function Ledger() {
       sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
     )
     return list.length === 0 ? (
-    <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
-  ) : (
-    sortedDates.map(date => (
-      <div key={date}>
-        {/* 날짜 구분선 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 10px' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', whiteSpace: 'nowrap' }}>
-            {date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
-          </span>
-          <div style={{ flex: 1, height: 1, background: '#F2F4F6' }} />
-          <span style={{ fontSize: 12, whiteSpace: 'nowrap', display: 'flex', gap: 8, fontWeight: 600 }}>
-            {dateGroups[date].some(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)) && (
-              <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
-            )}
-            {(() => {
-              const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && isCreditExcluded(t)).reduce((s, t) => s + t.amount, 0)
-              return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}>-{grayAmt.toLocaleString()}원</span> : null
-            })()}
-            {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
-              <span style={{ color: '#2ECC71' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
-            )}
-          </span>
-        </div>
-
-        {dateGroups[date].map(t => {
-          const isMerged = !!t.isMerged
-          const isSelected = selectedIds.has(t.id)
-          const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
-          const iconColor = t.type === 'transfer' ? '#888' : isMerged ? themeData.primary : getCategoryColor(t.category || '기타')
-          const isExpanded = expandedMergeId === t.id
-
-          // ── 합산 내역 아이템 ──────────────────────────
-          if (isMerged) {
-            const amtColor = t.type === 'income' ? '#2ECC71' : t.type === 'expense' ? '#FF5A5F' : '#C9CDD4'
-            const amtPrefix = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''
-            const selBg = isSelected ? `${themeData.primary}15` : '#fff'
-            return (
-              <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: selBg, boxShadow: '0 2px 12px rgba(0,0,0,0.05)', marginBottom: 10,
-                border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
-                transition: 'border-color 0.15s, background 0.15s' }}>
-                {!selectionMode && swipedId === t.id && (
-                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => handleDelete(t.id)}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                      <path d="M10 11v6"/><path d="M14 11v6"/>
-                    </svg>
-                  </div>
-                )}
-                <div
-                  ref={setRowEl(t.id)}
-                  onClick={() => {
-                    if (selectionMode) { handleSelectItem(t.id) }
-                    else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
-                  }}
-                  onPointerDown={e => handleItemPointerDown(e, t)}
-                  onPointerMove={handleItemPointerMove}
-                  onPointerUp={handleItemPointerEnd}
-                  onPointerCancel={handleItemPointerEnd}
-                  style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
-                    transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                    touchAction: 'pan-y', position: 'relative', zIndex: 1, background: selBg }}>
-                  {/* 선택 체크박스 */}
-                  {selectionMode && (
-                    <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                      {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                    </div>
+          <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
+        ) : (
+          sortedDates.map(date => (
+            <div key={date}>
+              {/* 날짜 구분선 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 10px' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', whiteSpace: 'nowrap' }}>
+                  {date.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3')}
+                </span>
+                <div style={{ flex: 1, height: 1, background: '#F2F4F6' }} />
+                <span style={{ fontSize: 12, whiteSpace: 'nowrap', display: 'flex', gap: 8, fontWeight: 600 }}>
+                  {dateGroups[date].some(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)) && (
+                    <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
                   )}
-                  {/* 합산 아이콘 */}
-                  <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: themeData.primary + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-                    </svg>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: themeData.primary, background: themeData.primary + '15', borderRadius: 9999, padding: '2px 7px', whiteSpace: 'nowrap', flexShrink: 0 }}>합산</span>
-                    </div>
-                    <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
-                  </div>
-                  <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
-                    {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
-                  </p>
-                </div>
-                {/* 합산 상세 내역 - 일반 내역 스타일 */}
-                {!selectionMode && isExpanded && (
-                  <div style={{ borderTop: '1px solid #F2F4F6', padding: '10px 12px 12px', background: '#F7F8FA' }}>
-                    {(t.mergedItems || []).map((item, idx) => {
-                      const subKey = `${t.id}_${item.id || idx}`
-                      const isSubSel = selectedSubId === subKey
-                      const subIconKey = item.type === 'transfer' ? 'transfer' : guessIconKey(item.category || '')
-                      const subIconColor = item.type === 'transfer' ? '#888' : getCategoryColor(item.category || '기타')
-                      return (
-                        <div key={subKey} style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', marginBottom: idx < t.mergedItems.length - 1 ? 8 : 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-                          <div
-                            onClick={() => setSelectedSubId(isSubSel ? null : subKey)}
-                            style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 60 }}>
-                            <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: subIconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <CatIcon cat={subIconKey} size={18} color={subIconColor} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{item.title}</p>
-                              <p style={{ fontSize: 12, color: '#8B95A1' }}>
-                                {item.time ? `${item.time} · ` : ''}{item.category || '-'}
-                              </p>
-                            </div>
-                            <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
-                              {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
-                            </p>
-                          </div>
-                          {isSubSel && (
-                            <div style={{ borderTop: '1px solid #F2F4F6' }}>
-                              <button
-                                onClick={() => {
-                                  const fullTxn = transactions.find(tx => tx.id === item.id)
-                                  if (fullTxn) { handleEdit(fullTxn); setSelectedSubId(null) }
-                                }}
-                                style={{ width: '100%', padding: '13px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                                수정
-                              </button>
+                  {(() => {
+                    const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && isCreditExcluded(t)).reduce((s, t) => s + t.amount, 0)
+                    return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}>-{grayAmt.toLocaleString()}원</span> : null
+                  })()}
+                  {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
+                    <span style={{ color: '#2ECC71' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                  )}
+                </span>
+              </div>
+
+              {dateGroups[date].map(t => {
+                const isMerged = !!t.isMerged
+                const isSelected = selectedIds.has(t.id)
+                const iconKey = t.type === 'transfer' ? 'transfer' : guessIconKey(t.category || '')
+                const iconColor = t.type === 'transfer' ? '#888' : isMerged ? themeData.primary : getCategoryColor(t.category || '기타')
+                const isExpanded = expandedMergeId === t.id
+
+                // ── 합산 내역 아이템 ──────────────────────────
+                if (isMerged) {
+                  const amtColor = t.type === 'income' ? '#2ECC71' : t.type === 'expense' ? '#FF5A5F' : '#C9CDD4'
+                  const amtPrefix = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''
+                  const selBg = isSelected ? `${themeData.primary}15` : '#fff'
+                  const cardRadius = (!selectionMode && isExpanded) ? '20px 20px 0 0' : 20
+                  return (
+                    <div key={t.id} style={{ marginBottom: 10 }}>
+                      <div style={{ position: 'relative' }}>
+                        <div
+                          ref={setDeleteBtnEl(t.id)}
+                          onClick={() => handleDelete(t.id)}
+                          style={{ position: 'absolute', right: 13, top: '50%',
+                            transform: `translateY(-50%) scale(${(!selectionMode && swipedId === t.id) ? 1 : 0.5})`,
+                            opacity: (!selectionMode && swipedId === t.id) ? 1 : 0,
+                            pointerEvents: (!selectionMode && swipedId === t.id) ? 'auto' : 'none',
+                            width: 44, height: 44, borderRadius: '50%', background: '#ef4444',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(239,68,68,0.35)' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                            <path d="M10 11v6"/><path d="M14 11v6"/>
+                          </svg>
+                        </div>
+                        <div
+                          ref={setRowEl(t.id)}
+                          onClick={() => {
+                            if (selectionMode) { handleSelectItem(t.id) }
+                            else { setExpandedMergeId(isExpanded ? null : t.id); setSelectedSubId(null); if (swipedId === t.id) settleRow(t.id, false) }
+                          }}
+                          onPointerDown={e => handleItemPointerDown(e, t)}
+                          onPointerMove={handleItemPointerMove}
+                          onPointerUp={handleItemPointerEnd}
+                          onPointerCancel={handleItemPointerEnd}
+                          style={{ position: 'relative', borderRadius: cardRadius, overflow: 'hidden', background: selBg,
+                            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                            border: isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                            transition: 'border-color 0.15s, background 0.15s',
+                            padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 68,
+                            transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
+                            touchAction: 'pan-y' }}>
+                          {/* 선택 체크박스 */}
+                          {selectionMode && (
+                            <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                              {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                             </div>
                           )}
+                          {/* 합산 아이콘 */}
+                          <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: themeData.primary + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={themeData.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                            </svg>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: themeData.primary, background: themeData.primary + '15', borderRadius: 9999, padding: '2px 7px', whiteSpace: 'nowrap', flexShrink: 0 }}>합산</span>
+                            </div>
+                            <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
+                          </div>
+                          <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
+                            {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
+                          </p>
                         </div>
-                      )
-                    })}
-                    <button
-                      onClick={() => handleDelete(t.id)}
-                      style={{ width: '100%', marginTop: 8, padding: '13px', borderRadius: 16, border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                      합산 내역 삭제
-                    </button>
-                  </div>
-                )}
-              </div>
-            )
-          }
+                      </div>
+                      {/* 합산 상세 내역 - 일반 내역 스타일 */}
+                      {!selectionMode && isExpanded && (
+                        <div style={{ borderRadius: '0 0 20px 20px', overflow: 'hidden', borderTop: '1px solid #F2F4F6', padding: '10px 12px 12px', background: '#F7F8FA' }}>
+                          {(t.mergedItems || []).map((item, idx) => {
+                            const subKey = `${t.id}_${item.id || idx}`
+                            const isSubSel = selectedSubId === subKey
+                            const subIconKey = item.type === 'transfer' ? 'transfer' : guessIconKey(item.category || '')
+                            const subIconColor = item.type === 'transfer' ? '#888' : getCategoryColor(item.category || '기타')
+                            return (
+                              <div key={subKey} style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', marginBottom: idx < t.mergedItems.length - 1 ? 8 : 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+                                <div
+                                  onClick={() => setSelectedSubId(isSubSel ? null : subKey)}
+                                  style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 60 }}>
+                                  <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: subIconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <CatIcon cat={subIconKey} size={18} color={subIconColor} />
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{item.title}</p>
+                                    <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                                      {item.time ? `${item.time} · ` : ''}{item.category || '-'}
+                                    </p>
+                                  </div>
+                                  <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
+                                    {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
+                                  </p>
+                                </div>
+                                {isSubSel && (
+                                  <div style={{ borderTop: '1px solid #F2F4F6' }}>
+                                    <button
+                                      onClick={() => {
+                                        const fullTxn = transactions.find(tx => tx.id === item.id)
+                                        if (fullTxn) { handleEdit(fullTxn); setSelectedSubId(null) }
+                                      }}
+                                      style={{ width: '100%', padding: '13px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                      </svg>
+                                      수정
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                          <button
+                            onClick={() => handleDelete(t.id)}
+                            style={{ width: '100%', marginTop: 8, padding: '13px', borderRadius: 16, border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            합산 내역 삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
 
-          // ── 일반 내역 아이템 ──────────────────────────
-          return (
-            <div key={t.id} style={{ position: 'relative', borderRadius: 20, overflow: 'hidden',
-              background: selectionMode && isSelected ? `${themeData.primary}12` : '#fff',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-              border: selectionMode && isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
-              marginBottom: txnExitId === t.id ? 0 : 10,
-              maxHeight: txnExitId === t.id ? 0 : 300,
-              opacity: txnExitId === t.id ? 0 : 1,
-              transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : 'border-color 0.15s, background 0.15s',
-              animation: newTxnId === t.id ? 'fadeSlideUp 250ms ease forwards' : undefined }}>
-              {!selectionMode && swipedId === t.id && (
-                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 70, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                  onClick={() => handleDelete(t.id)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                    <path d="M10 11v6"/><path d="M14 11v6"/>
-                  </svg>
-                </div>
-              )}
-              <div
-                ref={setRowEl(t.id)}
-                onPointerDown={e => handleItemPointerDown(e, t)}
-                onPointerMove={handleItemPointerMove}
-                onPointerUp={handleItemPointerEnd}
-                onPointerCancel={handleItemPointerEnd}
-                onClick={() => {
-                  if (selectionMode) { handleSelectItem(t.id) }
-                  else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
-                }}
-                style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
-                  background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
-                  transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
-                  touchAction: 'pan-y', position: 'relative', zIndex: 1, cursor: 'pointer', minHeight: 68 }}>
-                {/* 선택 체크박스 */}
-                {selectionMode && (
-                  <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                    {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                  </div>
-                )}
-                {/* 카테고리 아이콘 */}
-                <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                  background: iconColor + '15',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CatIcon cat={iconKey} size={20} color={iconColor} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                    {t.isAutoRegistered && (
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
+                // ── 일반 내역 아이템 ──────────────────────────
+                const normalCardRadius = (!selectionMode && selectedId === t.id) ? '20px 20px 0 0' : 20
+                return (
+                  <div key={t.id} style={{
+                    marginBottom: txnExitId === t.id ? 0 : 10,
+                    maxHeight: txnExitId === t.id ? 0 : 300,
+                    opacity: txnExitId === t.id ? 0 : 1,
+                    overflow: txnExitId === t.id ? 'hidden' : 'visible',
+                    transition: txnExitId === t.id ? 'opacity 250ms ease, max-height 250ms ease, margin-bottom 250ms ease' : undefined,
+                    animation: newTxnId === t.id ? 'fadeSlideUp 250ms ease forwards' : undefined }}>
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        ref={setDeleteBtnEl(t.id)}
+                        onClick={() => handleDelete(t.id)}
+                        style={{ position: 'absolute', right: 13, top: '50%',
+                          transform: `translateY(-50%) scale(${(!selectionMode && swipedId === t.id) ? 1 : 0.5})`,
+                          opacity: (!selectionMode && swipedId === t.id) ? 1 : 0,
+                          pointerEvents: (!selectionMode && swipedId === t.id) ? 'auto' : 'none',
+                          width: 44, height: 44, borderRadius: '50%', background: '#ef4444',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(239,68,68,0.35)' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6"/><path d="M14 11v6"/>
+                        </svg>
+                      </div>
+                      <div
+                        ref={setRowEl(t.id)}
+                        onPointerDown={e => handleItemPointerDown(e, t)}
+                        onPointerMove={handleItemPointerMove}
+                        onPointerUp={handleItemPointerEnd}
+                        onPointerCancel={handleItemPointerEnd}
+                        onClick={() => {
+                          if (selectionMode) { handleSelectItem(t.id) }
+                          else { setSelectedId(selectedId === t.id ? null : t.id); if (swipedId === t.id) settleRow(t.id, false) }
+                        }}
+                        style={{ position: 'relative', borderRadius: normalCardRadius, overflow: 'hidden',
+                          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                          border: selectionMode && isSelected ? `1.5px solid ${themeData.primary}` : '1.5px solid transparent',
+                          transition: 'border-color 0.15s, background 0.15s',
+                          padding: '14px 16px', display: 'flex', alignItems: 'center', gap: selectionMode ? 10 : 14,
+                          background: t.creditCardBilling ? '#FFF6F6' : showLoan && t.isLoan ? (t.type === 'expense' ? '#FFF6F6' : '#F0FDF4') : (t.type === 'expense' && isCreditExcluded(t)) ? '#FAFAFA' : (selectionMode && isSelected) ? 'transparent' : '#fff',
+                          transform: (!selectionMode && swipedId === t.id) ? 'translateX(-70px)' : 'translateX(0)',
+                          touchAction: 'pan-y', cursor: 'pointer', minHeight: 68 }}>
+                        {/* 선택 체크박스 */}
+                        {selectionMode && (
+                          <div style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${isSelected ? themeData.primary : '#C9CDD4'}`, background: isSelected ? themeData.primary : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                            {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                        )}
+                        {/* 카테고리 아이콘 */}
+                        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+                          background: iconColor + '15',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <CatIcon cat={iconKey} size={20} color={iconColor} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                            {t.isAutoRegistered && (
+                              <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                            {t.type === 'transfer'
+                              ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
+                              : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
+                          </p>
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
+                          color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
+                          {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 수정/숨기기/삭제 - 선택 모드가 아닐 때만 */}
+                    {!selectionMode && selectedId === t.id && (
+                      <div style={{ display: 'flex', borderRadius: '0 0 20px 20px', overflow: 'hidden', background: '#fff', borderTop: '1px solid #F2F4F6' }}>
+                        <button onClick={() => handleEdit(t)}
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          수정
+                        </button>
+                        <div style={{ width: 1, background: '#F2F4F6' }} />
+                        <button onClick={() => handleHide(t.id)}
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                          </svg>
+                          숨기기
+                        </button>
+                        <div style={{ width: 1, background: '#F2F4F6' }} />
+                        <button onClick={() => handleDelete(t.id)}
+                          style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          삭제
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <p style={{ fontSize: 12, color: '#8B95A1' }}>
-                    {t.type === 'transfer'
-                      ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
-                      : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
-                  </p>
-                </div>
-                <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
-                  color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
-                  {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
-                </p>
-              </div>
-
-              {/* 수정/숨기기/삭제 - 선택 모드가 아닐 때만 */}
-              {!selectionMode && selectedId === t.id && (
-                <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
-                  <button onClick={() => handleEdit(t)}
-                    style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    수정
-                  </button>
-                  <div style={{ width: 1, background: '#F2F4F6' }} />
-                  <button onClick={() => handleHide(t.id)}
-                    style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                    숨기기
-                  </button>
-                  <div style={{ width: 1, background: '#F2F4F6' }} />
-                  <button onClick={() => handleDelete(t.id)}
-                    style={{ flex: 1, padding: '14px', border: 'none', background: '#fff', color: '#FF5A5F', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    삭제
-                  </button>
-                </div>
-              )}
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
-    ))
-    )
+          ))
+        )
   }
 
   const filteredContent = renderTxnList(filtered)
@@ -1083,8 +1149,56 @@ export default function Ledger() {
     transition: 'all 0.2s',
   })
 
+  if (neumorphism) {
+    return (
+      <LedgerNeu
+        themeData={themeData} loadError={loadError}
+        selectionMode={selectionMode} exitSelectionMode={exitSelectionMode}
+        selectedIds={selectedIds} setSelectedIds={setSelectedIds} filtered={filtered}
+        showSearch={showSearch} setShowSearch={setShowSearch}
+        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+        searchCategory={searchCategory} setSearchCategory={setSearchCategory}
+        allSearchCategories={allSearchCategories}
+        hiddenTransactions={hiddenTransactions} setShowHiddenView={setShowHiddenView} showHiddenView={showHiddenView}
+        period={period} setPeriod={setPeriod} setWeekOffset={setWeekOffset}
+        formatWeekLabel={formatWeekLabel}
+        viewMonth={viewMonth} viewYear={viewYear} setShowYMPicker={setShowYMPicker} showYMPicker={showYMPicker}
+        setViewYear={setViewYear} setViewMonth={setViewMonth}
+        prevMonth={prevMonth} nextMonth={nextMonth}
+        customStart={customStart} setCustomStart={setCustomStart} customEnd={customEnd} setCustomEnd={setCustomEnd}
+        totalExpense={totalExpense} totalIncome={totalIncome} fmt={fmt}
+        tab={tab} setTab={setTab}
+        sortOrder={sortOrder} setSortOrder={setSortOrder}
+        dateGroups={dateGroups} sortedDates={sortedDates}
+        isCreditExcluded={isCreditExcluded} showLoan={showLoan}
+        expandedMergeId={expandedMergeId} setExpandedMergeId={setExpandedMergeId}
+        selectedSubId={selectedSubId} setSelectedSubId={setSelectedSubId}
+        selectedId={selectedId} setSelectedId={setSelectedId}
+        swipedId={swipedId} settleRow={settleRow}
+        setDeleteBtnEl={setDeleteBtnEl} setRowEl={setRowEl}
+        handleItemPointerDown={handleItemPointerDown} handleItemPointerMove={handleItemPointerMove} handleItemPointerEnd={handleItemPointerEnd}
+        handleSelectItem={handleSelectItem}
+        handleDelete={handleDelete} handleEdit={handleEdit} handleHide={handleHide} handleUnhide={handleUnhide}
+        txnExitId={txnExitId} newTxnId={newTxnId}
+        transactions={transactions} categories={categories}
+        setEditItem={setEditItem} setForm={setForm} setShowForm={setShowForm} showForm={showForm}
+        getMergedNet={getMergedNet} getSelectedTxns={getSelectedTxns}
+        showMergeModal={showMergeModal} setShowMergeModal={setShowMergeModal}
+        mergeTitle={mergeTitle} setMergeTitle={setMergeTitle} handleMerge={handleMerge}
+        deleteConfirmTxnId={deleteConfirmTxnId} setDeleteConfirmTxnId={setDeleteConfirmTxnId} confirmDeleteTxn={confirmDeleteTxn}
+        mergeUndoSnackbar={mergeUndoSnackbar} handleUndoMerge={handleUndoMerge}
+        txnUndoSnackbar={txnUndoSnackbar} handleUndoTxn={handleUndoTxn}
+        editItem={editItem} form={form} handleSubmit={handleSubmit} formSaveState={formSaveState}
+        userCardsList={userCardsList} userAccountsList={userAccountsList} userPayments={userPayments}
+        showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
+        showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
+        showCardBilling={showCardBilling} loans={loans}
+      />
+    )
+  }
+
   return (
-    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
+    <div style={{ background: themeData.bg, minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }} className={themeData.bgClass}>
 
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
@@ -1223,7 +1337,7 @@ export default function Ledger() {
       {!selectionMode && (
         <FixedPortal>
         <button onClick={() => { setEditItem(null); setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' }); setShowForm(true) }} aria-label="내역 추가"
-          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+          style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 105px)', right: 20, width: 56, height: 56, borderRadius: 24, background: themeData.primary, border: 'none', color: '#fff', fontSize: 28, cursor: 'pointer', zIndex: 100, boxShadow: `0 4px 20px ${themeData.primary}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
         </FixedPortal>
       )}
 
@@ -1938,7 +2052,7 @@ export default function Ledger() {
       {/* ── 합치기 Undo Snackbar ── */}
       <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
+        position: 'fixed', bottom: 'calc(95px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: mergeUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: mergeUndoSnackbar ? 1 : 0,
         transition: mergeUndoSnackbar
@@ -1963,7 +2077,7 @@ export default function Ledger() {
       {/* ── Undo Snackbar ── */}
       <FixedPortal>
       <div style={{
-        position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
+        position: 'fixed', bottom: 'calc(95px + env(safe-area-inset-bottom, 0px))', left: 16, right: 16, zIndex: 400,
         transform: txnUndoSnackbar ? 'translateY(0)' : 'translateY(120px)',
         opacity: txnUndoSnackbar ? 1 : 0,
         transition: txnUndoSnackbar
@@ -1981,8 +2095,6 @@ export default function Ledger() {
         </button>
       </div>
       </FixedPortal>
-
-      <BottomNav />
     </div>
   )
 }

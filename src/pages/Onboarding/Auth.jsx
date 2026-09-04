@@ -22,6 +22,24 @@ import { Sentry } from '../../utils/sentry'
 // 원하는 주소로 바꿔도 되며, 심사 메모(App Review Information)에 아이디/비번을 적어주면 됩니다.
 const DEMO_ACCOUNT_EMAIL = 'appreview@moa-budget.com'
 
+// 약관/연령 동의용 커스텀 체크박스. 네이티브 accentColor는 브라우저마다
+// 렌더링이 달라 보여서, 체크마크 드로잉 + 스프링 팝 애니메이션을 직접 그린다.
+function CheckBox({ checked, onChange, children, style }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', ...style }}>
+      <span className="checkbox-box">
+        <input type="checkbox" checked={checked} onChange={onChange} />
+        <span className="checkbox-visual" aria-hidden="true">
+          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+            <path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </span>
+      <span style={{ fontSize: 13, color: '#666', lineHeight: 1.4, marginTop: 1 }}>{children}</span>
+    </label>
+  )
+}
+
 export default function Auth() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -63,8 +81,17 @@ export default function Auth() {
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 12,
     border: '1.5px solid #e8e8e8', fontSize: 15, color: '#111',
-    outline: 'none', background: '#fafafa', boxSizing: 'border-box'
+    outline: 'none', background: '#fafafa', boxSizing: 'border-box',
+    transition: 'border-color 180ms ease, box-shadow 180ms ease'
   }
+
+  // 화면 진입 및 로그인↔가입 전환 시 요소들이 순서대로 톡톡 떠오르는 캐스케이드 모션.
+  // 렌더될 때마다 0으로 리셋되고, 실제로 그려지는 요소만 카운트가 올라가 순서가 어긋나지 않는다.
+  let staggerIndex = 0
+  const stagger = () => ({
+    animation: 'fadeSlideUp 420ms cubic-bezier(0.22,1,0.36,1) both',
+    animationDelay: `${staggerIndex++ * 45}ms`,
+  })
 
   const handleEmail = async () => {
     setError('')
@@ -177,18 +204,20 @@ export default function Auth() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: 'calc(env(safe-area-inset-top, 0px) + 32px) 28px 32px', background: '#fff' }}>
-      <div style={{ flex: 1 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 6 }}>
+      {/* key={mode}: 로그인↔가입 전환 시 카드 내용을 통째로 다시 마운트시켜
+          아래 stagger() 캐스케이드 모션이 매번 처음부터 다시 재생되게 한다 */}
+      <div key={mode} style={{ flex: 1 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 6, ...stagger() }}>
           {mode === 'signup' ? '시작해볼까요?' : '다시 만나서 반가워요'}
         </h2>
-        <p style={{ fontSize: 14, color: '#999', marginBottom: 32 }}>
+        <p style={{ fontSize: 14, color: '#999', marginBottom: 32, ...stagger() }}>
           {mode === 'signup' ? '계정을 만들어 데이터를 안전하게 저장하세요' : '계정에 로그인하세요'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* 이메일 — 실시간 유효성 표시 */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', ...stagger() }}>
             <input
               style={{
                 ...inputStyle,
@@ -202,7 +231,7 @@ export default function Auth() {
               onBlur={() => setTouchedEmail(true)}
             />
             {touchedEmail && email && (
-              <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+              <span key={emailValid ? 'valid' : 'invalid'} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', animation: 'iconPop 320ms cubic-bezier(0.34,1.56,0.64,1)' }}>
                 {emailValid ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="24" height="24" rx="6" fill="#10b981"/>
@@ -223,11 +252,11 @@ export default function Auth() {
           )}
 
           {/* 비밀번호 — 로그인 시 위에 레이블 + 비밀번호 찾기 링크 */}
-          <div>
+          <div style={stagger()}>
             {mode === 'login' && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <span style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>비밀번호</span>
-                <button onClick={() => { setShowReset(true); setResetEmail(email) }}
+                <button className="pressable-subtle" onClick={() => { setShowReset(true); setResetEmail(email) }}
                   style={{ background: 'none', border: 'none', color: '#3182F6', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                   비밀번호를 잊으셨나요?
                 </button>
@@ -241,7 +270,7 @@ export default function Auth() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <button type="button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+              <button className="pressable-subtle" type="button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
                 style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
                 {showPw ? (
@@ -278,12 +307,12 @@ export default function Auth() {
                   ].map(({ label, ok }) => (
                     <span key={label} style={{ fontSize: 11, color: ok ? '#10b981' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 3 }}>
                       {ok ? (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <svg key="ok" width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ animation: 'iconPop 280ms cubic-bezier(0.34,1.56,0.64,1)' }}>
                           <circle cx="12" cy="12" r="10" fill="#10b981"/>
                           <polyline points="7 12 10.5 15.5 17 9" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       ) : (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <svg key="pending" width="12" height="12" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="12" r="10" stroke="#94a3b8" strokeWidth="2" fill="none"/>
                         </svg>
                       )}
@@ -297,7 +326,7 @@ export default function Auth() {
 
           {/* 비밀번호 확인 — show/hide + 일치 여부 */}
           {mode === 'signup' && (
-            <div>
+            <div style={stagger()}>
               <div style={{ position: 'relative' }}>
                 <input
                   style={{
@@ -312,7 +341,7 @@ export default function Auth() {
                   onChange={e => setConfirm(e.target.value)}
                   onBlur={() => setTouchedConfirm(true)}
                 />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 표시'}
+                <button className="pressable-subtle" type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 표시'}
                   style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}>
                   {showConfirm ? (
@@ -329,72 +358,65 @@ export default function Auth() {
                 </button>
               </div>
               {touchedConfirm && confirm && !confirmMatch && (
-                <p style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>비밀번호가 일치하지 않습니다</p>
+                <p style={{ fontSize: 12, color: '#ef4444', marginTop: 4, animation: 'fadeSlideUp 200ms ease' }}>비밀번호가 일치하지 않습니다</p>
               )}
               {touchedConfirm && confirmMatch && (
-                <p style={{ fontSize: 12, color: '#10b981', marginTop: 4 }}>비밀번호가 일치합니다</p>
+                <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, animation: 'fadeSlideUp 200ms ease' }}>비밀번호가 일치합니다</p>
               )}
             </div>
           )}
 
           {/* 연령 확인 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
           {mode === 'signup' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={ageConfirmed}
-                onChange={e => setAgeConfirmed(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: 13, color: '#666' }}>만 14세 이상입니다</span>
-            </label>
+            <CheckBox checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} style={stagger()}>
+              만 14세 이상입니다
+            </CheckBox>
           )}
 
           {/* 약관 동의 — 회원가입 시만, 이메일/Google/Apple 가입 공통 게이트 */}
           {mode === 'signup' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={termsConfirmed}
-                onChange={e => setTermsConfirmed(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: '#3182F6', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: 13, color: '#666' }}>
-                <span
-                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
-                  style={{ color: '#3182F6', textDecoration: 'underline' }}
-                >이용약관</span>
-                {' '}및{' '}
-                <span
-                  onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
-                  style={{ color: '#3182F6', textDecoration: 'underline' }}
-                >개인정보 처리방침</span>
-                에 동의합니다
-              </span>
-            </label>
+            <CheckBox checked={termsConfirmed} onChange={e => setTermsConfirmed(e.target.checked)} style={stagger()}>
+              <span
+                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
+                style={{ color: '#3182F6', textDecoration: 'underline' }}
+              >이용약관</span>
+              {' '}및{' '}
+              <span
+                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
+                style={{ color: '#3182F6', textDecoration: 'underline' }}
+              >개인정보 처리방침</span>
+              에 동의합니다
+            </CheckBox>
           )}
 
         </div>
 
         {error && (
-          <p style={{ fontSize: 13, color: '#ef4444', marginTop: 10 }}>{error}</p>
+          <p key={error} style={{ fontSize: 13, color: '#ef4444', marginTop: 10, animation: 'shakeX 400ms cubic-bezier(0.36,0.07,0.19,0.97)' }}>{error}</p>
         )}
 
         <button
+          className="pressable"
           onClick={handleEmail}
           disabled={loading}
           style={{
             width: '100%', padding: '15px', borderRadius: 14,
-            background: loading ? '#a7cbfdff' : '#3182F6', color: '#fff',
-            border: 'none', fontSize: 16, fontWeight: 600,
-            cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20
+            background: loading ? '#a7cbfdff' : 'linear-gradient(135deg, #4C93FF 0%, #3182F6 60%, #2A6FE0 100%)',
+            color: '#fff', border: 'none', fontSize: 16, fontWeight: 600,
+            cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20,
+            boxShadow: loading ? 'none' : '0 8px 20px rgba(49,130,246,0.28)',
+            transition: 'background 200ms ease, box-shadow 200ms ease',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            ...stagger()
           }}>
-          {loading ? '처리 중...' : mode === 'signup' ? '이메일로 가입' : '로그인'}
+          {loading && <span className="spin-loader" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />}
+          {loading ? '처리 중' : mode === 'signup' ? '이메일로 가입' : '로그인'}
         </button>
 
         {/* 데모 체험 버튼 — 베타 빌드 또는 로컬 개발 환경에서만 노출 */}
         {(import.meta.env.DEV || import.meta.env.VITE_BETA === 'true') && (
           <button
+            className="pressable-subtle"
             onClick={() => {
               injectDemoData()
               navigate('/home', { replace: true })
@@ -403,26 +425,29 @@ export default function Auth() {
               width: '100%', padding: '12px', borderRadius: 14,
               background: 'transparent', color: '#aaa',
               border: '1.5px dashed #ddd', fontSize: 13, fontWeight: 500,
-              cursor: 'pointer', marginTop: 8
+              cursor: 'pointer', marginTop: 8,
+              ...stagger()
             }}>
             🛠 개발 로그인 (시뮬레이터 전용)
           </button>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0', ...stagger() }}>
           <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
           <span style={{ fontSize: 12, color: '#bbb' }}>또는</span>
           <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
         </div>
 
         <button
+          className="pressable-subtle"
           onClick={handleGoogle}
           disabled={loading}
           style={{
             width: '100%', padding: '13px', borderRadius: 12,
             border: '1.5px solid #e8e8e8', background: '#fff',
             fontSize: 14, color: '#333', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            ...stagger()
           }}>
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -434,13 +459,15 @@ export default function Auth() {
         </button>
 
         <button
+          className="pressable-subtle"
           onClick={handleApple}
           disabled={loading}
           style={{
             width: '100%', padding: '13px', borderRadius: 12, marginTop: 10,
             border: '1.5px solid #e8e8e8', background: '#fff',
             fontSize: 14, color: '#333', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            ...stagger()
           }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#000"/>
@@ -450,31 +477,34 @@ export default function Auth() {
       </div>
 
       <p style={{ textAlign: 'center', fontSize: 14, color: '#999' }}>
-        {mode === 'signup' ? '이미 계정이 있나요? ' : '계정이 없나요? '}
-        <span
-          onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError('') }}
-          style={{ color: '#3182F6', fontWeight: 600, cursor: 'pointer' }}>
-          {mode === 'signup' ? '로그인' : '회원가입'}
+        <span key={mode} style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4, animation: 'fadeIn 260ms ease' }}>
+          {mode === 'signup' ? '이미 계정이 있나요? ' : '계정이 없나요? '}
+          <span
+            className="pressable-subtle"
+            onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError('') }}
+            style={{ color: '#3182F6', fontWeight: 600, cursor: 'pointer' }}>
+            {mode === 'signup' ? '로그인' : '회원가입'}
+          </span>
         </span>
       </p>
 
       {/* 비밀번호 찾기 모달 */}
       {showReset && (
         <FixedPortal>
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', alignItems: 'flex-end', animation: 'fadeIn 220ms ease' }}
           onClick={() => { setShowReset(false); setResetSent(false); setResetError(''); setResetEmail(''); setResetLoading(false) }}>
-          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px' }}
+          <div style={{ width: '100%', background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px 44px', animation: 'slideInUp 320ms cubic-bezier(0.22,1,0.36,1)' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e0e0e0', margin: '0 auto 20px' }} />
             {resetSent ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
+                <div style={{ fontSize: 48, marginBottom: 16, animation: 'iconPop 380ms cubic-bezier(0.34,1.56,0.64,1)' }}>📧</div>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 8 }}>이메일을 보냈어요!</p>
                 <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>
                   <span style={{ fontWeight: 600, color: '#111' }}>{resetEmail}</span>으로<br/>
                   비밀번호 재설정 링크를 보냈어요.
                 </p>
-                <button onClick={() => { setShowReset(false); setResetSent(false); setResetEmail('') }}
+                <button className="pressable" onClick={() => { setShowReset(false); setResetSent(false); setResetEmail('') }}
                   style={{ marginTop: 24, width: '100%', padding: '14px', borderRadius: 12, background: '#111', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
                   확인
                 </button>
@@ -486,10 +516,17 @@ export default function Auth() {
                 <input type="email" placeholder="이메일 주소" value={resetEmail}
                   onChange={e => { setResetEmail(e.target.value); setResetError('') }}
                   style={{ ...inputStyle, marginBottom: 8 }} />
-                {resetError && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>{resetError}</p>}
-                <button onClick={handlePasswordReset} disabled={resetLoading}
-                  style={{ width: '100%', padding: '14px', borderRadius: 12, background: resetLoading ? '#a7cbfdff' : '#3182F6', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: resetLoading ? 'not-allowed' : 'pointer', marginTop: 8 }}>
-                  {resetLoading ? '전송 중...' : '재설정 링크 보내기'}
+                {resetError && <p key={resetError} style={{ fontSize: 13, color: '#ef4444', marginBottom: 8, animation: 'shakeX 400ms cubic-bezier(0.36,0.07,0.19,0.97)' }}>{resetError}</p>}
+                <button className="pressable" onClick={handlePasswordReset} disabled={resetLoading}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 12,
+                    background: resetLoading ? '#a7cbfdff' : '#3182F6', color: '#fff', border: 'none',
+                    fontSize: 15, fontWeight: 600, cursor: resetLoading ? 'not-allowed' : 'pointer', marginTop: 8,
+                    transition: 'background 200ms ease',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                  }}>
+                  {resetLoading && <span className="spin-loader" style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%' }} />}
+                  {resetLoading ? '전송 중' : '재설정 링크 보내기'}
                 </button>
               </>
             )}

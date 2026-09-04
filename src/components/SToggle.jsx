@@ -1,5 +1,20 @@
+import { useTheme } from '../contexts/ThemeContext'
+
 // 설정 화면용 토글
 export default function SToggle({ on, onChange, primary }) {
+  const theme = useTheme()
+  const neumorphism = theme?.neumorphism
+
+  if (neumorphism) {
+    return (
+      <div onClick={() => onChange(!on)} className="neu-toggle-track">
+        <div className="neu-toggle-thumb" style={{ left: on ? 23 : 3 }}>
+          <div className="neu-toggle-dot" style={{ background: on ? primary : '#C9CDD4' }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div onClick={() => onChange(!on)}
       style={{ width: 48, height: 28, borderRadius: 9999, background: on ? primary : '#ddd', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>

@@ -4,7 +4,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
 import DeepLinkListener from './components/DeepLinkListener'
 import { AppConfigProvider } from './contexts/AppConfigContext'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { LoansProvider } from './contexts/LoansContext'
@@ -12,6 +12,7 @@ import { PurchasesProvider } from './contexts/PurchasesContext'
 import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
+import BottomNav from './components/BottomNav'
 
 // 탭 화면들은 recharts/xlsx/jspdf 등 무거운 의존성을 포함하므로
 // 스플래시/로그인 시점의 초기 번들에서 제외하기 위해 지연 로드한다.
@@ -26,9 +27,10 @@ const MyPage = lazy(() => import('./pages/MyPage'))
 const TAB_PATHS = ['/calendar', '/ledger', '/home', '/analysis', '/my']
 
 function RouteFallback() {
+  const { themeData } = useTheme()
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: '#4F46E5', borderRadius: '50%' }} />
+      <div className="spin-loader" style={{ width: 24, height: 24, border: '2.5px solid rgba(0,0,0,0.08)', borderTopColor: themeData.primary, borderRadius: '50%' }} />
     </div>
   )
 }
@@ -51,31 +53,35 @@ function AnimatedRoutes() {
   }
 
   return (
-    <div
-      key={location.pathname}
-      style={{
-        zoom: fontScale,
-        animation: `${animationName} 280ms cubic-bezier(0.22,1,0.36,1) forwards`,
-      }}
-    >
-      <ErrorBoundary key={location.pathname}>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes location={location}>
-            <Route path="/" element={<SplashScreen />} />
-            <Route path="/how-to-use" element={<HowToUse />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding/ai-style" element={<AIStyleSetup />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/ledger" element={<Ledger />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/analysis" element={<Analysis />} />
-            <Route path="/my" element={<MyPage />} />
-            {/* 알 수 없는 경로(구 딥링크, 오타 등) → 흰 화면 대신 스플래시로 복귀시켜 로그인 상태에 따라 자동 라우팅 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
-    </div>
+    <>
+      <div
+        key={location.pathname}
+        style={{
+          zoom: fontScale,
+          animation: `${animationName} 280ms cubic-bezier(0.22,1,0.36,1) forwards`,
+        }}
+      >
+        <ErrorBoundary key={location.pathname}>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes location={location}>
+              <Route path="/" element={<SplashScreen />} />
+              <Route path="/how-to-use" element={<HowToUse />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding/ai-style" element={<AIStyleSetup />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/ledger" element={<Ledger />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/analysis" element={<Analysis />} />
+              <Route path="/my" element={<MyPage />} />
+              {/* 알 수 없는 경로(구 딥링크, 오타 등) → 흰 화면 대신 스플래시로 복귀시켜 로그인 상태에 따라 자동 라우팅 */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+      {/* 탭 페이지 전환 시에도 같은 인스턴스를 유지해야 슬라이딩 인디케이터가 실제로 움직인다 (키 변경으로 재마운트되는 위 div 밖에 둔다) */}
+      {isTab && <BottomNav />}
+    </>
   )
 }
 

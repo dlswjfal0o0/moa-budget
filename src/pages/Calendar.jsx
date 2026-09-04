@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
-import BottomNav from '../components/BottomNav'
 import LoadError from '../components/LoadError'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { inputStyle } from '../styles/styles'
@@ -12,9 +11,10 @@ import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
+import CalendarNeu from './CalendarNeu'
 
 export default function Calendar() {
-  const { themeData } = useTheme()
+  const { themeData, neumorphism } = useTheme()
   const { cards } = useCards()
   const settings = useSettings()
   const navigate = useNavigate()
@@ -272,6 +272,32 @@ export default function Calendar() {
     return da - db_
   })
 
+  if (neumorphism) {
+    return (
+      <CalendarNeu
+        themeData={themeData} loadError={loadError}
+        viewYear={viewYear} setViewYear={setViewYear} viewMonth={viewMonth} setViewMonth={setViewMonth}
+        showYMPicker={showYMPicker} setShowYMPicker={setShowYMPicker}
+        days={days} firstDay={firstDay} byDate={byDate} todayStr={todayStr}
+        selectedDate={selectedDate} setSelectedDate={setSelectedDate}
+        fixedDueDays={fixedDueDays}
+        selectedTxs={selectedTxs} isCreditExcluded={isCreditExcluded} showLoan={showLoan}
+        weekExpense={weekExpense} weekIncome={weekIncome} totalExpense={totalExpense} totalIncome={totalIncome}
+        fmt={fmt}
+        fixedExpenses={fixedExpenses} fixedTotal={fixedTotal} sortedFixed={sortedFixed} currentMonthKey={currentMonthKey}
+        setShowAddFixed={setShowAddFixed}
+        expandedFixedId={expandedFixedId} setExpandedFixedId={setExpandedFixedId}
+        handleToggleFixed={handleToggleFixed} handleDeleteFixed={handleDeleteFixed}
+        setEditingFixedId={setEditingFixedId} setEditFixedData={setEditFixedData}
+        editingFixedId={editingFixedId} editFixedData={editFixedData} handleSaveFixed={handleSaveFixed}
+        showAddFixed={showAddFixed} newFixed={newFixed} setNewFixed={setNewFixed} EMPTY_FIXED={EMPTY_FIXED} handleAddFixed={handleAddFixed}
+        categories={categories} accNames={accNames} userCards={userCards}
+        showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
+        showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
+      />
+    )
+  }
+
   return (
     <div style={{
       height: '100dvh',
@@ -350,7 +376,7 @@ export default function Calendar() {
         </div>
 
       {/* ── 스크롤 영역: 날짜 내역 + 요약 + 고정지출 ── */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 선택한 날짜 내역 */}
         {selectedDate && (
@@ -803,7 +829,6 @@ export default function Calendar() {
           onClose={() => setShowYMPicker(false)}
         />
       )}
-      <BottomNav />
     </div>
   )
 }
