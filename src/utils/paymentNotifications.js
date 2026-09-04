@@ -77,7 +77,7 @@ export const requestPaymentNotificationPermission = async () => {
 }
 
 // fixedExpenses/설정이 바뀔 때마다 예약된 결제 알림을 전부 취소하고 현재 상태 기준으로 재예약
-export const syncPaymentNotifications = async ({ fixedExpenses, settings }) => {
+export const syncPaymentNotifications = async ({ fixedExpenses, settings, isPro }) => {
   if (!isNative()) return
   try {
     const pending = await LocalNotifications.getPending()
@@ -88,7 +88,7 @@ export const syncPaymentNotifications = async ({ fixedExpenses, settings }) => {
       await LocalNotifications.cancel({ notifications: ourIds.map(id => ({ id })) })
     }
 
-    if (!settings?.notifyPaymentEnabled) return
+    if (!isPro || !settings?.notifyPaymentEnabled) return
 
     const now = new Date()
     const notifications = (fixedExpenses || [])

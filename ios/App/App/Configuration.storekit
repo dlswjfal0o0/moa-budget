@@ -1,0 +1,111 @@
+{
+  "identifier" : "60DF8182-0000-4000-8000-000000000000",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "0",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "ko_KR",
+    "_storefront" : "KOR",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "FCA9DE93",
+      "localizations" : [],
+      "name" : "MOA Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "1100",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "78FA088A",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "1년 프로모션 월간 구독 (50% 할인)",
+              "displayName" : "Pro 프로모션 월간",
+              "locale" : "ko"
+            }
+          ],
+          "productID" : "com.moa.budget.promo.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro 프로모션 월간",
+          "subscriptionGroupID" : "FCA9DE93",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "10000",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "3DA1AF13",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "1년 프로모션 연간 구독 (50% 할인)",
+              "displayName" : "Pro 프로모션 연간",
+              "locale" : "ko"
+            }
+          ],
+          "productID" : "com.moa.budget.promo.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro 프로모션 연간",
+          "subscriptionGroupID" : "FCA9DE93",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2200",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "49D7BF87",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "일반 월간 구독",
+              "displayName" : "Pro 일반 월간",
+              "locale" : "ko"
+            }
+          ],
+          "productID" : "com.moa.budget.standard.month",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro 일반 월간",
+          "subscriptionGroupID" : "FCA9DE93",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "20000",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "AAFF333D",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "일반 연간 구독",
+              "displayName" : "Pro 일반 연간",
+              "locale" : "ko"
+            }
+          ],
+          "productID" : "com.moa.budget.standard.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro 일반 연간",
+          "subscriptionGroupID" : "FCA9DE93",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

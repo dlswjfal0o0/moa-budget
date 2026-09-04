@@ -11,12 +11,17 @@ import { inputStyle } from '../styles/styles'
 import { DEFAULT_CATEGORIES } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useIsPro } from '../contexts/PurchasesContext'
+import LockedFeature from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
 
 export default function Calendar() {
   const { themeData } = useTheme()
   const { cards } = useCards()
   const settings = useSettings()
+  const isPro = useIsPro()
+  const [showPaywall, setShowPaywall] = useState(false)
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -84,7 +89,7 @@ export default function Calendar() {
           const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
           const promises = []
           const processed = fixedList.map(f => {
-            if (!f.autoRegister || !f.dueDate) return f
+            if (!isPro || !f.autoRegister || !f.dueDate) return f // Pro 아니면 자동 등록 건너뜀(데이터는 유지)
             const dueDay = parseInt(f.dueDate.split('-')[2])
             if (isNaN(dueDay) || todayDay < dueDay) return f
             const registeredMonths = f.autoRegisteredMonths || []
@@ -139,8 +144,9 @@ export default function Calendar() {
         notifyPaymentTime: settings?.notifyPaymentTime,
         notifyNightConsent: settings?.notifyNightConsent,
       },
+      isPro,
     })
-  }, [fixedExpenses, settings?.notifyPaymentEnabled, settings?.notifyPaymentTime, settings?.notifyNightConsent])
+  }, [fixedExpenses, isPro, settings?.notifyPaymentEnabled, settings?.notifyPaymentTime, settings?.notifyNightConsent])
 
   const saveFixed = async (updated) => {
     setFixedExpenses(updated)
@@ -227,6 +233,7 @@ export default function Calendar() {
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       const card = getCreditCard(t.payment)
       return card?.creditTracking !== 'billing'
@@ -399,6 +406,15 @@ export default function Calendar() {
         </div>
 
         {/* ── 고정지출 ── */}
+        {!isPro ? (
+          <div style={{ margin: '12px 16px 0' }}>
+            <LockedFeature
+              title="고정지출 & 다가오는 결제"
+              description="반복되는 고정지출을 등록하고, 결제일 전날 알림까지 받아보세요."
+              onPress={() => setShowPaywall(true)}
+            />
+          </div>
+        ) : (
         <div style={{ margin: '12px 16px 0', borderRadius: 20, overflow: 'hidden' }}>
 
           {/* 고정지출 헤더 */}
@@ -477,6 +493,7 @@ export default function Calendar() {
             </div>
           </div>
         </div>
+        )}
 
       </div>{/* ── 스크롤 영역 끝 ── */}
 
@@ -803,6 +820,7 @@ export default function Calendar() {
           onClose={() => setShowYMPicker(false)}
         />
       )}
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <BottomNav />
     </div>
   )

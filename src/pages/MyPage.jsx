@@ -17,6 +17,9 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import LockedFeature, { SubscriptionBadge } from '../components/LockedFeature'
+import PaywallModal from '../components/PaywallModal'
+import { usePurchases } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
@@ -42,6 +45,8 @@ export default function MyPage() {
   const { cards, setCards } = useCards()
   const { loans, setLoans } = useLoans()
   const { weekStartDay, setWeekStartDay, sortOrder, setSortOrder, showCardBilling, setShowCardBilling, rolloverBudget, setRolloverBudget, showLoan, setShowLoan, aiAnalysisStyle, setAiAnalysisStyle, aiShowAdvice, setAiShowAdvice, categories, setCategories, fontScale, setFontScale, notifyPaymentEnabled, setNotifyPaymentEnabled, notifyPaymentTime, setNotifyPaymentTime, notifyNightConsent, setNotifyNightConsent } = useSettings()
+  const { isPro, isSubscribed, isTrialActive, trialDaysLeft } = usePurchases()
+  const [showPaywall, setShowPaywall] = useState(false)
   const [notifyPermissionError, setNotifyPermissionError] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   // BottomSheet가 닫히는 애니메이션 동안에도 카드 정보가 유지되도록 마지막 값을 보존한다
@@ -721,8 +726,9 @@ export default function MyPage() {
                   <button onClick={handleNicknameSave} style={{ background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>저장</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                  <SubscriptionBadge isSubscribed={isSubscribed} />
                   <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
                 </div>
               )}
@@ -744,6 +750,22 @@ export default function MyPage() {
       </div>
 
       <div style={{ padding: '16px 24px' }}>
+
+        {/* 무료체험 종료 임박 배너 */}
+        {isTrialActive && trialDaysLeft <= 3 && (
+          <div style={{ background: t.card, borderRadius: 20, padding: '16px 18px', marginBottom: 16, border: `1.5px solid ${t.primary}`, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: t.text || '#191F28' }}>
+                무료체험 종료까지 {trialDaysLeft}일 남았습니다.
+              </p>
+              <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>구독하면 Pro 기능을 계속 이용할 수 있어요.</p>
+            </div>
+            <button onClick={() => setShowPaywall(true)}
+              style={{ background: t.primary, border: 'none', borderRadius: 12, padding: '9px 16px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+              구독하기
+            </button>
+          </div>
+        )}
 
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
@@ -835,17 +857,23 @@ export default function MyPage() {
                   )}
                   <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
                   <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
-                    {card.limit > 0 && (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
-                        {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
-                  </div>
+                  {isPro ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
+                        {card.limit > 0 && (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
+                            {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                      </div>
+                    </>
+                  ) : (
+                    <LockedFeature variant="compact" title="목표 달성 현황 보기" onPress={(e) => { e.stopPropagation(); setShowPaywall(true) }} />
+                  )}
                 </div>
                 {/* 수정/삭제 펼침 행 */}
                 {expandedCardId === card.id && (
@@ -2385,6 +2413,8 @@ export default function MyPage() {
         </button>
       </div>
       </FixedPortal>
+
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
 
       <BottomNav />
     </div>

@@ -19,6 +19,8 @@ import { inputStyle } from '../styles/styles'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLoans } from '../contexts/LoansContext'
+import { useIsPro } from '../contexts/PurchasesContext'
+import PaywallModal from '../components/PaywallModal'
 import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -139,6 +141,8 @@ export default function Ledger() {
   const { cards: userCardsList } = useCards()
   const { loans } = useLoans()
   const { weekStartDay, sortOrder, setSortOrder, showCardBilling, showLoan, categories } = useSettings()
+  const isPro = useIsPro()
+  const [showPaywall, setShowPaywall] = useState(false)
   const navigate = useNavigate()
   const reducedMotion = useReducedMotion()
   const now = new Date()
@@ -358,7 +362,7 @@ export default function Ledger() {
         const ref = await addDoc(collection(db, 'transactions'), data)
         savedId = ref.id
       }
-      if (form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+      if (isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
 
       // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
       if (editItem) {
@@ -711,6 +715,7 @@ export default function Ledger() {
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => userCardsList.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       const card = getCreditCard(t.payment)
       return card?.creditTracking !== 'billing'
@@ -826,7 +831,7 @@ export default function Ledger() {
                   숨김 {hiddenTransactions.length}건
                 </button>
               )}
-              <button onClick={() => setShowSearch(true)} aria-label="검색"
+              <button onClick={() => isPro ? setShowSearch(true) : setShowPaywall(true)} aria-label="검색"
                 style={{ width: 36, height: 36, borderRadius: 12, border: 'none', background: '#F2F4F6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -1725,6 +1730,8 @@ export default function Ledger() {
         </button>
       </div>
       </FixedPortal>
+
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
 
       <BottomNav />
     </div>
