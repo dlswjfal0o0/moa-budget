@@ -1193,6 +1193,7 @@ export default function Ledger() {
         showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
         showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
         showCardBilling={showCardBilling} loans={loans}
+        isPro={isPro}
       />
     )
   }

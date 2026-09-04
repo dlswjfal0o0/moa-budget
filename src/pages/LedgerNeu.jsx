@@ -73,6 +73,7 @@ export default function LedgerNeu(props) {
     showCardSelector, setShowCardSelector,
     showAccountSelector, setShowAccountSelector,
     showCardBilling, loans,
+    isPro,
   } = props
 
   const primary = themeData.primary
@@ -84,6 +85,27 @@ export default function LedgerNeu(props) {
 
   return (
     <div className="neu-page" style={{ minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
+
+      {showSearch && !isPro && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(25,31,40,0.72)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
+          display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0' }}>
+            <button onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }} aria-label="뒤로가기"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#fff' }}>
+              <BackIcon />
+            </button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 40px', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>✨ 검색은 Pro 전용 기능이에요</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>Pro를 구독하면 내역을 검색할 수 있어요</p>
+          </div>
+        </div>
+      )}
 
       {loadError && (
         <div style={{ padding: '12px 20px 0' }}>
@@ -120,7 +142,7 @@ export default function LedgerNeu(props) {
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 <input
-                  autoFocus
+                  autoFocus={isPro}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="내역 검색..."
