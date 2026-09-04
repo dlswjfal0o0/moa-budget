@@ -4,6 +4,7 @@ import { doc, setDoc } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
+import { ProBadge } from '../components/LockedFeature'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -61,6 +62,7 @@ export default function SettingsNeu(props) {
     settingsPage, setSettingsPage, settingsDirection, settingsPageTitle,
     user,
     neumorphism, setNeumorphism,
+    isPro, setShowPaywall,
     rolloverBudget, setRolloverBudget,
     weekStartDay, setWeekStartDay, sortOrder, setSortOrder,
     showCardBilling, setShowCardBilling,
@@ -413,7 +415,7 @@ export default function SettingsNeu(props) {
           {settingsPage === 'export' && (
             <div style={{ padding: '20px 16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <button onClick={exportToExcel} disabled={exporting} className="neu-card"
+                <button onClick={() => isPro ? exportToExcel() : setShowPaywall(true)} disabled={exporting} className="neu-card"
                   style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, border: 'none', cursor: 'pointer' }}>
                   <div className="neu-inset" style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -422,12 +424,15 @@ export default function SettingsNeu(props) {
                     </svg>
                   </div>
                   <div style={{ textAlign: 'left', flex: 1 }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>엑셀로 내보내기</p>
+                      {!isPro && <ProBadge />}
+                    </div>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .xlsx 파일로 저장</p>
                   </div>
                   {settingsChevron}
                 </button>
-                <button onClick={exportToPDF} disabled={exporting} className="neu-card"
+                <button onClick={() => isPro ? exportToPDF() : setShowPaywall(true)} disabled={exporting} className="neu-card"
                   style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, border: 'none', cursor: 'pointer' }}>
                   <div className="neu-inset" style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -436,7 +441,10 @@ export default function SettingsNeu(props) {
                     </svg>
                   </div>
                   <div style={{ textAlign: 'left', flex: 1 }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>PDF로 내보내기</p>
+                      {!isPro && <ProBadge />}
+                    </div>
                     <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>전체 내역을 .pdf 파일로 저장</p>
                   </div>
                   {settingsChevron}
