@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import MonthlyReportSheet from '../components/MonthlyReportSheet'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -142,6 +143,8 @@ export default function Analysis() {
   const [expandedPayments, setExpandedPayments] = useState(new Set())
   const [expandedUtilities, setExpandedUtilities] = useState(new Set())
   const [monthSlideDir, setMonthSlideDir] = useState(null) // 'prev' | 'next' | null
+  const [monthlyReports, setMonthlyReports] = useState({})
+  const [openMonthlyReportKey, setOpenMonthlyReportKey] = useState(null)
   const monthSlideTimerRef = useRef(null)
   // Stagger: 0=compare, 1=daily, 2=category, 3=AI, 4=payment
   const isVisible = useStagger(5, 40, 80)
@@ -222,11 +225,13 @@ export default function Analysis() {
   useEffect(() => {
     if (!user) return
     getDoc(doc(db, 'users', user.uid)).then(snap => {
-      if (snap.exists() && snap.data().aiCache) {
-        const remote = snap.data().aiCache
-        setAiCache(remote)
-        try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+      if (!snap.exists()) return
+      const data = snap.data()
+      if (data.aiCache) {
+        setAiCache(data.aiCache)
+        try { localStorage.setItem('moa_ai_cache', JSON.stringify(data.aiCache)) } catch { /* ignore */ }
       }
+      if (data.monthlyReports) setMonthlyReports(data.monthlyReports)
     }).catch(() => { /* ignore */ })
   }, [user])
 
@@ -675,6 +680,37 @@ export default function Analysis() {
             )}
           </div>
 
+          {/* 저장된 월간 리포트 */}
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>📅 월간 리포트</p>
+            {Object.keys(monthlyReports).length === 0 ? (
+              // #C9CDD4(기존 textMuted)는 흰 배경 대비 약 1.6:1로 WCAG AA(4.5:1) 미달이라 #5B6572로 교체 — 모든 테마 카드 배경에서 4.5:1 이상 확보
+              <p style={{ fontSize: 14, color: '#5B6572', textAlign: 'center', padding: '20px 0' }}>
+                매달 첫 방문 시 지난달 결산 리포트가 자동으로 뜨고, 저장하면 여기서 다시 볼 수 있어요
+              </p>
+            ) : (
+              Object.entries(monthlyReports)
+                .sort(([a], [b]) => {
+                  const [ay, am] = a.split('-').map(Number)
+                  const [by, bm] = b.split('-').map(Number)
+                  return by - ay || bm - am
+                })
+                .map(([key, report]) => {
+                  const [ry, rm] = key.split('-').map(Number)
+                  return (
+                    <button key={key} onClick={() => setOpenMonthlyReportKey(key)}
+                      style={{ width: '100%', minHeight: 44, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        background: '#f8f8f8', border: 'none', borderRadius: 12, padding: '12px 14px', marginBottom: 8, cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: themeData.text || '#191F28' }}>{ry}년 {rm}월</span>
+                      <span style={{ fontSize: 13, color: '#5B6572' }}>
+                        수입 {fmt(report.totals?.income || 0)}원 · 지출 {fmt(report.totals?.expense || 0)}원
+                      </span>
+                    </button>
+                  )
+                })
+            )}
+          </div>
+
           {/* 결제수단별 지출 – 아코디언 */}
           <div style={{ background: themeData.card, borderRadius: 20, padding: '16px', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28', marginBottom: 16 }}>결제수단별 지출</p>
@@ -972,6 +1008,18 @@ export default function Analysis() {
 
         </div>
       )}
+
+      <MonthlyReportSheet
+        open={!!openMonthlyReportKey}
+        onClose={() => setOpenMonthlyReportKey(null)}
+        mode="saved"
+        year={openMonthlyReportKey ? Number(openMonthlyReportKey.split('-')[0]) : undefined}
+        month={openMonthlyReportKey ? Number(openMonthlyReportKey.split('-')[1]) - 1 : undefined}
+        themeData={themeData}
+        fmt={fmt}
+        user={user}
+        savedReport={openMonthlyReportKey ? monthlyReports[openMonthlyReportKey] : undefined}
+      />
     </div>
   )
 }

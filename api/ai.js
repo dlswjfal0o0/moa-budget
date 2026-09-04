@@ -17,6 +17,7 @@ const DOMAIN_LABELS = {
   budget: '예산 인사이트',
   consumption: '소비 분석',
   utility: '공과금 분석',
+  monthly: '월간 리포트',
 }
 
 // 사용자 1인당 하루 호출 상한. 필요시 Vercel 환경변수로 조정 가능(코드 배포 없이).
