@@ -60,8 +60,8 @@ function CategoryList({ items, total, fmt, textColor, textSecondary }) {
         const pct = total > 0 ? Math.round((amount / total) * 100) : 0
         const color = colorMap[name] || '#B0B0B0'
         return (
-          <div key={name} style={{ marginBottom: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+          <div key={name} style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
@@ -92,7 +92,7 @@ function SavingsRateRing({ rate }) {
           strokeDasharray={Math.PI * 42} strokeDashoffset={Math.PI * 42 * (1 - clamped / 100)}
           style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1)' }} />
       </svg>
-      <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: 15, fontWeight: 700, color, whiteSpace: 'nowrap' }}>
+      <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color, whiteSpace: 'nowrap' }}>
         {rate.toFixed(1)}%
       </span>
     </div>
@@ -270,7 +270,7 @@ export default function MonthlyReportSheet({
   const cardTitle = { fontSize: 14, fontWeight: 600, color: textColor, marginBottom: 12 }
   const statCard = { minWidth: 0, background: themeData?.card || '#fff', borderRadius: 20, padding: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }
   const statLabel = { fontSize: 12, color: textSecondary, marginBottom: 4 }
-  const statValue = { fontSize: 16, fontWeight: 700, overflowWrap: 'anywhere' }
+  const statValue = { fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', overflowWrap: 'anywhere' }
 
   return (
     <BottomSheet open={open} onClose={onClose} maxOpacity={0.45}>
@@ -286,7 +286,7 @@ export default function MonthlyReportSheet({
             <button key={t.key} onClick={() => setActiveTab(t.key)}
               style={{ flex: 1, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: '0 9px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                fontSize: 13.5, fontWeight: activeTab === t.key ? 700 : 500,
+                fontSize: 14, fontWeight: activeTab === t.key ? 700 : 500,
                 background: activeTab === t.key ? primary : 'transparent',
                 color: activeTab === t.key ? '#fff' : textSecondary,
                 transition: 'background 0.15s cubic-bezier(0.22, 1, 0.36, 1), color 0.15s cubic-bezier(0.22, 1, 0.36, 1)' }}>
@@ -354,11 +354,11 @@ export default function MonthlyReportSheet({
                     </ResponsiveContainer>
                     {details.topDay && (
                       <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #F2F4F6' }}>
-                        <p style={{ fontSize: 12.5, color: textColor, marginBottom: 6 }}>
+                        <p style={{ fontSize: 13, color: textColor, lineHeight: 1.5, marginBottom: 6 }}>
                           최고 지출일 <span style={{ color: primary, fontWeight: 700 }}>{month + 1}월 {details.topDay.day}일</span> · <span style={{ fontWeight: 700 }}>{fmt(details.topDay.amount)}원</span>
                         </p>
                         {details.topDay.items.map((it, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: textSecondary, padding: '3px 0' }}>
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: textSecondary, padding: '7px 0' }}>
                             <span>{it.title || it.category}{it.title ? ` · ${it.category}` : ''}</span>
                             <span>{fmt(it.amount)}원</span>
                           </div>
@@ -378,8 +378,8 @@ export default function MonthlyReportSheet({
                   const exceeded = b.spent > b.amount
                   const barColor = exceeded ? '#FF5A5F' : b.pct >= 80 ? '#f59e0b' : primary
                   return (
-                    <div key={i} style={{ marginBottom: i < details.budgetsSummary.length - 1 ? 14 : 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                    <div key={i} style={{ marginBottom: i < details.budgetsSummary.length - 1 ? 16 : 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: textColor }}>{b.label}</span>
                         <span style={{ fontSize: 12, color: exceeded ? '#FF5A5F' : textSecondary, fontWeight: 600 }}>
                           {fmt(b.spent)}원 / {fmt(b.amount)}원 ({b.pct}%)
@@ -423,7 +423,7 @@ export default function MonthlyReportSheet({
                   <span style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{fmt(details.fixedTotal)}원</span>
                 </div>
                 {details.fixedExpenseItems?.length > 0 ? details.fixedExpenseItems.map((f, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '7px 0', borderTop: i > 0 ? '1px solid #F2F4F6' : 'none' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '11px 0', borderTop: i > 0 ? '1px solid #F2F4F6' : 'none' }}>
                     <span style={{ color: textColor }}>{f.title}</span>
                     <span style={{ color: textSecondary, fontWeight: 600 }}>{fmt(f.amount)}원</span>
                   </div>
@@ -451,7 +451,7 @@ export default function MonthlyReportSheet({
                 <p style={cardTitle}>최종 점수</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ width: 60, height: 60, borderRadius: '50%', background: rc.color, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ color: '#fff', fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{data.score}</span>
+                    <span style={{ color: '#fff', fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{data.score}</span>
                     <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>점</span>
                   </div>
                   <div style={{ flex: 1 }}>
@@ -514,7 +514,7 @@ export default function MonthlyReportSheet({
 
                 {data.message && (
                   <div style={{ textAlign: 'center', padding: '14px', background: primaryLight, borderRadius: 16 }}>
-                    <p style={{ fontSize: 14, color: primary, fontWeight: 500 }}>{data.message}</p>
+                    <p style={{ fontSize: 14, color: primary, fontWeight: 500, lineHeight: 1.5 }}>{data.message}</p>
                   </div>
                 )}
               </div>
