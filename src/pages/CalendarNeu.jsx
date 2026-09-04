@@ -1,5 +1,6 @@
 import YearMonthPicker from '../components/YearMonthPicker'
 import LoadError from '../components/LoadError'
+import LockedFeature from '../components/LockedFeature'
 import { getColoredShadow } from '../utils/neuColors'
 
 const neuInputStyle = {
@@ -154,6 +155,7 @@ function FixedExpenseForm({ title, data, setData, categories, accNames, userCard
 export default function CalendarNeu(props) {
   const {
     themeData, loadError,
+    isPro, setShowPaywall,
     viewYear, setViewYear, viewMonth, setViewMonth,
     showYMPicker, setShowYMPicker,
     days, firstDay, byDate, todayStr,
@@ -293,6 +295,15 @@ export default function CalendarNeu(props) {
         </div>
 
         {/* ── 고정지출 ── */}
+        {!isPro ? (
+          <div style={{ margin: '12px 20px 0' }}>
+            <LockedFeature
+              title="고정지출 & 다가오는 결제"
+              description="반복되는 고정지출을 등록하고, 결제일 전날 알림까지 받아보세요."
+              onPress={() => setShowPaywall(true)}
+            />
+          </div>
+        ) : (
         <div style={{ margin: '12px 20px 0' }}>
           <div className="neu-card" style={{ borderRadius: 20, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -362,6 +373,7 @@ export default function CalendarNeu(props) {
             })}
           </div>
         </div>
+        )}
 
       </div>
 

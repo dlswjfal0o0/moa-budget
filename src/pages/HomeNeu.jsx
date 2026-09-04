@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
+import LockedFeature from '../components/LockedFeature'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -93,7 +94,7 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
 }
 
 export default function HomeNeu({
-  loadError, themeData, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
+  loadError, themeData, isPro, setShowPaywall, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
   showAddBudget, setShowAddBudget, newBudget, setNewBudget, allExpenseCategories,
   handleAddBudget, editingBudgetId, setEditingBudgetId, editBudgetData, setEditBudgetData, handleSaveBudget,
   expandedBudgetEditId, setExpandedBudgetEditId, expandedTipIds, setExpandedTipIds,
@@ -251,7 +252,16 @@ export default function HomeNeu({
         </div>
 
         {/* 다가오는 결제 */}
-        {upcomingPayments.length > 0 && (
+        {!isPro ? (
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>다가오는 결제</p>
+            <LockedFeature
+              title="다가오는 결제"
+              description="고정지출을 등록하면 결제일이 다가올 때 미리 알려드려요."
+              onPress={() => setShowPaywall(true)}
+            />
+          </div>
+        ) : upcomingPayments.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>다가오는 결제</p>
             <div className="neu-card" style={{ borderRadius: 22, padding: '8px 16px' }}>

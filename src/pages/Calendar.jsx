@@ -281,8 +281,10 @@ export default function Calendar() {
 
   if (neumorphism) {
     return (
+      <>
       <CalendarNeu
         themeData={themeData} loadError={loadError}
+        isPro={isPro} setShowPaywall={setShowPaywall}
         viewYear={viewYear} setViewYear={setViewYear} viewMonth={viewMonth} setViewMonth={setViewMonth}
         showYMPicker={showYMPicker} setShowYMPicker={setShowYMPicker}
         days={days} firstDay={firstDay} byDate={byDate} todayStr={todayStr}
@@ -302,6 +304,8 @@ export default function Calendar() {
         showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
         showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
       />
+      <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      </>
     )
   }
 
