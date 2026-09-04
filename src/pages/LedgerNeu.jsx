@@ -37,7 +37,17 @@ export default function LedgerNeu(props) {
   const {
     themeData, loadError,
     selectionMode, exitSelectionMode, selectedIds, setSelectedIds, filtered,
-    showSearch, setShowSearch, searchQuery, setSearchQuery, searchCategory, setSearchCategory,
+    showSearch, setShowSearch, searchQuery, setSearchQuery,
+    searchType, setSearchType, searchCategories, setSearchCategories,
+    searchPayment, setSearchPayment, searchPeriod, setSearchPeriod,
+    setSearchWeekOffset,
+    searchViewMonth, setSearchViewMonth, searchViewYear, setSearchViewYear,
+    searchCustomStart, setSearchCustomStart, searchCustomEnd, setSearchCustomEnd,
+    showSearchFilter, setShowSearchFilter,
+    formatSearchWeekLabel, prevSearchMonth, nextSearchMonth,
+    allSearchPayments, getSearchFiltered,
+    recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches,
+    searchInputRef, resetSearchFilters,
     allSearchCategories,
     hiddenTransactions, setShowHiddenView, showHiddenView,
     period, setPeriod, setWeekOffset,
@@ -49,7 +59,6 @@ export default function LedgerNeu(props) {
     totalExpense, totalIncome, fmt,
     tab, setTab,
     sortOrder, setSortOrder,
-    dateGroups, sortedDates,
     isCreditExcluded, showLoan,
     expandedMergeId, setExpandedMergeId,
     selectedSubId, setSelectedSubId,
@@ -73,6 +82,7 @@ export default function LedgerNeu(props) {
     showCardSelector, setShowCardSelector,
     showAccountSelector, setShowAccountSelector,
     showCardBilling, loans,
+    isPro,
   } = props
 
   const primary = themeData.primary
@@ -82,164 +92,17 @@ export default function LedgerNeu(props) {
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
   const emptyForm = () => ({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
 
-  return (
-    <div className="neu-page" style={{ minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
-
-      {loadError && (
-        <div style={{ padding: '12px 20px 0' }}>
-          <LoadError message={loadError} onRetry={() => window.location.reload()} />
-        </div>
-      )}
-
-      {/* ── 헤더 ── */}
-      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 0', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
-
-        {selectionMode ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingTop: 2 }}>
-            <button onClick={exitSelectionMode}
-              style={{ background: 'none', border: 'none', fontSize: 15, color: '#191F28', cursor: 'pointer', fontWeight: 500, padding: '4px 0' }}>
-              취소
-            </button>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{selectedIds.size}개 선택됨</p>
-            <button onClick={() => {
-              if (selectedIds.size === filtered.length) setSelectedIds(new Set())
-              else setSelectedIds(new Set(filtered.map(t => t.id)))
-            }} style={{ background: 'none', border: 'none', fontSize: 14, color: primary, cursor: 'pointer', fontWeight: 700, padding: '4px 0' }}>
-              {selectedIds.size === filtered.length ? '전체 취소' : '전체 선택'}
-            </button>
-          </div>
-        ) : showSearch ? (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <button onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchCategory(null) }} aria-label="뒤로가기"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#191F28', flexShrink: 0 }}>
-                <BackIcon />
-              </button>
-              <div className="neu-inset" style={{ flex: 1, display: 'flex', alignItems: 'center', borderRadius: 14, padding: '0 14px', gap: 8 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  autoFocus
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="내역 검색..."
-                  style={{ flex: 1, border: 'none', background: 'transparent', padding: '11px 0', fontSize: 15, outline: 'none', color: '#191F28' }}
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} aria-label="검색어 지우기"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
-                )}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-              <NeuChip selected={searchCategory === null} onClick={() => setSearchCategory(null)} activeColor={primary}>전체</NeuChip>
-              {allSearchCategories.map(cat => (
-                <NeuChip key={cat} selected={searchCategory === cat} onClick={() => setSearchCategory(searchCategory === cat ? null : cat)} activeColor={primary}>{cat}</NeuChip>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {hiddenTransactions.length > 0 && (
-                <button onClick={() => setShowHiddenView(true)} className="neu-chip"
-                  style={{ padding: '6px 12px', borderRadius: 9999, color: '#8B95A1', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                  숨김 {hiddenTransactions.length}건
-                </button>
-              )}
-              <button onClick={() => setShowSearch(true)} aria-label="검색" className="neu-btn"
-                style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showSearch ? null : <div className="neu-inset" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, marginBottom: 16 }}>
-          {['주간', '월간', '직접'].map(p => {
-            const sel = period === p
-            return (
-              <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
-                style={{ flex: 1, borderRadius: 12, padding: '10px 0', textAlign: 'center', border: 'none', cursor: 'pointer',
-                  fontSize: 14, fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
-                  background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>{p}</button>
-            )
-          })}
-        </div>}
-
-        {!showSearch && period === '주간' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
-            <button onClick={() => setWeekOffset(o => o-1)} aria-label="이전 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatWeekLabel()}</p>
-            <button onClick={() => setWeekOffset(o => o+1)} aria-label="다음 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
-          </div>
-        )}
-        {!showSearch && period === '월간' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
-            <button onClick={prevMonth} aria-label="이전 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
-            <p onClick={() => setShowYMPicker(true)} style={{ fontSize: 16, fontWeight: 700, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#8B95A1' }}>▾</span>
-            </p>
-            <button onClick={nextMonth} aria-label="다음 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
-          </div>
-        )}
-        {!showSearch && period === '직접' && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input type="date" className="neu-inset" value={customStart} onChange={e => setCustomStart(e.target.value)}
-              style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
-            <span style={{ display: 'flex', alignItems: 'center', color: '#8B95A1', fontSize: 13 }}>~</span>
-            <input type="date" className="neu-inset" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-              style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
-          </div>
-        )}
-
-        {/* 지출 / 수입 요약 */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
-            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>지출</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
-          </div>
-          <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
-            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>수입</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
-          </div>
-        </div>
-
-        {/* 필터 탭 + 정렬 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['전체', '소비', '수입', '이체'].map(t => (
-              <NeuChip key={t} selected={tab === t} onClick={() => setTab(t)} activeColor="#191F28"
-                style={{ borderRadius: 12, padding: '7px 14px' }}>{t}</NeuChip>
-            ))}
-          </div>
-          <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
-            style={{ background: 'none', border: 'none', color: '#8B95A1', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 2 }}>
-            {sortOrder === 'desc' ? '↓ 최신순' : '↑ 오래된순'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── 선택 모드 힌트 배너 ── */}
-      {selectionMode && (
-        <div className="neu-inset" style={{ margin: '10px 20px 2px', borderRadius: 14, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-          </svg>
-          <p style={{ fontSize: 13, color: primary, fontWeight: 600 }}>합칠 내역을 선택하세요</p>
-        </div>
-      )}
-
-      {/* ── 내역 리스트 ── */}
-      <div style={{ padding: '8px 20px', paddingBottom: selectionMode ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : undefined }}>
-        {filtered.length === 0 ? (
+  const renderNeuTxnList = (list) => {
+    const dateGroups = list.reduce((acc, t) => {
+      const d = t.date || '날짜 없음'
+      if (!acc[d]) acc[d] = []
+      acc[d].push(t)
+      return acc
+    }, {})
+    const sortedDates = Object.keys(dateGroups).sort((a, b) =>
+      sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
+    )
+    return list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>내역이 없어요</div>
         ) : (
           sortedDates.map(date => (
@@ -488,7 +351,138 @@ export default function LedgerNeu(props) {
               })}
             </div>
           ))
+        )
+
+  }
+
+
+  return (
+    <div className="neu-page" style={{ minHeight: '100vh', paddingBottom: 'calc(95px + env(safe-area-inset-bottom, 0px))' }}>
+
+      {loadError && (
+        <div style={{ padding: '12px 20px 0' }}>
+          <LoadError message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
+
+      {/* ── 헤더 ── */}
+      <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 0', borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
+
+        {selectionMode ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingTop: 2 }}>
+            <button onClick={exitSelectionMode}
+              style={{ background: 'none', border: 'none', fontSize: 15, color: '#191F28', cursor: 'pointer', fontWeight: 500, padding: '4px 0' }}>
+              취소
+            </button>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{selectedIds.size}개 선택됨</p>
+            <button onClick={() => {
+              if (selectedIds.size === filtered.length) setSelectedIds(new Set())
+              else setSelectedIds(new Set(filtered.map(t => t.id)))
+            }} style={{ background: 'none', border: 'none', fontSize: 14, color: primary, cursor: 'pointer', fontWeight: 700, padding: '4px 0' }}>
+              {selectedIds.size === filtered.length ? '전체 취소' : '전체 선택'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>가계부</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hiddenTransactions.length > 0 && (
+                <button onClick={() => setShowHiddenView(true)} className="neu-chip"
+                  style={{ padding: '6px 12px', borderRadius: 9999, color: '#8B95A1', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                  숨김 {hiddenTransactions.length}건
+                </button>
+              )}
+              <button onClick={() => setShowSearch(true)} aria-label="검색" className="neu-btn"
+                style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
+
+        <div className="neu-inset" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, marginBottom: 16 }}>
+          {['주간', '월간', '직접'].map(p => {
+            const sel = period === p
+            return (
+              <button key={p} onClick={() => { setPeriod(p); setWeekOffset(0) }}
+                style={{ flex: 1, borderRadius: 12, padding: '10px 0', textAlign: 'center', border: 'none', cursor: 'pointer',
+                  fontSize: 14, fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
+                  background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>{p}</button>
+            )
+          })}
+        </div>
+
+        {period === '주간' && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
+            <button onClick={() => setWeekOffset(o => o-1)} aria-label="이전 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatWeekLabel()}</p>
+            <button onClick={() => setWeekOffset(o => o+1)} aria-label="다음 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+          </div>
+        )}
+        {period === '월간' && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 16 }}>
+            <button onClick={prevMonth} aria-label="이전 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+            <p onClick={() => setShowYMPicker(true)} style={{ fontSize: 16, fontWeight: 700, color: '#191F28', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {viewYear}년 {viewMonth + 1}월 <span style={{ fontSize: 13, color: '#8B95A1' }}>▾</span>
+            </p>
+            <button onClick={nextMonth} aria-label="다음 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+          </div>
+        )}
+        {period === '직접' && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <input type="date" className="neu-inset" value={customStart} onChange={e => setCustomStart(e.target.value)}
+              style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
+            <span style={{ display: 'flex', alignItems: 'center', color: '#8B95A1', fontSize: 13 }}>~</span>
+            <input type="date" className="neu-inset" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+              style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
+          </div>
+        )}
+
+        {/* 지출 / 수입 요약 */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
+            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>지출</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
+          </div>
+          <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
+            <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>수입</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
+          </div>
+        </div>
+
+        {/* 필터 탭 + 정렬 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['전체', '소비', '수입', '이체'].map(t => (
+              <NeuChip key={t} selected={tab === t} onClick={() => setTab(t)} activeColor="#191F28"
+                style={{ borderRadius: 12, padding: '7px 14px' }}>{t}</NeuChip>
+            ))}
+          </div>
+          <button onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
+            style={{ background: 'none', border: 'none', color: '#8B95A1', fontSize: 13, cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 2 }}>
+            {sortOrder === 'desc' ? '↓ 최신순' : '↑ 오래된순'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── 선택 모드 힌트 배너 ── */}
+      {selectionMode && (
+        <div className="neu-inset" style={{ margin: '10px 20px 2px', borderRadius: 14, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          <p style={{ fontSize: 13, color: primary, fontWeight: 600 }}>합칠 내역을 선택하세요</p>
+        </div>
+      )}
+
+      {/* ── 내역 리스트 ── */}
+      <div style={{ padding: '8px 20px', paddingBottom: selectionMode ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : undefined }}>
+        {renderNeuTxnList(filtered)}
       </div>
 
       {/* ── FAB ── */}
@@ -850,6 +844,192 @@ export default function LedgerNeu(props) {
           onClose={() => setShowYMPicker(false)}
         />
       )}
+
+      {/* ── 검색 (전체화면) ── */}
+      <BottomSheet variant="full" open={showSearch} showHandle={false} background={NEU_BG}
+        onClose={() => { setShowSearch(false); resetSearchFilters() }}>
+        <div>
+          {!isPro && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 20, background: 'rgba(25,31,40,0.72)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
+              display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0' }}>
+                <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#fff' }}>
+                  <BackIcon />
+                </button>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 40px', textAlign: 'center' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>✨ 검색은 Pro 전용 기능이에요</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>Pro를 구독하면 내역을 검색할 수 있어요</p>
+              </div>
+            </div>
+          )}
+          <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px 14px', borderBottom: '1px solid rgba(163,177,198,0.25)', position: 'sticky', top: 0, zIndex: 10, background: NEU_BG }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#191F28', flexShrink: 0 }}>
+                <BackIcon />
+              </button>
+              <div className="neu-inset" style={{ flex: 1, display: 'flex', alignItems: 'center', borderRadius: 14, padding: '0 14px', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addRecentSearch(searchQuery) }}
+                  placeholder="내역 검색..."
+                  style={{ flex: 1, border: 'none', background: 'transparent', padding: '11px 0', fontSize: 15, outline: 'none', color: '#191F28' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} aria-label="검색어 지우기"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 18, lineHeight: 1, padding: 2 }}>×</button>
+                )}
+              </div>
+              <button onClick={() => setShowSearchFilter(true)} aria-label="필터" className="neu-btn"
+                style={{ position: 'relative', width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A1', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill={NEU_BG}/>
+                  <line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2" fill={NEU_BG}/>
+                  <line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill={NEU_BG}/>
+                </svg>
+                {(searchPeriod !== '전체' || searchPayment) && (
+                  <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: primary }} />
+                )}
+              </button>
+            </div>
+            {/* 유형 탭 */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {['전체', '지출', '수입', '이체'].map(t => (
+                <NeuChip key={t} selected={searchType === t} onClick={() => { setSearchType(t); setSearchCategories([]) }} activeColor="#191F28"
+                  style={{ borderRadius: 9999, padding: '7px 14px' }}>{t}</NeuChip>
+              ))}
+            </div>
+            {/* 카테고리 아이콘 탭 (다중 선택, 유형별) */}
+            {searchType !== '이체' && (
+              <div style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '2px 2px 4px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                <button onClick={() => setSearchCategories([])}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <div className={searchCategories.length === 0 ? 'neu-btn' : 'neu-inset'} style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CatIcon cat={null} size={20} color={searchCategories.length === 0 ? primary : '#8B95A1'} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: searchCategories.length === 0 ? 700 : 500, color: searchCategories.length === 0 ? primary : '#8B95A1' }}>전체</span>
+                </button>
+                {(searchType === '지출' ? categories.expense : searchType === '수입' ? categories.income : allSearchCategories).map(cat => {
+                  const active = searchCategories.includes(cat)
+                  return (
+                    <button key={cat} onClick={() => setSearchCategories(prev => active ? prev.filter(c => c !== cat) : [...prev, cat])}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      <div className={active ? 'neu-btn' : 'neu-inset'} style={{ width: 50, height: 50, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CatIcon cat={cat} size={20} color={active ? primary : '#8B95A1'} />
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? primary : '#8B95A1' }}>{cat}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ padding: '8px 20px 24px' }}>
+            {!searchQuery.trim() && searchType === '전체' && searchCategories.length === 0 && !searchPayment && searchPeriod === '전체' ? (
+              /* ── 최근 검색어 ── */
+              <div style={{ paddingTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#191F28' }}>최근 검색어</p>
+                  {recentSearches.length > 0 && (
+                    <button onClick={clearRecentSearches}
+                      style={{ background: 'none', border: 'none', color: '#8B95A1', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                      전체 삭제
+                    </button>
+                  )}
+                </div>
+                {recentSearches.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '64px 0', color: '#8B95A1', fontSize: 15 }}>최근 검색 내역이 없어요</div>
+                ) : (
+                  recentSearches.map(term => (
+                    <div key={term} onClick={() => { setSearchQuery(term); addRecentSearch(term) }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 2px', borderBottom: '1px solid rgba(163,177,198,0.25)', cursor: 'pointer' }}>
+                      <span style={{ fontSize: 15, color: '#191F28' }}>{term}</span>
+                      <button onClick={e => { e.stopPropagation(); removeRecentSearch(term) }} aria-label="검색어 삭제"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A1', fontSize: 16, lineHeight: 1, padding: 4 }}>×</button>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : renderNeuTxnList(getSearchFiltered())}
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* ── 검색 필터: 기간 / 결제수단 ── */}
+      <BottomSheet open={showSearchFilter} onClose={() => setShowSearchFilter(false)} background={NEU_BG}>
+        <div style={{ padding: '24px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+          <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 20 }}>검색 필터</p>
+
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 10 }}>기간</p>
+          <div className="neu-inset" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 16, marginBottom: 12 }}>
+            {['전체', '주간', '월간', '직접'].map(p => {
+              const sel = searchPeriod === p
+              return (
+                <button key={p} onClick={() => setSearchPeriod(p)}
+                  style={{ flex: 1, borderRadius: 12, padding: '10px 0', textAlign: 'center', border: 'none', cursor: 'pointer',
+                    fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? '#fff' : '#8B95A1',
+                    background: sel ? primary : 'transparent', boxShadow: sel ? coloredShadow.raisedSm : 'none' }}>{p}</button>
+              )
+            })}
+          </div>
+          {searchPeriod === '주간' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 20 }}>
+              <button onClick={() => setSearchWeekOffset(o => o-1)} aria-label="이전 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>{formatSearchWeekLabel()}</p>
+              <button onClick={() => setSearchWeekOffset(o => o+1)} aria-label="다음 주" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+            </div>
+          )}
+          {searchPeriod === '월간' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', marginBottom: 20 }}>
+              <button onClick={prevSearchMonth} aria-label="이전 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>‹</button>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28' }}>{searchViewYear}년 {searchViewMonth + 1}월</p>
+              <button onClick={nextSearchMonth} aria-label="다음 달" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8B95A1', padding: '0 4px', lineHeight: 1 }}>›</button>
+            </div>
+          )}
+          {searchPeriod === '직접' && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <input type="date" className="neu-inset" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
+                style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
+              <span style={{ display: 'flex', alignItems: 'center', color: '#8B95A1', fontSize: 13 }}>~</span>
+              <input type="date" className="neu-inset" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
+                style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
+            </div>
+          )}
+
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#8B95A1', marginBottom: 10 }}>결제수단</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+            <NeuChip selected={!searchPayment} onClick={() => setSearchPayment(null)} activeColor={primary}>전체</NeuChip>
+            {allSearchPayments.map(p => (
+              <NeuChip key={p} selected={searchPayment === p} onClick={() => setSearchPayment(p)} activeColor={primary}>{p}</NeuChip>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setSearchPeriod('전체'); setSearchWeekOffset(0); setSearchViewMonth(new Date().getMonth()); setSearchViewYear(new Date().getFullYear()); setSearchCustomStart(''); setSearchCustomEnd(''); setSearchPayment(null) }}
+              className="neu-btn"
+              style={{ flex: 1, padding: '14px', borderRadius: 16, color: '#8B95A1', fontSize: 15, fontWeight: 700 }}>
+              초기화
+            </button>
+            <button onClick={() => setShowSearchFilter(false)}
+              style={{ flex: 2, padding: '14px', borderRadius: 16, border: 'none', cursor: 'pointer', background: primary, color: '#fff', fontSize: 15, fontWeight: 700, boxShadow: coloredShadow.raised }}>
+              적용
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
 
       {/* ── 숨긴 내역 보기 ── */}
       <BottomSheet variant="full" open={showHiddenView} showHandle={false} background={NEU_BG}

@@ -349,21 +349,6 @@ export default function Ledger() {
     if (tab === '소비') filtered = filtered.filter(t => t.type === 'expense')
     if (tab === '수입') filtered = filtered.filter(t => t.type === 'income')
     if (tab === '이체') filtered = filtered.filter(t => t.type === 'transfer')
-    // 검색 필터 — LedgerNeu(뉴모피즘 테마)는 자체 전체화면 검색 UI 없이
-    // 이 filtered를 그대로 사용하므로 여기서도 반영해야 한다. 일반 Ledger는
-    // 검색을 별도 전체화면 오버레이(getSearchFiltered)로 처리하므로 영향 없음
-    // (검색 종료 시 searchQuery/searchCategories가 초기화됨).
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      filtered = filtered.filter(t =>
-        t.title?.toLowerCase().includes(q) ||
-        t.memo?.toLowerCase().includes(q) ||
-        t.category?.toLowerCase().includes(q)
-      )
-    }
-    if (searchCategories.length > 0) {
-      filtered = filtered.filter(t => searchCategories.includes(t.category))
-    }
     filtered.sort((a, b) => {
       const aKey = `${a.date} ${a.time || '00:00'}`
       const bKey = `${b.date} ${b.time || '00:00'}`
@@ -850,20 +835,6 @@ export default function Ledger() {
   const totalIncome = filtered.filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0)
   const fmt = n => n.toLocaleString('ko-KR')
 
-  // LedgerNeu(뉴모피즘 테마)는 자체 전체화면 검색 UI 없이 이 dateGroups/sortedDates와
-  // 단일 선택 카테고리(searchCategory)를 그대로 props로 받아 쓴다.
-  const dateGroups = filtered.reduce((acc, t) => {
-    const d = t.date || '날짜 없음'
-    if (!acc[d]) acc[d] = []
-    acc[d].push(t)
-    return acc
-  }, {})
-  const sortedDates = Object.keys(dateGroups).sort((a, b) =>
-    sortOrder === 'desc' ? b.localeCompare(a) : a.localeCompare(b)
-  )
-  const searchCategory = searchCategories[0] ?? null
-  const setSearchCategory = (cat) => setSearchCategories(cat ? [cat] : [])
-
   // ── 내역 리스트 콘텐츠 (기본 화면 / 검색 전체화면에서 공유) ──
   const renderTxnList = (list) => {
     const dateGroups = list.reduce((acc, t) => {
@@ -1157,7 +1128,20 @@ export default function Ledger() {
         selectedIds={selectedIds} setSelectedIds={setSelectedIds} filtered={filtered}
         showSearch={showSearch} setShowSearch={setShowSearch}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-        searchCategory={searchCategory} setSearchCategory={setSearchCategory}
+        searchType={searchType} setSearchType={setSearchType}
+        searchCategories={searchCategories} setSearchCategories={setSearchCategories}
+        searchPayment={searchPayment} setSearchPayment={setSearchPayment}
+        searchPeriod={searchPeriod} setSearchPeriod={setSearchPeriod}
+        searchWeekOffset={searchWeekOffset} setSearchWeekOffset={setSearchWeekOffset}
+        searchViewMonth={searchViewMonth} setSearchViewMonth={setSearchViewMonth}
+        searchViewYear={searchViewYear} setSearchViewYear={setSearchViewYear}
+        searchCustomStart={searchCustomStart} setSearchCustomStart={setSearchCustomStart}
+        searchCustomEnd={searchCustomEnd} setSearchCustomEnd={setSearchCustomEnd}
+        showSearchFilter={showSearchFilter} setShowSearchFilter={setShowSearchFilter}
+        formatSearchWeekLabel={formatSearchWeekLabel} prevSearchMonth={prevSearchMonth} nextSearchMonth={nextSearchMonth}
+        allSearchPayments={allSearchPayments} getSearchFiltered={getSearchFiltered}
+        recentSearches={recentSearches} addRecentSearch={addRecentSearch} removeRecentSearch={removeRecentSearch} clearRecentSearches={clearRecentSearches}
+        searchInputRef={searchInputRef} resetSearchFilters={resetSearchFilters}
         allSearchCategories={allSearchCategories}
         hiddenTransactions={hiddenTransactions} setShowHiddenView={setShowHiddenView} showHiddenView={showHiddenView}
         period={period} setPeriod={setPeriod} setWeekOffset={setWeekOffset}
@@ -1169,7 +1153,6 @@ export default function Ledger() {
         totalExpense={totalExpense} totalIncome={totalIncome} fmt={fmt}
         tab={tab} setTab={setTab}
         sortOrder={sortOrder} setSortOrder={setSortOrder}
-        dateGroups={dateGroups} sortedDates={sortedDates}
         isCreditExcluded={isCreditExcluded} showLoan={showLoan}
         expandedMergeId={expandedMergeId} setExpandedMergeId={setExpandedMergeId}
         selectedSubId={selectedSubId} setSelectedSubId={setSelectedSubId}
@@ -1193,6 +1176,7 @@ export default function Ledger() {
         showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
         showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
         showCardBilling={showCardBilling} loans={loans}
+        isPro={isPro}
       />
     )
   }
