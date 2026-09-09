@@ -1358,7 +1358,9 @@ export default function Ledger() {
       {/* ── 내역 추가/수정 폼 ── */}
       <BottomSheet variant="full" open={showForm} showHandle={false} background="#F7F8FA"
         onClose={() => { setShowForm(false); setEditItem(null) }}>
-        <div>
+        <div onKeyDown={e => {
+          if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); handleSubmit() }
+        }}>
           {/* 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
@@ -1662,14 +1664,14 @@ export default function Ledger() {
                   <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {form.date ? form.date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$1. $2. $3.') : '날짜'}
                   </div>
-                  <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  <input type="date" className="dt-tap-overlay" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
                 <div style={{ flex: 1, position: 'relative' }}>
                   <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {formatTime(form.time)}
                   </div>
-                  <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                  <input type="time" className="dt-tap-overlay" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
               </div>

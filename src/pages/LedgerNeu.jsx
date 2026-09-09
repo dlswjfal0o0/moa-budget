@@ -526,7 +526,9 @@ export default function LedgerNeu(props) {
       {/* ── 내역 추가/수정 폼 ── */}
       <BottomSheet variant="full" open={showForm} showHandle={false} background={NEU_BG}
         onClose={() => { setShowForm(false); setEditItem(null) }}>
-        <div className="neu-page" style={{ '--neu-focus': primary + '59', minHeight: '100%' }}>
+        <div className="neu-page" style={{ '--neu-focus': primary + '59', minHeight: '100%' }} onKeyDown={e => {
+          if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); handleSubmit() }
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', borderBottom: '1px solid rgba(163,177,198,0.25)', position: 'sticky', top: 0, zIndex: 10, background: NEU_BG }}>
             <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28' }}>{editItem ? '내역 수정' : '내역 추가'}</p>
@@ -789,14 +791,14 @@ export default function LedgerNeu(props) {
                   <div className="neu-inset" style={{ padding: '14px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {form.date ? form.date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$1. $2. $3.') : '날짜'}
                   </div>
-                  <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  <input type="date" className="dt-tap-overlay" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
                 <div style={{ flex: 1, position: 'relative' }}>
                   <div className="neu-inset" style={{ padding: '14px 0', borderRadius: 12, textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {formatTime(form.time)}
                   </div>
-                  <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                  <input type="time" className="dt-tap-overlay" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
               </div>
