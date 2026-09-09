@@ -1,6 +1,8 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import { ProBadge } from '../components/LockedFeature'
+import { useIsPro } from '../contexts/PurchasesContext'
 import { UtilityIcon, UtilityChart } from './Analysis'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -39,6 +41,7 @@ const neuInputStyle = {
 export default function AnalysisNeu(props) {
   const {
     showUtilities, loadError,
+    setShowPaywall,
     viewMonth, viewYear, setViewYear, setViewMonth,
     monthSlideDir, triggerMonthSlide,
     activeAnalysisTab, setActiveAnalysisTab,
@@ -57,6 +60,7 @@ export default function AnalysisNeu(props) {
     editingUtility, setEditingUtility,
     newUtility, setNewUtility, saveUtilities,
   } = props
+  const isPro = useIsPro()
   const coloredShadow = getColoredShadow(primary)
 
   return (
@@ -86,16 +90,21 @@ export default function AnalysisNeu(props) {
       {showUtilities && (
         <div style={{ padding: '12px 20px 0' }}>
           <div className="neu-inset" style={{ display: 'flex', borderRadius: 9999, padding: 4 }}>
-            {['소비', '공과금'].map(tab => (
-              <button key={tab} onClick={() => setActiveAnalysisTab(tab)}
-                style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
-                  fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
-                  background: activeAnalysisTab === tab ? primary : 'transparent',
-                  boxShadow: activeAnalysisTab === tab ? coloredShadow.raisedSm : 'none',
-                  color: activeAnalysisTab === tab ? '#fff' : '#8B95A1' }}>
-                {tab}
-              </button>
-            ))}
+            {['소비', '공과금'].map(tab => {
+              const locked = tab === '공과금' && !isPro
+              return (
+                <button key={tab} onClick={() => locked ? setShowPaywall(true) : setActiveAnalysisTab(tab)}
+                  style={{ flex: 1, padding: '10px', borderRadius: 9999, border: 'none', cursor: 'pointer',
+                    fontSize: 14, fontWeight: activeAnalysisTab === tab ? 700 : 500,
+                    background: activeAnalysisTab === tab ? primary : 'transparent',
+                    boxShadow: activeAnalysisTab === tab ? coloredShadow.raisedSm : 'none',
+                    color: activeAnalysisTab === tab ? '#fff' : '#8B95A1',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  {tab}
+                  {locked && <ProBadge />}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -399,7 +408,7 @@ export default function AnalysisNeu(props) {
       )}
 
       {/* ── 공과금 탭 ── */}
-      {showUtilities && activeAnalysisTab === '공과금' && (
+      {showUtilities && isPro && activeAnalysisTab === '공과금' && (
         <div style={{ padding: '16px 20px 100px' }}>
 
           {/* 총합 배너 */}
