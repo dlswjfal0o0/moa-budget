@@ -27,7 +27,6 @@ const fmt = (n) => n.toLocaleString('ko-KR')
 export default function SubscriptionPlanList({ onPurchased }) {
   const { themeData: t } = useTheme() || {}
   const primary = t?.primary || '#3182F6'
-  const primaryLight = t?.primaryLight || '#E8F3FF'
   const purchases = usePurchases()
 
   const [period, setPeriod] = useState('monthly')
