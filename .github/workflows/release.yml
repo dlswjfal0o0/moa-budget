@@ -27,7 +27,18 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build
+
+      # VITE_* vars are baked into the JS bundle at build time, not read at
+      # runtime — Vercel's env vars (where these are also set, for the web
+      # build) don't reach this separate CI build, so they have to be
+      # injected here too or the shipped app silently runs with RevenueCat
+      # unconfigured (no purchases possible) and Sentry disabled.
+      - name: Build
+        env:
+          VITE_REVENUECAT_IOS_KEY: ${{ secrets.VITE_REVENUECAT_IOS_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
       - run: npx cap sync ios
       - run: node scripts/sync-version.js
 
