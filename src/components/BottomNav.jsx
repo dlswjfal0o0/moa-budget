@@ -98,7 +98,7 @@ export default function BottomNav() {
         display: 'flex', padding: PAD, zIndex: 100,
       }}>
         {navNeumorphism ? (
-          <div ref={indicatorRef} style={{
+          <div key="neu-indicator" ref={indicatorRef} style={{
             position: 'absolute', top: 6, bottom: 6,
             left: `calc(6px + ${Math.max(activeIndex, 0)} * ((100% - 12px) / ${tabs.length}))`,
             width: `calc((100% - 12px) / ${tabs.length})`,
@@ -112,7 +112,7 @@ export default function BottomNav() {
           // 기본(플랫) 스타일: 뉴모피즘 pill과 같은 크기·위치의 인디케이터 하나가
           // 탭 사이를 슬라이드한다. translateX(%)는 요소 자기 자신의 너비 기준이라
           // JS 없이도 정확히 한 칸씩 이동하고, transform만 쓰므로 reflow가 없다.
-          <div style={{
+          <div key="flat-indicator" style={{
             position: 'absolute', top: 6, bottom: 6, left: 6,
             width: `calc((100% - 12px) / ${tabs.length})`,
             background: '#F0F1F3', borderRadius: 22,
