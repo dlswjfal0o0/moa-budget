@@ -1069,8 +1069,8 @@ export default function MyPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
                       <SIcon bg={t.primary}><SI><rect x="3" y="11" width="18" height="6" rx="3"/><circle cx="8" cy="14" r="1.4" fill="#fff" stroke="none"/></SI></SIcon>
                       <div style={{ flex: 1, textAlign: 'left' }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>뉴모피즘 (베타)</p>
-                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>앱 전체와 하단바를 소프트 UI(음각/양각) 스타일로 표시</p>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>뉴모피즘</p>
+                        <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 1 }}>화면 전체를 부드러운 소프트 UI 스타일로 표시</p>
                       </div>
                       <SToggle on={neumorphism} onChange={(val) => {
                         setNeumorphism(val)

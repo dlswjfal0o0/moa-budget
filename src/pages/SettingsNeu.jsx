@@ -376,7 +376,7 @@ export default function SettingsNeu(props) {
 
               <SectionLabel>화면 스타일</SectionLabel>
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden' }}>
-                <ToggleRow title="뉴모피즘 (베타)" desc="앱 전체와 하단바를 소프트 UI(음각/양각) 스타일로 표시"
+                <ToggleRow title="뉴모피즘" desc="화면 전체를 부드러운 소프트 UI 스타일로 표시"
                   on={neumorphism} onChange={val => {
                     setNeumorphism(val)
                     if (user) setDoc(doc(db, 'users', user.uid), { neumorphism: val, navNeumorphism: val }, { merge: true })
