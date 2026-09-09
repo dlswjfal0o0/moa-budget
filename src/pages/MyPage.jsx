@@ -670,15 +670,19 @@ export default function MyPage() {
     try {
         const now = new Date()
         const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-        const allTxns = []
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key?.startsWith('moa_txns_')) {
-                const txns = JSON.parse(localStorage.getItem(key) || '[]')
-                allTxns.push(...txns)
+        // 데모 모드는 Firestore를 쓰지 않아 allTxns가 채워지지 않으므로 로컬 시드 데이터를 사용
+        const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+        let txns = allTxns
+        if (isDemo) {
+            txns = []
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (key?.startsWith('moa_txns_')) {
+                    txns.push(...JSON.parse(localStorage.getItem(key) || '[]'))
+                }
             }
         }
-        return allTxns
+        return txns
             .filter(t => t.payment === card.name && t.type === 'expense' && !t.creditCardBilling && !t.cardBilling && (t.month || t.date?.slice(0, 7)) === currentMonth)
             .reduce((s, t) => s + (t.amount || 0), 0)
     } catch { return card.used || 0 }
