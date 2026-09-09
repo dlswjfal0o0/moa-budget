@@ -85,6 +85,21 @@ input.neu-inset:focus, textarea.neu-inset:focus {
     inset 0 0 0 2px var(--neu-focus, rgba(49,130,246,0.35)) !important;
 }
 
+/* 날짜/시간 입력을 투명 오버레이(opacity:0)로 얹어 어디를 눌러도 네이티브 피커가 뜨게 하는
+   패턴 — 모바일은 input 전체를 탭하면 항상 시스템 피커가 뜨지만, 데스크톱은 브라우저가
+   렌더링하는 작은 달력/시계 아이콘을 정확히 눌러야만 피커가 열린다. 그 아이콘 히트 영역을
+   입력창 전체로 늘려서 데스크톱에서도 클릭 위치와 무관하게 피커가 열리도록 한다. */
+.dt-tap-overlay::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* ── Press feedback (native-feel touch-down/up) ──────
    :active는 JS state/re-render 없이 터치 즉시 반응하고,
    연타해도 별도 큐가 쌓이지 않아 버튼 눌림 표현의 기본값으로 사용한다. */
