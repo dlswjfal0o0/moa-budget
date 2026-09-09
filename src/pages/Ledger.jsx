@@ -444,20 +444,45 @@ export default function Ledger() {
 
     const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
     try {
+      const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
       const monthDate = new Date(form.date)
       const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
       const isInstallmentEligible = form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit')
       const installmentMonths = isInstallmentEligible && form.installmentMonths ? Number(form.installmentMonths) : null
-      const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString(), installmentMonths }
+      const data = { ...form, amount: Number(form.amount), uid: user ? user.uid : 'demo', month: monthStr, createdAt: new Date().toISOString(), installmentMonths }
       let savedId
-      if (editItem) {
+      if (isDemo) {
+        // Firestore 대신 로컬 상태 + moa_txns_ 캐시(월별)에 직접 반영해서
+        // MY 탭의 카드 실적 등 다른 화면이 즉시 같은 데이터를 보게 한다.
+        savedId = editItem ? editItem.id : `demo-${Date.now()}`
+        if (editItem) {
+          // 수정으로 날짜(월)가 바뀌었을 수 있으니 모든 월별 캐시에서 기존 항목을 먼저 제거
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k?.startsWith('moa_txns_')) {
+              const txns = JSON.parse(localStorage.getItem(k) || '[]')
+              if (txns.some(t => t.id === editItem.id)) {
+                localStorage.setItem(k, JSON.stringify(txns.filter(t => t.id !== editItem.id)))
+              }
+            }
+          }
+        }
+        const key = `moa_txns_${monthStr}`
+        const monthTxns = JSON.parse(localStorage.getItem(key) || '[]')
+        localStorage.setItem(key, JSON.stringify([{ ...data, id: savedId }, ...monthTxns]))
+        const demoMonths = JSON.parse(localStorage.getItem('moa_demo_months') || '[]')
+        if (!demoMonths.includes(monthStr)) localStorage.setItem('moa_demo_months', JSON.stringify([...demoMonths, monthStr]))
+        setTransactions(prev => editItem
+          ? prev.map(t => t.id === editItem.id ? { ...t, ...data, id: editItem.id } : t)
+          : [{ ...data, id: savedId }, ...prev])
+      } else if (editItem) {
         await updateDoc(doc(db, 'transactions', editItem.id), data)
         savedId = editItem.id
       } else {
         const ref = await addDoc(collection(db, 'transactions'), data)
         savedId = ref.id
       }
-      if (isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+      if (!isDemo && isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
 
       // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
       if (editItem) {
@@ -495,7 +520,7 @@ export default function Ledger() {
       setEditItem(null)
       setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
       if (savedId && !editItem) setNewTxnId(savedId)
-      await fetchTransactions()
+      if (!isDemo) await fetchTransactions()
       setTimeout(() => setNewTxnId(null), 1000)
     } catch {
       clearTimeout(loadingTimer)
@@ -526,6 +551,16 @@ export default function Ledger() {
       await deleteDoc(doc(db, 'transactions', id))
       for (const originalId of mergedOriginalIds) {
         await updateDoc(doc(db, 'transactions', originalId), { mergedInto: null })
+      }
+    } else if (isDemo) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k?.startsWith('moa_txns_')) {
+          const txns = JSON.parse(localStorage.getItem(k) || '[]')
+          if (txns.some(t => t.id === id)) {
+            localStorage.setItem(k, JSON.stringify(txns.filter(t => t.id !== id)))
+          }
+        }
       }
     }
     setTransactions(prev => {
