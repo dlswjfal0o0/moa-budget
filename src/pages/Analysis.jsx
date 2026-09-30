@@ -40,6 +40,40 @@ function extractJson(text) {
 }
 
 // 한자(CJK) 등 한글 이외 잘못된 문자를 제거하는 안전망 (모델이 실수로 뱉는 깨진 글자 방지)
+// 모델이 가끔 뱉는 끝 쉼표(,} ,])를 걷어내고 파싱을 시도한다. 실패하면 null.
+function parseAiJson(text) {
+  if (!text || !text.trim().startsWith('{')) return null
+  for (const candidate of [text, text.replace(/,\s*([}\]])/g, '$1')]) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+    } catch { /* 다음 후보 시도 */ }
+  }
+  return null
+}
+
+// JSON이 아닌 응답(서버의 사용량 초과 안내 등)은 그대로 보여주고, 깨진 JSON은 원문 대신 안내 문구로 바꾼다.
+function aiFailureMessage(text) {
+  const t = (text || '').trim()
+  if (!t) return '응답이 비어있어요. 잠시 후 다시 시도해주세요.'
+  if (t.includes('{')) return '분석 결과를 정리하지 못했어요. 잠시 후 다시 시도해주세요.'
+  return stripHanja(t)
+}
+
+// Firestore의 캐시와 기기의 캐시를 합친다. 같은 달 항목이 양쪽에 있으면 더 최근(at) 것을 쓴다.
+function mergeAiCache(local, remote) {
+  const out = { ...local }
+  for (const kind of Object.keys(remote || {})) {
+    const merged = { ...(local?.[kind] || {}) }
+    for (const [key, entry] of Object.entries(remote[kind] || {})) {
+      const mine = merged[key]
+      if (!mine || (entry?.at || 0) >= (mine.at || 0)) merged[key] = entry
+    }
+    out[kind] = merged
+  }
+  return out
+}
+
 function stripHanja(s) {
   return typeof s === 'string'
     ? s.replace(/[㐀-鿿豈-﫿぀-ヿ]/g, '').replace(/[ \t]{2,}/g, ' ').trim()
@@ -231,22 +265,27 @@ export default function Analysis() {
     getDoc(doc(db, 'users', user.uid)).then(snap => {
       if (snap.exists() && snap.data().aiCache) {
         const remote = snap.data().aiCache
-        setAiCache(remote)
-        try { localStorage.setItem('moa_ai_cache', JSON.stringify(remote)) } catch { /* ignore */ }
+        setAiCache(prev => {
+          const next = mergeAiCache(prev, remote)
+          try { localStorage.setItem('moa_ai_cache', JSON.stringify(next)) } catch { /* ignore */ }
+          return next
+        })
       }
     }).catch(() => { /* ignore */ })
   }, [user])
 
   // AI 캐시 저장: 로컬 + 계정(Firestore) 동시 반영. kind='consume'|'utility', key='YYYY-M'
   const persistAiCache = async (kind, key, sig, data) => {
+    // eslint-disable-next-line react-hooks/purity -- 렌더가 아닌 분석 완료 시점(이벤트 핸들러)에서만 호출된다
+    const entry = { sig, data, at: Date.now() }
     setAiCache(prev => {
-      const next = { ...prev, [kind]: { ...(prev[kind] || {}), [key]: { sig, data } } }
+      const next = { ...prev, [kind]: { ...(prev[kind] || {}), [key]: entry } }
       try { localStorage.setItem('moa_ai_cache', JSON.stringify(next)) } catch { /* ignore */ }
       return next
     })
     if (user) {
       try {
-        await setDoc(doc(db, 'users', user.uid), { aiCache: { [kind]: { [key]: { sig, data } } } }, { merge: true })
+        await setDoc(doc(db, 'users', user.uid), { aiCache: { [kind]: { [key]: entry } } }, { merge: true })
       } catch { /* ignore */ }
     }
   }
@@ -305,16 +344,19 @@ export default function Analysis() {
   }, 0)
   const utilityTotalDiff = currentMonthTotal - prevMonthTotal
 
+  // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음.
+  // 카테고리는 이름순으로 정렬해 거래 조회 순서가 바뀌어도 같은 값이 나오게 한다.
+  const catLine = (obj) => Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ')
+  const byCat = catLine(byCategory)
+  const lastByCat = catLine(lastExpenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})) || '없음'
+  const consumeSig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
+  const consumeCached = aiCache.consume?.[cacheMonthKey]
+  const aiIsSaved = !!(consumeCached?.data && consumeCached.sig === consumeSig)
+
   const getAiFeedback = async () => {
     if (expenses.length === 0) return alert('지출 내역이 없어요.')
-    const byCat = Object.entries(byCategory).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ')
-    const lastByCat = Object.entries(
-      lastExpenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
-    ).map(([c, a]) => `${c}: ${fmt(a)}원`).join(', ') || '없음'
-    // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, byCat, lastByCat, totalExpense, totalIncome, lastTotalExpense, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
-    const cached = aiCache.consume?.[cacheMonthKey]
-    if (cached && cached.sig === sig && cached.data) { setAiFeedbackData(cached.data); setAiFeedbackRaw(''); return }
+    const sig = consumeSig
+    if (aiIsSaved) { setAiFeedbackData(consumeCached.data); setAiFeedbackRaw(''); return }
     setLoadingAi(true); setAiFeedbackData(null); setAiFeedbackRaw('')
     try {
       const adviceContentRule = aiShowAdvice
@@ -324,18 +366,19 @@ export default function Analysis() {
         ? '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","cuts":[{"category":"카테고리명","tip":"카테고리별로 서로 다른 구체적 조언 (청유형)","save":정수}],"unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"saving_goal":정수,"message":"응원 메시지"}'
         : '{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약","unusual":["평소와 다른 지출이 있으면 구체적으로, 없으면 빈 배열"],"message":"응원 메시지"}'
       const data = await callAI({
-        max_tokens: 1200, ...getDeterminismParams(),
+        max_tokens: 2000, ...getDeterminismParams(),
         domain: 'consumption', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
         messages: [{ role: 'user', content: `아래 소비 데이터를 분석해 JSON으로만 응답해주세요.\n\n이번 달 카테고리별: ${byCat}\n이번 달 총 지출 ${fmt(totalExpense)}원, 총 수입 ${fmt(totalIncome)}원\n지난 달 카테고리별: ${lastByCat} / 총 지출 ${fmt(lastTotalExpense)}원\n\n[JSON 필드 규칙]\n- summary는 실제 수치를 근거로 이번 달 소비 특징을 구체적으로 요약하세요. 증가/감소 금액이나 비중이 큰 카테고리를 언급하세요.${adviceContentRule}\n- summary, unusual, message는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요. 예: "식비가 지난달보다 3만원 늘었습니다".\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}` }]
       })
       const raw = data.content?.[0]?.text || ''
-      const text = extractJson(raw)
-      if (!text) { setAiFeedbackRaw('응답이 비어있어요. 잠시 후 다시 시도해주세요.'); setLoadingAi(false); return }
-      try {
-        const parsed = sanitizeDeep(JSON.parse(text))
-        setAiFeedbackData(parsed)
-        persistAiCache('consume', cacheMonthKey, sig, parsed)
-      } catch { setAiFeedbackRaw(stripHanja(text)) }
+      const parsed = parseAiJson(extractJson(raw))
+      if (parsed) {
+        const clean = sanitizeDeep(parsed)
+        setAiFeedbackData(clean)
+        persistAiCache('consume', cacheMonthKey, sig, clean)
+      } else {
+        setAiFeedbackRaw(aiFailureMessage(raw))
+      }
     } catch { setAiFeedbackRaw('AI 분석을 불러오는 데 실패했어요.') }
     setLoadingAi(false)
   }
@@ -346,23 +389,27 @@ export default function Analysis() {
     if (user) await setDoc(doc(db, 'users', user.uid), { utilities: updated }, { merge: true })
   }
 
+  const utilitySummary = utilityTypes.map(type => {
+    const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
+    if (!cur) return null
+    const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
+    const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
+    const prevYear = utilities.find(u => u.type === type && u.year === viewYear - 1 && u.month === viewMonth + 1)
+    let comparison = prevYear
+      ? `전월 ${prev ? fmt(prev.amount) + '원' : '없음'} / 전년도 ${fmt(prevYear.amount)}원`
+      : prev ? `전월 ${fmt(prev.amount)}원` : '비교 데이터 없음'
+    return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
+  }).filter(Boolean).join('\n')
+  // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
+  const utilitySig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, summary: utilitySummary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
+  const utilityCached = aiCache.utility?.[cacheMonthKey]
+  const utilityAIIsSaved = !!(utilityCached?.data && utilityCached.sig === utilitySig)
+
   const getUtilityAI = async () => {
-    const summary = utilityTypes.map(type => {
-      const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
-      if (!cur) return null
-      const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
-      const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
-      const prevYear = utilities.find(u => u.type === type && u.year === viewYear - 1 && u.month === viewMonth + 1)
-      let comparison = prevYear
-        ? `전월 ${prev ? fmt(prev.amount) + '원' : '없음'} / 전년도 ${fmt(prevYear.amount)}원`
-        : prev ? `전월 ${fmt(prev.amount)}원` : '비교 데이터 없음'
-      return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
-    }).filter(Boolean).join('\n')
+    const summary = utilitySummary
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
-    // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-    const sig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, summary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
-    const cached = aiCache.utility?.[cacheMonthKey]
-    if (cached && cached.sig === sig && cached.data) { setUtilityAI(cached.data); return }
+    const sig = utilitySig
+    if (utilityAIIsSaved) { setUtilityAI(utilityCached.data); return }
     setLoadingUtilityAI(true); setUtilityAI(null)
     try {
       const adviceOverallRule = aiShowAdvice
@@ -372,19 +419,37 @@ export default function Analysis() {
         ? '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평","tip":"구체적 절약 제안 (청유형)"}'
         : '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평"}'
       const data = await callAI({
-        max_tokens: 900, ...getDeterminismParams(),
+        max_tokens: 1500, ...getDeterminismParams(),
         domain: 'utility', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
         messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[JSON 필드 규칙]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n-${adviceOverallRule}\n- items의 comment, overall은 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n${schema}` }]
       })
-      const text = extractJson(data.content?.[0]?.text || '')
-      try {
-        const parsed = sanitizeDeep(JSON.parse(text))
-        setUtilityAI(parsed)
-        persistAiCache('utility', cacheMonthKey, sig, parsed)
-      } catch { setUtilityAI({ overall: stripHanja(text) }) }
+      const raw = data.content?.[0]?.text || ''
+      const parsed = parseAiJson(extractJson(raw))
+      if (parsed) {
+        const clean = sanitizeDeep(parsed)
+        setUtilityAI(clean)
+        persistAiCache('utility', cacheMonthKey, sig, clean)
+      } else {
+        setUtilityAI({ overall: aiFailureMessage(raw) })
+      }
     } catch { setUtilityAI({ overall: '분석에 실패했어요.' }) }
     setLoadingUtilityAI(false)
   }
+
+  // 저장된 분석 자동 복원: 같은 달·같은 데이터로 이미 분석한 결과가 있으면 그대로 보여주고,
+  // 달이 바뀌거나 데이터가 달라졌으면 이전 결과를 내린다(다른 달의 분석이 남아 보이지 않도록).
+  const isDemoMode = localStorage.getItem('moa_demo_mode') === 'true'
+  useEffect(() => {
+    if (isDemoMode || loadingAi) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 캐시(외부 저장소)와 화면 결과를 동기화
+    setAiFeedbackData(aiIsSaved ? consumeCached.data : null)
+    setAiFeedbackRaw('')
+  }, [consumeSig, cacheMonthKey, aiCache]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isDemoMode || loadingUtilityAI) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 캐시(외부 저장소)와 화면 결과를 동기화
+    setUtilityAI(utilityAIIsSaved ? utilityCached.data : null)
+  }, [utilitySig, cacheMonthKey, aiCache]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerMonthSlide = (dir) => {
     setMonthSlideDir(dir)
