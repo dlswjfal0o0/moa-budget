@@ -52,7 +52,7 @@ export default function LockedFeature({ title, description, onPress, variant = '
       <LockIcon color={primary} size={26} />
       <p style={{ fontSize: 15, fontWeight: 700, color: t?.text || '#191F28' }}>✨ {title}</p>
       {description && (
-        <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{description}</p>
+        <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{description}</p>
       )}
       <span style={{
         marginTop: 4, padding: '9px 18px', borderRadius: 999,
