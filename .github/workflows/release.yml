@@ -65,6 +65,13 @@ jobs:
           # Ruby process launches.
           LANG: en_US.UTF-8
           LC_ALL: en_US.UTF-8
+          # fastlane's own `xcodebuild -showBuildSettings` lookup (inside
+          # build_app) defaults to a 3s timeout doubling over 4 tries
+          # (3/6/12/24s). On a busy/cold macOS runner that isn't enough even
+          # after the resolvePackageDependencies warm-up, and the whole
+          # release fails before building. Start at 30s instead.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "30"
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "4"
           IOS_DIST_CERTIFICATE_BASE64: ${{ secrets.IOS_DIST_CERTIFICATE_BASE64 }}
           IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
