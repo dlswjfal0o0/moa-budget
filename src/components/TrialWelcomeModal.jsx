@@ -1,5 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
 import SubscriptionPlanList from './SubscriptionPlans'
+import FixedPortal from './FixedPortal'
 
 const PRO_FEATURES = [
   '결제 알림 (고정지출 결제일 전날 알림)',
@@ -17,7 +18,9 @@ export default function TrialWelcomeModal({ open, onClose }) {
 
   const primary = t?.primary || '#3182F6'
 
+  // 페이지 래퍼(zoom·전환 애니메이션) 밖으로 포탈해야 화면 전체를 덮는다
   return (
+    <FixedPortal>
     <div style={{ position: 'fixed', inset: 0, background: '#F7F8FA', zIndex: 1300, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 8px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
         <button onClick={onClose}
@@ -65,5 +68,6 @@ export default function TrialWelcomeModal({ open, onClose }) {
         </p>
       </div>
     </div>
+    </FixedPortal>
   )
 }
