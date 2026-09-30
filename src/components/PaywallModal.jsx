@@ -37,8 +37,8 @@ export default function PaywallModal({ open, onClose }) {
 
         <SubscriptionPlanList onPurchased={onClose} renderLayout={({ plans, cta }) => (
           <>
-            {/* 스크롤 영역: 소개 + 요금제 선택 */}
-            <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: '8px 24px 16px', WebkitOverflowScrolling: 'touch' }}>
+            {/* 소개 + 요금제 선택. 내용이 한 화면에 들어가므로 스크롤 없이 고정 배치한다 */}
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '8px 24px 16px' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 12px', borderRadius: 9999, background: 'rgba(49,130,246,0.1)', border: '1px solid rgba(49,130,246,0.3)' }}>
                 <span style={{ fontSize: 12 }}>💎</span>
                 <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#3182F6' }}>PRO</span>
@@ -54,7 +54,7 @@ export default function PaywallModal({ open, onClose }) {
             </div>
 
             {/* 하단 고정: 구독 버튼 + 안내·약정 문구(모두 버튼 아래). 기기 높이와 상관없이 홈 인디케이터 바로 위에 붙는다 */}
-            <div style={{ flexShrink: 0, padding: '12px 24px calc(env(safe-area-inset-bottom, 0px) + 12px)', background: '#F5F5F7', boxShadow: '0 -8px 16px -8px rgba(0,0,0,0.08)' }}>
+            <div style={{ flexShrink: 0, padding: '12px 24px calc(env(safe-area-inset-bottom, 0px) + 12px)', background: '#F5F5F7', }}>
               {cta}
               {error && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', marginTop: 8 }}>{error}</p>}
               <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.5, marginTop: 10 }}>
