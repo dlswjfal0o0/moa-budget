@@ -1,12 +1,14 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { getColoredShadow } from '../utils/neuColors'
 
+// Pro 전용 기능 옆에 붙는 마크. 테마 색을 따라가도록 primary 배경을 쓴다.
 export function ProBadge({ style }) {
+  const { themeData: t } = useTheme() || {}
   return (
     <span style={{
-      fontSize: 10, fontWeight: 800, color: '#fff', background: '#191F28',
-      padding: '2px 6px', borderRadius: 6, letterSpacing: 0.3, flexShrink: 0, ...style,
-    }}>✨ PRO</span>
+      fontSize: 10, fontWeight: 800, color: '#fff', background: t?.primary || '#3182F6',
+      padding: '2px 6px', borderRadius: 6, letterSpacing: 0.3, lineHeight: 1.3, flexShrink: 0, ...style,
+    }}>PRO</span>
   )
 }
 
