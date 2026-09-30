@@ -18,6 +18,7 @@ const RATING_LABELS = {
   data:     { good: '안정적인 소비', warning: '지출 관리 필요', danger: '지출 과다' },
 }
 const ADVICE_TITLES = { warm: '이렇게 해보면 어때요?', balanced: '아낄 수 있는 곳', data: '절감 포인트' }
+const STYLE_NAMES = ['매우 공감적', '공감적', '균형형', '이성적', '매우 이성적'] // AIStyleSlider와 동일
 
 function styleMode(level) {
   if (level <= 2) return 'warm'
@@ -47,6 +48,13 @@ function FailureIcon({ kind, color }) {
   if (kind === 'limit') return <svg {...p}><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" /></svg>
   if (kind === 'lock') return <svg {...p}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
   return <svg {...p}><circle cx="12" cy="12" r="9" /><line x1="12" y1="7.5" x2="12" y2="13" /><line x1="12" y1="16.5" x2="12.01" y2="16.5" /></svg>
+}
+
+function PreviewIcon({ kind, color }) {
+  const p = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  if (kind === 'score') return <svg {...p}><path d="M4 16a8 8 0 1 1 16 0" /><line x1="12" y1="16" x2="15.5" y2="10.5" /><circle cx="12" cy="16" r="1.2" fill={color} /></svg>
+  if (kind === 'save') return <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2c-.5-.8-1.5-1.3-2.8-1.3-1.7 0-2.8.8-2.8 2s1.1 1.7 2.8 2.1 2.8.9 2.8 2.1-1.1 2-2.8 2c-1.3 0-2.3-.5-2.8-1.3" /><line x1="12" y1="6" x2="12" y2="7.9" /><line x1="12" y1="16.1" x2="12" y2="18" /></svg>
+  return <svg {...p}><polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" /></svg>
 }
 
 function ScoreRing({ score, color, track, size = 68 }) {
@@ -93,7 +101,8 @@ function SaveBar({ save, spend, track, height = 4 }) {
 export default function AiConsumptionReport({
   data, raw, loading, saved, onAnalyze,
   primary, primaryLight, text = '#191F28', fmt,
-  styleLevel = 3, categorySpend = {},
+  styleLevel = 3, categorySpend = {}, showAdvice = true, hasData = true,
+  month, totalExpense = 0, lastTotalExpense = 0,
   neumorphism = false, coloredShadow,
 }) {
   const mode = styleMode(styleLevel)
@@ -112,17 +121,28 @@ export default function AiConsumptionReport({
   const goal = Number(data?.saving_goal) > 0 ? Number(data.saving_goal) : 0
   const message = data?.message ? toText(data.message) : ''
   const failure = !loading && raw ? describeFailure(raw) : null
+  const isEmpty = !loading && !data && !raw
+  const previews = [
+    { kind: 'score', label: '소비 점수' },
+    showAdvice && { kind: 'save', label: '아낄 수 있는 곳' },
+    { kind: 'trend', label: '평소와 다른 지출' },
+  ].filter(Boolean)
 
   return (
     <>
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: data || failure || loading ? 18 : 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: data || failure || loading ? 18 : 12 }}>
         <p style={{ fontSize: 15, fontWeight: 700, color: text }}>AI 소비 분석</p>
         {saved && !loading ? (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: primary, background: neumorphism ? undefined : primaryLight, padding: '6px 11px', borderRadius: 9999 }}
             className={neumorphism ? 'neu-inset' : undefined}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
             분석 완료
+          </span>
+        ) : isEmpty ? (
+          <span style={{ fontSize: 12, fontWeight: 600, color: muted, background: neumorphism ? undefined : `${text}0A`, padding: '5px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}
+            className={neumorphism ? 'neu-inset' : undefined}>
+            {STYLE_NAMES[Math.min(5, Math.max(1, styleLevel)) - 1]} 스타일
           </span>
         ) : !failure && (
           <button onClick={onAnalyze} disabled={loading}
@@ -140,10 +160,62 @@ export default function AiConsumptionReport({
         </div>
       )}
 
-      {!loading && !data && !raw && (
-        <p style={{ fontSize: 14, color: muted, lineHeight: 1.6, padding: '4px 0 6px' }}>
-          이번 달 지출을 지난달과 비교해 소비 패턴과 아낄 수 있는 곳을 알려드려요.
-        </p>
+      {/* 분석 전: 받게 될 결과 미리보기 + 시작 버튼 */}
+      {isEmpty && (
+        <div>
+          <p style={{ fontSize: 18, fontWeight: 800, color: text, letterSpacing: '-0.03em', lineHeight: 1.35, wordBreak: 'keep-all' }}>
+            {month ? `${month}월 소비, ` : '이번 달 소비, '}<span style={{ color: primary }}>AI가 짚어드릴게요</span>
+          </p>
+          <p style={{ fontSize: 13.5, color: muted, lineHeight: 1.55, marginTop: 4, wordBreak: 'keep-all' }}>
+            지난달과 비교해 어디에 많이 썼는지, 무엇이 달라졌는지 알려드려요.
+          </p>
+
+          {/* 이번 달 실제 수치 — 분석 전에도 내 데이터가 반영된 카드처럼 보이도록 */}
+          {hasData && (() => {
+            const diffPct = lastTotalExpense > 0 ? Math.round(((totalExpense - lastTotalExpense) / lastTotalExpense) * 100) : null
+            const up = diffPct !== null && diffPct > 0
+            const diffColor = diffPct === null || diffPct === 0 ? muted : up ? '#F04452' : GREEN
+            return (
+              <div {...panel} style={{ ...panel.style, borderRadius: 14, padding: '12px 14px', marginTop: 14, display: 'flex', alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>이번 달 지출</p>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalExpense)}원</p>
+                </div>
+                <div style={{ width: 1, alignSelf: 'stretch', background: divider, margin: '0 14px' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>지난달 대비</p>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: diffColor, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {diffPct === null ? '비교 없음' : diffPct === 0 ? '변화 없음' : `${up ? '▲' : '▼'} ${Math.abs(diffPct)}%`}
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
+          <p style={{ fontSize: 12, fontWeight: 700, color: muted, marginTop: 18, marginBottom: 8 }}>분석하면 알 수 있어요</p>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${previews.length}, 1fr)`, gap: 8 }}>
+            {previews.map(pv => (
+              <div key={pv.kind} {...panel} style={{ ...panel.style, borderRadius: 14, padding: '14px 6px 12px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: neumorphism ? undefined : primaryLight }}
+                  className={neumorphism ? 'neu-card' : undefined}>
+                  <PreviewIcon kind={pv.kind} color={primary} />
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: body, textAlign: 'center', lineHeight: 1.35, wordBreak: 'keep-all' }}>{pv.label}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={onAnalyze} disabled={!hasData}
+            style={{ width: '100%', height: 50, marginTop: 16, borderRadius: 14, border: 'none',
+              cursor: hasData ? 'pointer' : 'not-allowed', fontSize: 15, fontWeight: 700,
+              background: hasData ? primary : `${text}14`, color: hasData ? '#fff' : muted,
+              boxShadow: neumorphism && hasData ? coloredShadow?.raisedSm : undefined }}>
+            {hasData ? '✨ 이번 달 소비 분석하기' : '분석할 지출 내역이 없어요'}
+          </button>
+          <p style={{ fontSize: 12, color: muted, lineHeight: 1.5, marginTop: 10, textAlign: 'center', wordBreak: 'keep-all' }}>
+            {hasData ? '같은 내역으로는 언제 봐도 같은 분석 결과를 보여드려요.' : '이번 달 지출을 기록하면 분석할 수 있어요.'}
+          </p>
+        </div>
       )}
 
       {/* 실패 안내 */}
