@@ -1219,6 +1219,7 @@ export default function MyPage() {
       settingsPage={settingsPage} setSettingsPage={setSettingsPage} settingsDirection={settingsDirection} settingsPageTitle={settingsPageTitle}
       user={user}
       neumorphism={neumorphism} setNeumorphism={setNeumorphism}
+      setShowPaywall={setShowPaywall}
       rolloverBudget={rolloverBudget} setRolloverBudget={setRolloverBudget}
       weekStartDay={weekStartDay} setWeekStartDay={setWeekStartDay} sortOrder={sortOrder} setSortOrder={setSortOrder}
       showCardBilling={showCardBilling} setShowCardBilling={setShowCardBilling}
@@ -1262,6 +1263,7 @@ export default function MyPage() {
       <>
       <MyPageNeu
         themeData={t} loadError={loadError} fileRef={fileRef}
+        setShowPaywall={setShowPaywall}
         profileImg={profileImg} handleProfileImg={handleProfileImg}
         nickname={nickname} setNickname={setNickname} editingNick={editingNick} setEditingNick={setEditingNick} handleNicknameSave={handleNicknameSave}
         user={user} setSettingsPage={setSettingsPage}
@@ -1298,6 +1300,7 @@ export default function MyPage() {
       />
       {neuSettingsSheet}
       {deleteAccountSheet}
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
       </>
     )
   }

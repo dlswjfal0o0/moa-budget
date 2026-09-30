@@ -1,4 +1,5 @@
 import { useTheme } from '../contexts/ThemeContext'
+import { getColoredShadow } from '../utils/neuColors'
 
 export function ProBadge({ style }) {
   return (
@@ -21,15 +22,16 @@ function LockIcon({ color = '#191F28', size = 18 }) {
 // 무료 유저에게 잠긴 기능 자리를 대체해 보여주는 공용 컴포넌트.
 // variant='card': 섹션 전체 대체용, variant='compact': 한 줄짜리 인라인 잠금 표시용
 export default function LockedFeature({ title, description, onPress, variant = 'card' }) {
-  const { themeData: t } = useTheme() || {}
+  const { themeData: t, neumorphism } = useTheme() || {}
   const primary = t?.primary || '#3182F6'
+  const coloredShadow = neumorphism ? getColoredShadow(primary) : null
 
   if (variant === 'compact') {
     return (
-      <button onClick={onPress} style={{
+      <button onClick={onPress} className={neumorphism ? 'neu-card' : undefined} style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 8,
         padding: '10px 12px', borderRadius: 12, border: 'none',
-        background: t?.primaryLight || '#E8F3FF', cursor: 'pointer', textAlign: 'left',
+        background: neumorphism ? undefined : (t?.primaryLight || '#E8F3FF'), cursor: 'pointer', textAlign: 'left',
       }}>
         <LockIcon color={primary} size={16} />
         <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: primary }}>
@@ -41,10 +43,11 @@ export default function LockedFeature({ title, description, onPress, variant = '
   }
 
   return (
-    <button onClick={onPress} style={{
+    <button onClick={onPress} className={neumorphism ? 'neu-card' : undefined} style={{
       width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-      padding: '32px 20px', borderRadius: 20, border: `1.5px dashed ${primary}66`,
-      background: t?.card || '#fff', cursor: 'pointer', textAlign: 'center',
+      padding: '32px 20px', borderRadius: 20,
+      border: neumorphism ? 'none' : `1.5px dashed ${primary}66`,
+      background: neumorphism ? undefined : (t?.card || '#fff'), cursor: 'pointer', textAlign: 'center',
     }}>
       <LockIcon color={primary} size={26} />
       <p style={{ fontSize: 15, fontWeight: 700, color: t?.text || '#191F28' }}>✨ {title}</p>
@@ -54,6 +57,7 @@ export default function LockedFeature({ title, description, onPress, variant = '
       <span style={{
         marginTop: 4, padding: '9px 18px', borderRadius: 999,
         background: primary, color: '#fff', fontSize: 13, fontWeight: 700,
+        boxShadow: neumorphism ? coloredShadow.raisedSm : undefined,
       }}>Pro 구독하고 확인하기</span>
     </button>
   )

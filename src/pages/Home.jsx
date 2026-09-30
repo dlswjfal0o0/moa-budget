@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { callAI } from '../utils/aiClient'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
@@ -20,6 +20,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 import HomeNeu from './HomeNeu'
+import CreditCardBills from '../components/CreditCardBills'
 import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
@@ -158,6 +159,13 @@ export default function Home() {
   const now = new Date()
   const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
   const [fixedExpenses, setFixedExpenses] = useState([])
+  // 신용카드 대금은 전월 사용분으로 결산한다.
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth()+1).padStart(2,'0')}`
+  const [prevTransactions, setPrevTransactions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`moa_txns_${prevMonthStr}`) || '[]') } catch { return [] }
+  })
+  const [billBusyCardId, setBillBusyCardId] = useState(null)
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
@@ -225,6 +233,19 @@ export default function Home() {
         setLoadError('거래내역을 불러오지 못했어요.')
     })
   }, [user])
+
+  // 신용카드 대금 결산용 전월 내역 — 신용카드가 있을 때만 불러온다
+  const hasCreditCard = cards.some(c => c.cardType === 'credit')
+  useEffect(() => {
+    if (!user || !hasCreditCard) return
+    const q = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('month', '==', prevMonthStr))
+    getDocs(q).then(snap => {
+        const txns = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        setPrevTransactions(txns)
+        localStorage.setItem(`moa_txns_${prevMonthStr}`, JSON.stringify(txns))
+    }).catch(err => console.error('[Home] 전월 거래내역 로딩 실패', err))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, hasCreditCard])
 
   const saveBudgets = async (updated) => {
     setBudgets(updated)
@@ -354,6 +375,11 @@ export default function Home() {
   // 신용카드 추적 방식에 따라 집계 제외 여부 판단
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    // 홈에서 자동 기재한 신용카드 대금: 카드 사용이 이미 지출로 잡히는 경우(Pro 아님 / 지출 모드) 이중 집계 방지
+    if (t.billingCardId) {
+      if (!isPro) return true
+      return cards.find(c => c.id === t.billingCardId)?.creditTracking !== 'billing'
+    }
     if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       // 대금 납부: billing 모드에서는 지출로 집계
@@ -400,6 +426,84 @@ export default function Home() {
   // 기본 카테고리 + 가계부에서 실제 사용된 카테고리 합산
   const allExpenseCategories = [...new Set([...(categories?.expense || DEFAULT_CATEGORIES.expense), ...expenses.map(t => t.category).filter(Boolean)])]
 
+  // 신용카드 대금: 카드별 전월 사용액 결산 + 이번 달 납부(자동 기재) 여부
+  const creditBills = cards.filter(c => c.cardType === 'credit').map(card => {
+    const paidTxn = transactions.find(t => t.billingCardId === card.id && t.billingForMonth === prevMonthStr)
+    const used = prevTransactions
+      .filter(t => t.payment === card.name && t.type === 'expense' && !t.mergedInto && !t.isHidden && !t.creditCardBilling && !t.cardBilling)
+      .reduce((s, t) => s + (t.amount || 0), 0)
+    const dueDay = parseInt(card.billingDay, 10)
+    return {
+      card, paidTxn, paid: !!paidTxn,
+      amount: paidTxn ? paidTxn.amount : used,
+      dueLabel: dueDay ? `${now.getMonth() + 1}/${dueDay}` : '',
+    }
+  })
+  const billMonthLabel = `${prevMonthDate.getMonth() + 1}월`
+
+  const writeDemoTxns = (update) => {
+    const key = `moa_txns_${monthStr}`
+    const next = update(JSON.parse(localStorage.getItem(key) || '[]'))
+    localStorage.setItem(key, JSON.stringify(next))
+  }
+
+  const toggleCreditBill = async (bill) => {
+    if (billBusyCardId) return
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (!isDemo && !user) return
+    const { card } = bill
+    if (bill.paid) {
+      if (!window.confirm(`${card.name} 대금 납부 내역을 가계부에서 삭제할까요?`)) return
+      setBillBusyCardId(card.id)
+      try {
+        if (isDemo) writeDemoTxns(txns => txns.filter(t => t.id !== bill.paidTxn.id))
+        else await deleteDoc(doc(db, 'transactions', bill.paidTxn.id))
+        setTransactions(prev => {
+          const next = prev.filter(t => t.id !== bill.paidTxn.id)
+          if (!isDemo) localStorage.setItem(`moa_txns_${monthStr}`, JSON.stringify(next))
+          return next
+        })
+      } catch (err) {
+        console.error('[Home] 신용카드 대금 내역 삭제 실패', err)
+        alert('삭제에 실패했어요. 잠시 후 다시 시도해주세요.')
+      }
+      setBillBusyCardId(null)
+      return
+    }
+    if (!card.linkedAccount || bill.amount <= 0) return
+    // 기재 날짜 = 이번 달 카드 결제일 (말일 초과 시 말일로 보정, 결제일 미설정 시 오늘)
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const dueDay = parseInt(card.billingDay, 10)
+    const day = dueDay ? Math.min(dueDay, lastDay) : now.getDate()
+    const data = {
+      type: 'expense', title: '신용카드 대금 납부', amount: bill.amount, category: '금융',
+      date: `${monthStr}-${String(day).padStart(2, '0')}`, time: '12:00',
+      memo: `${card.name} ${billMonthLabel} 사용분`, payment: card.linkedAccount,
+      cardBilling: false, creditCardBilling: true, toAccount: '', isLoan: false, installmentMonths: null,
+      billingCardId: card.id, billingForMonth: prevMonthStr,
+      uid: user ? user.uid : 'demo', month: monthStr, createdAt: new Date().toISOString(),
+    }
+    setBillBusyCardId(card.id)
+    try {
+      let id
+      if (isDemo) {
+        id = `demo-${Date.now()}`
+        writeDemoTxns(txns => [{ ...data, id }, ...txns])
+      } else {
+        id = (await addDoc(collection(db, 'transactions'), data)).id
+      }
+      setTransactions(prev => {
+        const next = [{ ...data, id }, ...prev]
+        if (!isDemo) localStorage.setItem(`moa_txns_${monthStr}`, JSON.stringify(next))
+        return next
+      })
+    } catch (err) {
+      console.error('[Home] 신용카드 대금 기재 실패', err)
+      alert('저장에 실패했어요. 잠시 후 다시 시도해주세요.')
+    }
+    setBillBusyCardId(null)
+  }
+
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 12,
     border: '1.5px solid #E5E8EB', fontSize: 15, outline: 'none',
@@ -420,9 +524,11 @@ export default function Home() {
 
   if (neumorphism) {
     return (
+      <>
       <HomeNeu
         loadError={loadError}
         themeData={themeData}
+        setShowPaywall={setShowPaywall}
         now={now}
         fmt={fmt}
         totalIncome={totalIncome}
@@ -442,9 +548,13 @@ export default function Home() {
         saveBudgets={saveBudgets}
         upcomingPayments={upcomingPayments}
         categoryData={categoryData} colorMap={colorMap}
+        creditBills={creditBills} billMonthLabel={billMonthLabel}
+        toggleCreditBill={toggleCreditBill} billBusyCardId={billBusyCardId}
         transactions={transactions}
         navigate={navigate}
       />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
+      </>
     )
   }
 
@@ -643,7 +753,7 @@ export default function Home() {
                       <p style={{ fontSize: 13, color: '#8B95A1' }}>매월 {f.dueDay}일</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 6 }}>-{fmt(f.amount)}원</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 3 }}>-{fmt(f.amount)}원</p>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 9999, padding: '3px 9px' }}>
                         {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
                       </span>
@@ -654,6 +764,13 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* 신용카드 대금 — 신용카드 등록자에게만 노출 */}
+        <div style={stagger(3)}>
+          <CreditCardBills bills={creditBills} billMonthLabel={billMonthLabel} fmt={fmt}
+            primary={themeData.primary} onToggle={toggleCreditBill} busyCardId={billBusyCardId}
+            cardBg={themeData.card || '#fff'} textColor={themeData.text || '#191F28'} />
+        </div>
 
         {/* 카테고리별 지출 */}
         <div style={{ background: themeData.card || '#fff', borderRadius: 20, padding: '20px', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...stagger(3) }}>

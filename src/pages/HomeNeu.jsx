@@ -2,9 +2,12 @@ import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
+import LockedFeature from '../components/LockedFeature'
+import { useIsPro } from '../contexts/PurchasesContext'
 import ThinkingOrbs from '../components/ThinkingOrbs'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
+import CreditCardBills from '../components/CreditCardBills'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -95,13 +98,15 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
 }
 
 export default function HomeNeu({
-  loadError, themeData, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
+  loadError, themeData, setShowPaywall, now, fmt, totalIncome, totalExpense, budgets, budgetsWithStats,
   showAddBudget, setShowAddBudget, newBudget, setNewBudget, allExpenseCategories,
   handleAddBudget, editingBudgetId, setEditingBudgetId, editBudgetData, setEditBudgetData, handleSaveBudget,
   expandedBudgetEditId, setExpandedBudgetEditId, expandedTipIds, setExpandedTipIds,
   loadingInsightId, getAiInsight, saveBudgets, upcomingPayments, categoryData, colorMap,
+  creditBills, billMonthLabel, toggleCreditBill, billBusyCardId,
   transactions, navigate,
 }) {
+  const isPro = useIsPro()
   const primary = themeData.primary
   const coloredShadow = getColoredShadow(primary)
 
@@ -255,7 +260,16 @@ export default function HomeNeu({
         </div>
 
         {/* 다가오는 결제 */}
-        {upcomingPayments.length > 0 && (
+        {!isPro ? (
+          <div style={{ marginBottom: 32 }}>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>다가오는 결제</p>
+            <LockedFeature
+              title="다가오는 결제"
+              description="고정지출을 등록하면 결제일이 다가올 때 미리 알려드려요."
+              onPress={() => setShowPaywall(true)}
+            />
+          </div>
+        ) : upcomingPayments.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <p style={{ fontSize: 18, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>다가오는 결제</p>
             <div className="neu-card" style={{ borderRadius: 22, padding: '8px 16px' }}>
@@ -273,7 +287,7 @@ export default function HomeNeu({
                       <p style={{ fontSize: 13, color: '#8B95A1' }}>매월 {f.dueDay}일</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 6 }}>-{fmt(f.amount)}원</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 3 }}>-{fmt(f.amount)}원</p>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 9999, padding: '3px 9px' }}>
                         {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
                       </span>
@@ -284,6 +298,10 @@ export default function HomeNeu({
             </div>
           </div>
         )}
+
+        {/* 신용카드 대금 — 신용카드 등록자에게만 노출 */}
+        <CreditCardBills neu bills={creditBills} billMonthLabel={billMonthLabel} fmt={fmt}
+          primary={primary} onToggle={toggleCreditBill} busyCardId={billBusyCardId} />
 
         {/* 카테고리별 지출 */}
         <div className="neu-card" style={{ borderRadius: 22, padding: '20px', marginBottom: 32 }}>
