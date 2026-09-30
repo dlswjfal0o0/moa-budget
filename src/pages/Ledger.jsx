@@ -22,6 +22,7 @@ import { useLoans } from '../contexts/LoansContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
 import LedgerNeu from './LedgerNeu'
+import DateTimeField from '../components/DateTimeField'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -1304,10 +1305,10 @@ export default function Ledger() {
         )}
         {period === '직접' && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+            <DateTimeField placeholder="시작일" value={customStart} onChange={e => setCustomStart(e.target.value)}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
             <span style={{ display: 'flex', alignItems: 'center', color: '#888', fontSize: 13 }}>~</span>
-            <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+            <DateTimeField placeholder="종료일" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
           </div>
         )}
@@ -1926,10 +1927,10 @@ export default function Ledger() {
           )}
           {searchPeriod === '직접' && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              <input type="date" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
+              <DateTimeField placeholder="시작일" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
                 style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
               <span style={{ display: 'flex', alignItems: 'center', color: '#888', fontSize: 13 }}>~</span>
-              <input type="date" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
+              <DateTimeField placeholder="종료일" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
                 style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: '1.5px solid #e8e8e8', fontSize: 13, outline: 'none' }} />
             </div>
           )}

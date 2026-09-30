@@ -8,6 +8,7 @@ import { ProBadge } from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 import { getColoredShadow } from '../utils/neuColors'
+import DateTimeField from '../components/DateTimeField'
 
 function NeuSIcon({ bg, children }) {
   return (
@@ -307,7 +308,7 @@ export default function SettingsNeu(props) {
                   }} primary={primary} borderBottom />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', opacity: notifyPaymentEnabled ? 1 : 0.4 }}>
                   <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>알림 시각</p>
-                  <input type="time" className="neu-inset" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
+                  <DateTimeField type="time" ariaLabel="알림 시각" className="neu-inset" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
                     onChange={e => setNotifyPaymentTime(e.target.value)}
                     style={{ border: 'none', borderRadius: 10, padding: '8px 10px', fontSize: 14, color: '#191F28' }} />
                 </div>

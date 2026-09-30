@@ -8,6 +8,7 @@ import ThinkingOrbs from '../components/ThinkingOrbs'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
 import CreditCardBills from '../components/CreditCardBills'
+import DateTimeField from '../components/DateTimeField'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -44,9 +45,9 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input className="neu-inset" style={{ ...neuInputStyle, flex: 1 }} type="date" value={data.startDate} onChange={e => setData(d => ({ ...d, startDate: e.target.value }))} />
+            <DateTimeField className="neu-inset" style={{ ...neuInputStyle, flex: 1 }} placeholder="시작일" value={data.startDate} onChange={e => setData(d => ({ ...d, startDate: e.target.value }))} />
             <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
-            <input className="neu-inset" style={{ ...neuInputStyle, flex: 1 }} type="date" value={data.endDate} onChange={e => setData(d => ({ ...d, endDate: e.target.value }))} />
+            <DateTimeField className="neu-inset" style={{ ...neuInputStyle, flex: 1 }} placeholder="종료일" value={data.endDate} onChange={e => setData(d => ({ ...d, endDate: e.target.value }))} />
           </div>
         </div>
         <div>
@@ -65,7 +66,7 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
             })}
           </div>
           {data.repeat === 'period' && (
-            <input className="neu-inset" style={{ ...neuInputStyle, marginTop: 10 }} type="date" value={data.repeatUntil}
+            <DateTimeField className="neu-inset" style={{ ...neuInputStyle, marginTop: 10 }} placeholder="반복 종료일" value={data.repeatUntil}
               onChange={e => setData(d => ({ ...d, repeatUntil: e.target.value }))} />
           )}
         </div>

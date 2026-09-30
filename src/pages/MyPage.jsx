@@ -23,6 +23,7 @@ import { usePurchases } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
 import MyPageNeu from './MyPageNeu'
 import SettingsNeu from './SettingsNeu'
+import DateTimeField from '../components/DateTimeField'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
 const APP_VERSION = __APP_VERSION__
@@ -986,7 +987,7 @@ export default function MyPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', opacity: notifyPaymentEnabled ? 1 : 0.4 }}>
                       <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>알림 시각</p>
-                      <input type="time" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
+                      <DateTimeField type="time" ariaLabel="알림 시각" value={notifyPaymentTime} disabled={!notifyPaymentEnabled}
                         onChange={e => setNotifyPaymentTime(e.target.value)}
                         style={{ border: '1.5px solid #E5E8EB', borderRadius: 10, padding: '8px 10px', fontSize: 14, color: '#191F28', background: '#F7F8FA' }} />
                     </div>

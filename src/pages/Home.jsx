@@ -22,6 +22,7 @@ import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 import HomeNeu from './HomeNeu'
 import CreditCardBills from '../components/CreditCardBills'
 import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
+import DateTimeField from '../components/DateTimeField'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -868,9 +869,9 @@ export default function Home() {
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간 <span style={{ color: '#FF5A5F' }}>*</span></p>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
+                <DateTimeField style={{ ...inputStyle, flex: 1 }} placeholder="시작일" value={newBudget.startDate} onChange={e => setNewBudget(b => ({ ...b, startDate: e.target.value }))} />
                 <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
-                <input style={{ ...inputStyle, flex: 1 }} type="date" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
+                <DateTimeField style={{ ...inputStyle, flex: 1 }} placeholder="종료일" value={newBudget.endDate} onChange={e => setNewBudget(b => ({ ...b, endDate: e.target.value }))} />
               </div>
             </div>
             <div>
@@ -889,7 +890,7 @@ export default function Home() {
                 })}
               </div>
               {newBudget.repeat === 'period' && (
-                <input style={{ ...inputStyle, marginTop: 10 }} type="date" value={newBudget.repeatUntil}
+                <DateTimeField style={{ ...inputStyle, marginTop: 10 }} placeholder="반복 종료일" value={newBudget.repeatUntil}
                   onChange={e => setNewBudget(b => ({ ...b, repeatUntil: e.target.value }))} />
               )}
             </div>
@@ -937,9 +938,9 @@ export default function Home() {
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
+                <DateTimeField style={{ ...inputStyle, flex: 1 }} placeholder="시작일" value={editBudgetData.startDate} onChange={e => setEditBudgetData(d => ({ ...d, startDate: e.target.value }))} />
                 <span style={{ color: '#8B95A1', fontSize: 15 }}>~</span>
-                <input style={{ ...inputStyle, flex: 1 }} type="date" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
+                <DateTimeField style={{ ...inputStyle, flex: 1 }} placeholder="종료일" value={editBudgetData.endDate} onChange={e => setEditBudgetData(d => ({ ...d, endDate: e.target.value }))} />
               </div>
             </div>
             <div>
@@ -958,7 +959,7 @@ export default function Home() {
                 })}
               </div>
               {editBudgetData.repeat === 'period' && (
-                <input style={{ ...inputStyle, marginTop: 10 }} type="date" value={editBudgetData.repeatUntil}
+                <DateTimeField style={{ ...inputStyle, marginTop: 10 }} placeholder="반복 종료일" value={editBudgetData.repeatUntil}
                   onChange={e => setEditBudgetData(d => ({ ...d, repeatUntil: e.target.value }))} />
               )}
             </div>

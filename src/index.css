@@ -70,6 +70,12 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(49,130,246,0.12);
 }
 
+/* DateTimeField — 실제 input은 투명 오버레이라, 박스(div)에 같은 포커스 링을 준다 */
+.dt-field:focus-within {
+  border-color: #3182F6 !important;
+  box-shadow: 0 0 0 3px rgba(49,130,246,0.12);
+}
+
 /* 테두리 없는 입력창(금액, 제목 등) — 각진 포커스 박스가 카드 디자인과 어긋나 보이므로 제거 */
 input.input-plain:focus, textarea.input-plain:focus {
   border-color: transparent !important;
@@ -79,7 +85,7 @@ input.input-plain:focus, textarea.input-plain:focus {
 /* 뉴모피즘 입력창(.neu-inset) 포커스 — 각진 파란 테두리/외곽 그림자 대신
    기존 음각 그림자를 유지한 채 안쪽 테두리에 옅은 컬러 링만 더한다.
    --neu-focus는 사용처(BudgetForm 등)에서 테마 primary 색으로 지정. */
-input.neu-inset:focus, textarea.neu-inset:focus {
+input.neu-inset:focus, textarea.neu-inset:focus, .dt-field.neu-inset:focus-within {
   border-color: transparent !important;
   box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light),
     inset 0 0 0 2px var(--neu-focus, rgba(49,130,246,0.35)) !important;
