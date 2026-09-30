@@ -254,6 +254,11 @@ export default function Analysis() {
   const showLoan = localStorage.getItem('moa_showLoan') === 'true'
   const getCreditCard = (p) => cards.find(c => c.name === p && c.cardType === 'credit')
   const isCreditExcluded = (t) => {
+    // 홈에서 자동 기재한 신용카드 대금: 카드 사용이 이미 지출로 잡히는 경우(Pro 아님 / 지출 모드) 이중 집계 방지
+    if (t.billingCardId) {
+      if (!isPro) return true
+      return cards.find(c => c.id === t.billingCardId)?.creditTracking !== 'billing'
+    }
     if (!isPro) return false // Pro 아니면 대금 기준 추적을 적용하지 않고 항상 지출로 집계
     if (t.cardBilling) {
       const card = getCreditCard(t.payment)
