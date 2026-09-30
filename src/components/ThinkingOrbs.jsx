@@ -1,88 +1,37 @@
-import { useEffect, useRef } from 'react'
-
-// 구 표면에 고르게 흩뿌린 점(피보나치 구). 한 번만 계산해 모든 인스턴스가 공유한다.
-const POINT_COUNT = 140
-const SPHERE_POINTS = (() => {
-  const pts = []
-  const golden = Math.PI * (3 - Math.sqrt(5))
-  for (let i = 0; i < POINT_COUNT; i++) {
-    const y = 1 - (i / (POINT_COUNT - 1)) * 2
-    const r = Math.sqrt(1 - y * y)
-    const theta = golden * i
-    pts.push([Math.cos(theta) * r, y, Math.sin(theta) * r])
-  }
-  return pts
-})()
-
-const TILT = 0.38 // 살짝 기울여서 위에서 내려다보는 입체감을 준다
-
-// 점으로 된 구가 천천히 회전하는 캔버스. 가까운 점일수록 크고 진하게 그린다.
-function DotSphere({ color, size }) {
-  const canvasRef = useRef(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = size * dpr
-    canvas.height = size * dpr
-    const ctx = canvas.getContext('2d')
-    ctx.scale(dpr, dpr)
-
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const speed = reduceMotion ? 0.00035 : 0.0011
-    const half = size / 2
-    const cosT = Math.cos(TILT)
-    const sinT = Math.sin(TILT)
-    const dotBase = Math.max(0.6, size / 40)
-    let raf
-    let start
-
-    const draw = (now) => {
-      if (start == null) start = now
-      const t = now - start
-      const angle = t * speed
-      // 은은한 호흡: 구가 아주 조금 부풀었다 줄어든다
-      const radius = half * (0.84 + Math.sin(t * 0.0021) * 0.05)
-      const cosA = Math.cos(angle)
-      const sinA = Math.sin(angle)
-
-      ctx.clearRect(0, 0, size, size)
-      ctx.fillStyle = color
-      for (const [x, y, z] of SPHERE_POINTS) {
-        // Y축 회전 → X축 기울기
-        const x1 = x * cosA + z * sinA
-        const z1 = -x * sinA + z * cosA
-        const y2 = y * cosT - z1 * sinT
-        const z2 = y * sinT + z1 * cosT
-        const depth = (z2 + 1) / 2 // 0(뒤) ~ 1(앞)
-        // 앞쪽 점이 한 번씩 반짝이며 지나가 "생각 중" 느낌을 더한다
-        const twinkle = 0.5 + 0.5 * Math.sin(t * 0.004 + x * 6 + y * 4)
-        ctx.globalAlpha = 0.12 + depth * (0.55 + twinkle * 0.33)
-        ctx.beginPath()
-        ctx.arc(half + x1 * radius, half + y2 * radius, dotBase * (0.45 + depth * 0.75), 0, Math.PI * 2)
-        ctx.fill()
-      }
-      ctx.globalAlpha = 1
-      raf = requestAnimationFrame(draw)
-    }
-    raf = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(raf)
-  }, [color, size])
-
-  return <canvas ref={canvasRef} aria-hidden="true" style={{ width: size, height: size, display: 'block', flexShrink: 0 }} />
+// 지갑에서 카드와 지폐가 번갈아 빠져나왔다 들어가는 로딩 아이콘.
+// 카드/지폐는 지갑 앞판 뒤에 그려서, 아래로 내려가면 지갑 안으로 쏙 들어간 것처럼 보인다.
+// 움직임은 index.css의 .ai-wallet-* 키프레임이 담당한다.
+function WalletLoader({ color, size }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" style={{ display: 'block', flexShrink: 0, overflow: 'visible' }}>
+      {/* 지폐 */}
+      <g className="ai-wallet-bill">
+        <rect x="8" y="9" width="24" height="14" rx="2" fill={color} opacity="0.3" />
+        <circle cx="20" cy="16" r="3.2" fill="none" stroke={color} strokeWidth="1.4" opacity="0.7" />
+      </g>
+      {/* 카드 */}
+      <g className="ai-wallet-card">
+        <rect x="11" y="7" width="22" height="14" rx="2.5" fill={color} opacity="0.62" />
+        <rect x="11" y="10.5" width="22" height="2.6" fill="#fff" opacity="0.55" />
+      </g>
+      {/* 지갑 몸통 + 똑딱이 */}
+      <rect x="4" y="17" width="32" height="19" rx="5" fill={color} />
+      <rect x="25" y="23" width="11" height="7" rx="3.5" fill="#fff" opacity="0.9" />
+      <circle cx="29" cy="26.5" r="1.4" fill={color} />
+    </svg>
+  )
 }
 
-// AI 분석 로딩 표시.
-// - label 없음: 점 구만 표시
-// - label 있음: 구 + 빛이 훑고 지나가는 문구
+// AI 분석 로딩 표시. (파일/컴포넌트 이름은 기존 호출부 호환을 위해 유지)
+// - label 없음: 지갑 아이콘만 표시
+// - label 있음: 지갑 + 빛이 훑고 지나가는 문구
 export default function ThinkingOrbs({ color = '#4F46E5', size = 36, label, fontSize = 15 }) {
   if (!label) {
-    return <span role="status" aria-label="AI가 분석하고 있어요" style={{ display: 'inline-flex' }}><DotSphere color={color} size={size} /></span>
+    return <span role="status" aria-label="AI가 분석하고 있어요" style={{ display: 'inline-flex' }}><WalletLoader color={color} size={size} /></span>
   }
   return (
     <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: size >= 32 ? 12 : 8, '--orb-color': color }}>
-      <DotSphere color={color} size={size} />
+      <WalletLoader color={color} size={size} />
       <span className="thinking-orbs-text" style={{ fontSize }}>{label}</span>
     </span>
   )
