@@ -501,8 +501,17 @@ export default function Calendar() {
                   <div key={f.id} style={{ borderRadius: 20, border: isDone ? `1.5px solid #F2F4F6` : `1.5px solid ${themeData.primary}33`, overflow: 'hidden', background: isDone ? '#F7F8FA' : '#fff' }}>
                     <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                       onClick={() => setExpandedFixedId(expandedFixedId === f.id ? null : f.id)}>
-                      <input type="checkbox" checked={isDone} onChange={e => { e.stopPropagation(); handleToggleFixed(f.id) }}
-                        style={{ width: 20, height: 20, cursor: 'pointer', accentColor: themeData.primary, flexShrink: 0 }} />
+                      <span className="checkbox-box" style={{ marginTop: 0, width: 22, height: 22 }}
+                        onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={isDone} aria-label={isDone ? `${f.title} 완료 해제` : `${f.title} 완료 처리`}
+                          onChange={() => handleToggleFixed(f.id)} />
+                        <span className="checkbox-visual" aria-hidden="true"
+                          style={isDone ? { background: themeData.primary, borderColor: themeData.primary, borderRadius: 7 } : { borderRadius: 7 }}>
+                          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                            <path d="M1 5L4.5 8.5L11 1.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#C9CDD4' : '#191F28', textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {f.title}

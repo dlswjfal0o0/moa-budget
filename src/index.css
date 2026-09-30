@@ -151,6 +151,8 @@ input.neu-inset:focus, textarea.neu-inset:focus {
   border-radius: 6px;
   border: 1.5px solid #d1d6db;
   background: #fff;
+  /* 시각 요소가 input 위에 겹치므로 탭이 input에 닿도록 통과시킨다(label로 감싸지 않은 곳 대비). */
+  pointer-events: none;
   transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 .checkbox-box .checkbox-visual svg path {
