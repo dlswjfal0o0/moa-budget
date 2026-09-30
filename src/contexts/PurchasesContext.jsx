@@ -3,6 +3,7 @@ import { Purchases } from '@revenuecat/purchases-capacitor'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
+import { DEMO_DATA_EVENT, isDemoProActive } from '../utils/demoData'
 
 const PurchasesContext = createContext()
 
@@ -25,6 +26,16 @@ export function PurchasesProvider({ children }) {
   const [loading, setLoading] = useState(isConfigurable())
   const [trialStartedAt, setTrialStartedAt] = useState(null)
   const configuredRef = useRef(false)
+  // 베타 테스트 로그인(데모 모드)은 Pro 구독자로 취급 — 개발/베타 빌드에서만 켜진다 (isDemoProActive 참고)
+  const [demoPro, setDemoPro] = useState(isDemoProActive)
+
+  useEffect(() => {
+    const sync = () => setDemoPro(isDemoProActive())
+    window.addEventListener(DEMO_DATA_EVENT, sync)
+    // 실제 계정으로 로그인하면 Auth.jsx가 moa_demo_mode를 지우므로 인증 상태가 바뀔 때도 다시 확인한다
+    const unsub = onAuthStateChanged(auth, sync)
+    return () => { window.removeEventListener(DEMO_DATA_EVENT, sync); unsub() }
+  }, [])
 
   const applyCustomerInfo = useCallback((customerInfo) => {
     const entitlement = customerInfo?.entitlements?.active?.[PRO_ENTITLEMENT_ID]
@@ -120,16 +131,18 @@ export function PurchasesProvider({ children }) {
     return customerInfo
   }
 
+  const subscribed = isSubscribed || demoPro
+  const currentProductId = demoPro && !isSubscribed ? 'promo_monthly' : activeProductId
   const trialEndsAt = trialStartedAt ? new Date(trialStartedAt.getTime() + TRIAL_DAYS * 86400000) : null
   const now = new Date()
-  const isTrialActive = !isSubscribed && !!trialEndsAt && now < trialEndsAt
+  const isTrialActive = !subscribed && !!trialEndsAt && now < trialEndsAt
   const trialDaysLeft = isTrialActive ? Math.max(0, Math.ceil((trialEndsAt - now) / 86400000)) : 0
   // 웹에는 결제 수단이 없고 기존 웹 사용자는 이미 전체 무료로 써왔으므로, Pro 게이팅은 네이티브 앱에서만 적용한다.
-  const isPro = !isNative() || isSubscribed || isTrialActive
+  const isPro = !isNative() || subscribed || isTrialActive
 
   return (
     <PurchasesContext.Provider value={{
-      isPro, isSubscribed, activeProductId, isTrialActive, trialEndsAt, trialDaysLeft,
+      isPro, isSubscribed: subscribed, activeProductId: currentProductId, isTrialActive, trialEndsAt, trialDaysLeft,
       loading, getOfferings, purchasePackage, restorePurchases,
     }}>
       {children}

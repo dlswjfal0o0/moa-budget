@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { injectDemoData } from '../../utils/demoData'
+import { injectDemoData, DEMO_ACCOUNT_EMAIL } from '../../utils/demoData'
 import FixedPortal from '../../components/FixedPortal'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
@@ -28,12 +28,6 @@ const startFreeTrial = async (uid) => {
   await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
   localStorage.setItem('moa_show_trial_popup', 'true')
 }
-
-// App Store 심사용 데모 계정.
-// 이 이메일로 로그인하면 데모 데이터가 자동으로 로드됩니다(심사자 전용).
-// Firebase Authentication 콘솔에서 이 이메일 + 비밀번호로 계정을 미리 만들어 두세요.
-// 원하는 주소로 바꿔도 되며, 심사 메모(App Review Information)에 아이디/비번을 적어주면 됩니다.
-const DEMO_ACCOUNT_EMAIL = 'appreview@moa-budget.com'
 
 // 약관/연령 동의용 커스텀 체크박스. 네이티브 accentColor는 브라우저마다
 // 렌더링이 달라 보여서, 체크마크 드로잉 + 스프링 팝 애니메이션을 직접 그린다.

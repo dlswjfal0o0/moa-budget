@@ -370,8 +370,18 @@ export default function MyPage() {
     haptic.selection()
     setSelectedCard(card)
     setCardDetailTab('benefits')
-    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
     setCardHistoryMonth(null)
+    // 데모 모드는 로그인 사용자가 없으므로 로컬 시드 거래 내역에서 찾는다
+    if (localStorage.getItem('moa_demo_mode') === 'true') {
+      const local = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key?.startsWith('moa_txns_')) local.push(...JSON.parse(localStorage.getItem(key) || '[]'))
+      }
+      setCardTransactions(local.filter(tx => tx.payment === card.name))
+      return
+    }
+    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
     getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
   }
 
@@ -1436,14 +1446,7 @@ export default function MyPage() {
               }}>
                 {/* 카드 본문 – 탭하면 상세 모달 */}
                 <div style={{ padding: '12px 14px', cursor: 'pointer' }}
-                  onClick={() => {
-                    haptic.selection()
-                    setSelectedCard(card)
-                    setCardDetailTab('benefits')
-                    const q2 = query(collection(db, 'transactions'), where('uid', '==', user.uid), where('payment', '==', card.name))
-                    setCardHistoryMonth(null)
-                    getDocs(q2).then(snap => setCardTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-                  }}>
+                  onClick={() => handleCardClick(card)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: t.text || '#111' }}>{card.name}</span>
