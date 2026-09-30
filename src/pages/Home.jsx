@@ -746,7 +746,7 @@ export default function Home() {
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액 <span style={{ color: '#FF5A5F' }}>*</span></p>
-              <AmountInput style={inputStyle} placeholder="예: 300000" value={newBudget.amount} onChange={v => setNewBudget(b => ({ ...b, amount: v }))} />
+              <AmountInput style={inputStyle} placeholder="예: 300,000" value={newBudget.amount} onChange={v => setNewBudget(b => ({ ...b, amount: v }))} />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간 <span style={{ color: '#FF5A5F' }}>*</span></p>
@@ -815,7 +815,7 @@ export default function Home() {
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
-              <AmountInput style={inputStyle} placeholder="예: 300000" value={editBudgetData.amount} onChange={v => setEditBudgetData(d => ({ ...d, amount: v }))} />
+              <AmountInput style={inputStyle} placeholder="예: 300,000" value={editBudgetData.amount} onChange={v => setEditBudgetData(d => ({ ...d, amount: v }))} />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>

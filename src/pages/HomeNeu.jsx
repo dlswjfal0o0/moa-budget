@@ -36,7 +36,7 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
         </div>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
-          <AmountInput className="neu-inset" style={neuInputStyle} placeholder="예: 300000" value={data.amount} onChange={v => setData(d => ({ ...d, amount: v }))} />
+          <AmountInput className="neu-inset" style={neuInputStyle} placeholder="예: 300,000" value={data.amount} onChange={v => setData(d => ({ ...d, amount: v }))} />
         </div>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>
