@@ -1,12 +1,27 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { getColoredShadow } from '../utils/neuColors'
 
+// Pro 전용 기능 옆에 붙는 마크. 테마 색을 따라가도록 primary 배경을 쓴다.
 export function ProBadge({ style }) {
+  const { themeData: t } = useTheme() || {}
   return (
     <span style={{
-      fontSize: 10, fontWeight: 800, color: '#fff', background: '#191F28',
-      padding: '2px 6px', borderRadius: 6, letterSpacing: 0.3, flexShrink: 0, ...style,
-    }}>✨ PRO</span>
+      fontSize: 10, fontWeight: 800, color: '#fff', background: t?.primary || '#3182F6',
+      padding: '2px 6px', borderRadius: 6, letterSpacing: 0.3, lineHeight: 1.3, flexShrink: 0, ...style,
+    }}>PRO</span>
+  )
+}
+
+// 닉네임 옆에 붙는 구독 등급 마크. 유료 구독 중엔 Pro 구독자, 아니면(무료체험 포함) 일반으로 표시.
+// 테마색 헤더 배너 위에 올라가므로 흰색 반투명 톤을 쓴다.
+export function SubscriptionBadge({ isSubscribed, style }) {
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, borderRadius: 9999, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap',
+      color: isSubscribed ? '#fff' : 'rgba(255,255,255,0.85)',
+      background: isSubscribed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+      ...style,
+    }}>{isSubscribed ? '✨ Pro 구독자' : '일반'}</span>
   )
 }
 
@@ -52,7 +67,7 @@ export default function LockedFeature({ title, description, onPress, variant = '
       <LockIcon color={primary} size={26} />
       <p style={{ fontSize: 15, fontWeight: 700, color: t?.text || '#191F28' }}>✨ {title}</p>
       {description && (
-        <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{description}</p>
+        <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{description}</p>
       )}
       <span style={{
         marginTop: 4, padding: '9px 18px', borderRadius: 999,

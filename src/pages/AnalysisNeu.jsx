@@ -5,6 +5,7 @@ import AmountInput from '../components/AmountInput'
 import { ProBadge } from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
 import ThinkingOrbs from '../components/ThinkingOrbs'
+import AiConsumptionReport from '../components/AiConsumptionReport'
 import { UtilityIcon, UtilityChart } from './Analysis'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -51,7 +52,7 @@ export default function AnalysisNeu(props) {
     totalExpense, totalIncome, lastTotalExpense, lastTotalIncome, expenseDiff, incomeDiff,
     dailyData, maxExpense,
     categoryData, colorMap,
-    aiFeedbackData, aiFeedbackRaw, loadingAi, getAiFeedback,
+    aiFeedbackData, aiFeedbackRaw, loadingAi, getAiFeedback, aiIsSaved, aiAnalysisStyle, byCategory,
     expenses,
     expandedPayments, setExpandedPayments,
     utilities, utilityTypes,
@@ -225,106 +226,13 @@ export default function AnalysisNeu(props) {
           </div>
 
           {/* AI 소비 분석 */}
-          <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>AI 소비 분석</p>
-              <button onClick={getAiFeedback} disabled={loadingAi}
-                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', background: loadingAi ? '#E5E8EB' : primary, color: loadingAi ? '#8B95A1' : '#fff', boxShadow: loadingAi ? 'none' : coloredShadow.raisedSm, fontSize: 13, fontWeight: 500, cursor: loadingAi ? 'not-allowed' : 'pointer' }}>
-                {loadingAi ? '분석 중...' : '✨ AI 분석'}
-              </button>
-            </div>
-            {loadingAi && (
-              <div style={{ textAlign: 'center', padding: '28px 0' }}>
-                <ThinkingOrbs color={primary} size={40} label="소비 패턴을 분석하는 중...." />
-              </div>
-            )}
-            {!loadingAi && !aiFeedbackData && !aiFeedbackRaw && (
-              <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', padding: '20px 0' }}>
-                AI 분석 버튼을 눌러 소비 패턴을 확인해보세요
-              </p>
-            )}
-            {aiFeedbackData && (() => {
-              const rc = {
-                good:    { color: '#2ECC71', label: '소비 우등생이에요 🌟' },
-                warning: { color: '#f59e0b', label: '지출 관리가 필요해요 ⚠️' },
-                danger:  { color: '#FF5A5F', label: '지출이 너무 많아요 🚨' },
-              }[aiFeedbackData.rating] || { color: '#22c55e', label: '분석 완료' }
-
-              const levelColors = ['#FF5A5F', '#f97316', '#eab308', '#2ECC71', '#f59e0b']
-              const levelNames = ['위험', '주의', '보통', '양호', '우수']
-              const filledCount = Math.min(5, Math.max(1, Math.ceil((aiFeedbackData.score || 50) / 20)))
-
-              return (
-                <>
-                  {/* 점수 카드 */}
-                  <div className="neu-inset" style={{ borderRadius: 16, padding: 16, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div className="neu-card" style={{ width: 60, height: 60, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ color: rc.color, fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{aiFeedbackData.score}</span>
-                      <span style={{ color: '#8B95A1', fontSize: 10 }}>점</span>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: rc.color, marginBottom: 4 }}>{rc.label}</p>
-                      <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5, marginBottom: 8 }}>{aiFeedbackData.summary}</p>
-                      <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                        {levelColors.map((color, i) => (
-                          <div key={i} style={{ width: 15, height: 15, borderRadius: '50%', background: i < filledCount ? color : 'rgba(163,177,198,0.35)', transition: 'background 0.3s' }} />
-                        ))}
-                        <span style={{ fontSize: 11, color: '#8B95A1', marginLeft: 4 }}>{levelNames[filledCount - 1]}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 절감 포인트 */}
-                  {aiFeedbackData.cuts?.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>💡 절감 포인트</p>
-                      {aiFeedbackData.cuts.map((cut, i) => (
-                        <div key={i} className="neu-inset" style={{ borderRadius: 14, padding: '10px 12px', marginBottom: 8 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: primary, background: primaryLight, padding: '2px 10px', borderRadius: 9999 }}>{cut.category}</span>
-                            {cut.save > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>최대 {fmt(cut.save)}원 절약</span>}
-                          </div>
-                          <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{typeof cut.tip === 'string' ? cut.tip : String(cut.tip ?? '')}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* 이상 지출 */}
-                  {aiFeedbackData.unusual?.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>🚨 이상 지출 감지</p>
-                      {aiFeedbackData.unusual.map((u, i) => (
-                        <div key={i} className="neu-inset" style={{ borderRadius: 14, padding: '10px 12px', marginBottom: 6, display: 'flex', gap: 8 }}>
-                          <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
-                          <p style={{ fontSize: 13, color: '#8B95A1', lineHeight: 1.5 }}>{typeof u === 'string' ? u : (u?.tip || u?.reason || u?.description || u?.message || JSON.stringify(u))}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* 절감 목표 */}
-                  {aiFeedbackData.saving_goal > 0 && (
-                    <div className="neu-inset" style={{ borderRadius: 16, padding: '12px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: '#191F28' }}>🎯 이번 달 절감 목표</span>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>{fmt(aiFeedbackData.saving_goal)}원</span>
-                    </div>
-                  )}
-
-                  {/* 응원 메시지 */}
-                  {aiFeedbackData.message && (
-                    <div className="neu-inset" style={{ textAlign: 'center', padding: 14, borderRadius: 16 }}>
-                      <p style={{ fontSize: 14, color: primary, fontWeight: 500 }}>{aiFeedbackData.message}</p>
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-            {aiFeedbackRaw && (
-              <div className="neu-inset" style={{ borderRadius: 16, padding: 14 }}>
-                <p style={{ fontSize: 14, color: '#191F28', lineHeight: 1.7 }}>{aiFeedbackRaw}</p>
-              </div>
-            )}
+          <div className="neu-card" style={{ borderRadius: 20, padding: '20px 18px', marginBottom: 16 }}>
+            <AiConsumptionReport
+              data={aiFeedbackData} raw={aiFeedbackRaw} loading={loadingAi} saved={aiIsSaved} onAnalyze={getAiFeedback}
+              primary={primary} primaryLight={primaryLight} fmt={fmt}
+              styleLevel={aiAnalysisStyle} categorySpend={byCategory}
+              neumorphism coloredShadow={coloredShadow}
+            />
           </div>
 
           {/* 결제수단별 지출 */}
@@ -561,7 +469,7 @@ export default function AnalysisNeu(props) {
                             </span>
                           )}
                         </div>
-                        <p style={{ fontSize: 12, color: '#8B95A1', lineHeight: 1.45 }}>{item.comment}</p>
+                        <p style={{ fontSize: 13, color: '#4E5968', lineHeight: 1.6, wordBreak: 'keep-all' }}>{item.comment}</p>
                       </div>
                     </div>
                   )

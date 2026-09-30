@@ -377,7 +377,21 @@ input.neu-inset:focus, textarea.neu-inset:focus {
   transition: background 200ms ease;
 }
 /* ── Thinking Orbs (AI 분석 로딩) ─────────────────── */
-/* 점 구(canvas)는 ThinkingOrbs.jsx에서 그린다. 여기선 문구 빛 번짐만 담당 */
+/* 지갑 아이콘(SVG)은 ThinkingOrbs.jsx에서 그리고, 여기선 카드·지폐 움직임과 문구 빛 번짐을 담당 */
+.ai-wallet-card, .ai-wallet-bill {
+  transform-box: view-box;
+  transform: translateY(12px);
+  animation: aiWalletPeek 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+.ai-wallet-bill { animation-delay: -1.2s; }
+@keyframes aiWalletPeek {
+  0%, 100% { transform: translateY(12px); }
+  30%, 55% { transform: translateY(0); }
+  80%      { transform: translateY(12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-wallet-card, .ai-wallet-bill { animation-duration: 4.8s; }
+}
 .thinking-orbs-text {
   font-weight: 500;
   letter-spacing: -0.01em;

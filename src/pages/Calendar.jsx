@@ -458,7 +458,7 @@ export default function Calendar() {
           <div style={{ margin: '12px 16px 0' }}>
             <LockedFeature
               title="고정지출 & 다가오는 결제"
-              description="반복되는 고정지출을 등록하고, 결제일 전날 알림까지 받아보세요."
+              description={"반복되는 고정지출을 등록하고,\n결제일 전날 알림까지 받아보세요."}
               onPress={() => setShowPaywall(true)}
             />
           </div>

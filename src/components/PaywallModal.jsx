@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { usePurchases } from '../contexts/PurchasesContext'
 import SubscriptionPlanList from './SubscriptionPlans'
+import BottomSheet from './BottomSheet'
 
 export default function PaywallModal({ open, onClose }) {
   const purchases = usePurchases()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-
-  if (!open) return null
 
   const handleRestore = async () => {
     setBusy(true)
@@ -22,9 +21,11 @@ export default function PaywallModal({ open, onClose }) {
     }
   }
 
+  // 가계부 검색처럼 body로 포탈된 전체화면 시트로 띄운다. 페이지 래퍼(zoom·전환 애니메이션) 안에서
+  // position:fixed로 그리면 WebKit이 뷰포트 대신 래퍼 기준으로 고정해 화면 하단부만 보이는 문제가 있었다.
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#F5F5F7', zIndex: 1200, display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 430, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <BottomSheet variant="full" open={!!open} onClose={onClose} showHandle={false} background="#F5F5F7" zIndex={1200}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 16px) 20px 0', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
           <button onClick={onClose}
             style={{ width: 36, height: 36, borderRadius: 10, background: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -72,6 +73,6 @@ export default function PaywallModal({ open, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }
