@@ -1,3 +1,21 @@
+import { auth } from '../firebase/config'
+
+export const DEMO_DATA_EVENT = 'moa-demo-data-injected'
+
+// App Store 심사용 데모 계정.
+// 이 이메일로 로그인하면 데모 데이터가 자동으로 로드되고 Pro 구독 상태로 보인다(심사자 전용).
+// Firebase Authentication 콘솔에서 이 이메일 + 비밀번호로 계정을 미리 만들어 두세요.
+// 원하는 주소로 바꿔도 되며, 심사 메모(App Review Information)에 아이디/비번을 적어주면 됩니다.
+export const DEMO_ACCOUNT_EMAIL = 'appreview@moa-budget.com'
+
+// 데모 모드(베타 테스트 로그인 / 심사용 계정)는 Pro 구독 상태로 보여준다.
+// 스토어 배포용 빌드에서는 localStorage 조작만으로 Pro가 켜지지 않도록, 실제로 심사용 계정에 로그인해 있을 때만 허용한다.
+export const isDemoProActive = () => {
+  if (localStorage.getItem('moa_demo_mode') !== 'true') return false
+  if (import.meta.env.DEV || import.meta.env.VITE_BETA === 'true') return true
+  return auth.currentUser?.email?.toLowerCase() === DEMO_ACCOUNT_EMAIL
+}
+
 export function injectDemoData() {
   const now = new Date()
   const pad = (n) => String(n).padStart(2, '0')
@@ -22,10 +40,15 @@ export function injectDemoData() {
   }
 
   // ── 카드 ──────────────────────────────────────────
+  // limit = 실적 목표 금액. 베타 로그인마다 20/30/40만원 중 하나를 골라 달성/진행 중 상태가 골고루 보이게 한다.
+  // 이번 달 사용액은 MY 탭이 아래 거래 내역(payment === 카드명)에서 직접 합산하므로 별도로 저장하지 않는다.
+  const PERFORMANCE_TARGETS = [200000, 300000, 400000]
+  const pickTarget = () => PERFORMANCE_TARGETS[Math.floor(Math.random() * PERFORMANCE_TARGETS.length)]
   const cards = [
-    { id: 1, cardType: 'debit', name: '신한 체크카드', limit: 0, cardNumber: '1234', expiry: '28/08', linkedAccount: '신한은행', billingDay: '', creditTracking: '', color: '#3182F6' },
-    { id: 2, cardType: 'credit', name: 'KB국민 신용카드', limit: 500000, cardNumber: '5678', expiry: '29/03', linkedAccount: '', billingDay: '15', creditTracking: '', color: '#FFB300' },
-    { id: 3, cardType: 'credit', name: '삼성 신용카드', limit: 1000000, cardNumber: '9012', expiry: '28/11', linkedAccount: '', billingDay: '10', creditTracking: '', color: '#1B2B4B' },
+    { id: 1, cardType: 'debit',  name: '신한 체크카드',       limit: pickTarget(), cardNumber: '1234', expiry: '28/08', linkedAccount: '신한은행',   billingDay: '',   creditTracking: '',      color: '#3182F6' },
+    { id: 2, cardType: 'credit', name: 'KB국민 신용카드',     limit: pickTarget(), cardNumber: '5678', expiry: '29/03', linkedAccount: '',           billingDay: '15', creditTracking: 'spend', color: '#FFB300' },
+    { id: 3, cardType: 'credit', name: '삼성 신용카드',       limit: pickTarget(), cardNumber: '9012', expiry: '28/11', linkedAccount: '',           billingDay: '10', creditTracking: 'spend', color: '#1B2B4B' },
+    { id: 4, cardType: 'debit',  name: '카카오뱅크 체크카드', limit: pickTarget(), cardNumber: '3456', expiry: '30/01', linkedAccount: '카카오뱅크', billingDay: '',   creditTracking: '',      color: '#FEE500' },
   ]
   localStorage.setItem('moa_cards', JSON.stringify(cards))
 
@@ -51,11 +74,11 @@ export function injectDemoData() {
   const template = [
     { d: 1,  t: 'expense', name: '스타벅스',        amt: 6500,  cat: '식비',        pay: '신한 체크카드',   time: '08:32' },
     { d: 2,  t: 'expense', name: '이마트',          amt: 87300, cat: '식비',        pay: '신한 체크카드',   time: '18:45' },
-    { d: 2,  t: 'expense', name: '지하철',          amt: 1500,  cat: '교통',        pay: '신한 체크카드',   time: '08:10' },
+    { d: 2,  t: 'expense', name: '지하철',          amt: 1500,  cat: '교통',        pay: '카카오뱅크 체크카드', time: '08:10' },
     { d: 3,  t: 'expense', name: '올리브영',        amt: 43000, cat: '생활',        pay: 'KB국민 신용카드', time: '14:20' },
     { d: 3,  t: 'expense', name: '넷플릭스',        amt: 17000, cat: '구독',        pay: 'KB국민 신용카드', time: '00:05' },
     { d: 5,  t: 'expense', name: '주유',            amt: 65000, cat: '교통',        pay: 'KB국민 신용카드', time: '17:55' },
-    { d: 6,  t: 'expense', name: '카페라떼',        amt: 8500,  cat: '식비',        pay: '신한 체크카드',   time: '09:15' },
+    { d: 6,  t: 'expense', name: '카페라떼',        amt: 8500,  cat: '식비',        pay: '카카오뱅크 체크카드', time: '09:15' },
     { d: 7,  t: 'expense', name: '의류 구매',       amt: 89000, cat: '쇼핑',        pay: '삼성 신용카드',   time: '15:40' },
     { d: 8,  t: 'expense', name: '병원비',          amt: 15000, cat: '의료/건강',   pay: '현금',            time: '11:00' },
     { d: 9,  t: 'expense', name: '마트 장보기',     amt: 56800, cat: '식비',        pay: '신한 체크카드',   time: '19:20' },
@@ -64,15 +87,17 @@ export function injectDemoData() {
     { d: 13, t: 'expense', name: '배달음식',        amt: 32000, cat: '식비',        pay: '신한 체크카드',   time: '19:05' },
     { d: 15, t: 'expense', name: '아메리카노',      amt: 7000,  cat: '식비',        pay: '신한 체크카드',   time: '08:55' },
     { d: 16, t: 'expense', name: '온라인 쇼핑',     amt: 56000, cat: '쇼핑',        pay: '삼성 신용카드',   time: '02:30' },
+    { d: 18, t: 'expense', name: '다이소',          amt: 12000, cat: '생활',        pay: '카카오뱅크 체크카드', time: '13:10' },
+    { d: 23, t: 'expense', name: '가전 구매',       amt: 129000,cat: '쇼핑',        pay: '삼성 신용카드',   time: '16:25' },
     { d: 17, t: 'expense', name: '외식 (삼겹살)',   amt: 45000, cat: '식비',        pay: 'KB국민 신용카드', time: '18:30' },
     { d: 19, t: 'expense', name: '마트',            amt: 34200, cat: '식비',        pay: '신한 체크카드',   time: '20:15' },
     { d: 20, t: 'expense', name: '미용실',          amt: 30000, cat: '생활',        pay: '현금',            time: '11:30' },
     { d: 21, t: 'expense', name: '영화 관람',       amt: 15000, cat: '문화/여가',   pay: 'KB국민 신용카드', time: '16:00' },
-    { d: 22, t: 'expense', name: '배달음식',        amt: 28000, cat: '식비',        pay: '신한 체크카드',   time: '20:45' },
+    { d: 22, t: 'expense', name: '배달음식',        amt: 28000, cat: '식비',        pay: '카카오뱅크 체크카드', time: '20:45' },
     { d: 25, t: 'expense', name: '전기요금',        amt: 33000, cat: '공과금',      pay: '신한 체크카드',   time: '09:30', memo: true },
     { d: 25, t: 'expense', name: '수도요금',        amt: 15000, cat: '공과금',      pay: '신한 체크카드',   time: '09:31', memo: true },
     { d: 25, t: 'expense', name: '가스요금',        amt: 40000, cat: '공과금',      pay: '신한 체크카드',   time: '09:32', memo: true },
-    { d: 27, t: 'expense', name: '편의점',          amt: 4300,  cat: '식비',        pay: '신한 체크카드',   time: '22:10' },
+    { d: 27, t: 'expense', name: '편의점',          amt: 4300,  cat: '식비',        pay: '카카오뱅크 체크카드', time: '22:10' },
     { d: 28, t: 'expense', name: '약국',            amt: 8900,  cat: '의료/건강',   pay: '현금',            time: '13:50' },
   ]
 
@@ -204,4 +229,7 @@ export function injectDemoData() {
   localStorage.setItem('moa_demo_mode', 'true')
   localStorage.setItem('moa_logged_in', 'true')
   localStorage.setItem('moa_nickname', '모아 moa')
+
+  // 앱 시작 시 localStorage를 한 번만 읽는 컨텍스트(카드·대출·구독)가 새로고침 없이 데모 데이터를 반영하도록 알린다.
+  window.dispatchEvent(new Event(DEMO_DATA_EVENT))
 }
