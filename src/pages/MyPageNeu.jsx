@@ -1,6 +1,7 @@
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import { getColoredShadow } from '../utils/neuColors'
 
 const NEU_BG = 'var(--neu-bg)'
@@ -319,7 +320,7 @@ export default function MyPageNeu(props) {
                 </div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>현재 잔액</p>
-                  <input className="neu-inset" style={neuInputStyle} type="number" placeholder="예: 1500000" value={editAccountData.balance} onChange={e => setEditAccountData(d => ({ ...d, balance: e.target.value }))} />
+                  <AmountInput allowNegative className="neu-inset" style={neuInputStyle} placeholder="예: 1500000" value={editAccountData.balance} onChange={v => setEditAccountData(d => ({ ...d, balance: v }))} />
                 </div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>계좌번호 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(선택)</span></p>
@@ -343,7 +344,7 @@ export default function MyPageNeu(props) {
                 </div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>잔액</p>
-                  <input className="neu-inset" style={neuInputStyle} type="number" placeholder="예: 1500000" value={newAccount.balance} onChange={e => setNewAccount(a => ({ ...a, balance: e.target.value }))} />
+                  <AmountInput allowNegative className="neu-inset" style={neuInputStyle} placeholder="예: 1500000" value={newAccount.balance} onChange={v => setNewAccount(a => ({ ...a, balance: v }))} />
                 </div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>계좌번호 <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 400 }}>(선택)</span></p>
@@ -374,7 +375,7 @@ export default function MyPageNeu(props) {
           <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 10 }}>직접 보유한 현금 자산</p>
           {editingCash ? (
             <div style={{ '--neu-focus': primary + '59' }}>
-              <input type="number" className="neu-inset" value={cashInput} onChange={e => setCashInput(e.target.value)} style={neuInputStyle} placeholder="현금 잔액 입력" autoFocus />
+              <AmountInput className="neu-inset" value={cashInput} onChange={v => setCashInput(v)} style={neuInputStyle} placeholder="현금 잔액 입력" autoFocus />
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <button onClick={() => setEditingCash(false)} className="neu-btn" style={{ flex: 1, padding: 10, borderRadius: 16, fontSize: 13, color: '#8B95A1' }}>취소</button>
                 <button onClick={handleCashSave} style={{ flex: 1, padding: 10, borderRadius: 16, background: primary, color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: coloredShadow.raisedSm }}>저장</button>
@@ -490,7 +491,7 @@ export default function MyPageNeu(props) {
           { label: '카드 이름', req: true, placeholder: '예: 신한카드', key: 'name', type: 'text', extra: {} },
           { label: '카드번호 끝 4자리', req: false, placeholder: '예: 1234', key: 'cardNumber', type: 'text', extra: { maxLength: 4 } },
           { label: '유효기간', req: false, placeholder: 'MM/YY', key: 'expiry', type: 'text', extra: {} },
-          { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'number', extra: {} },
+          { label: '실적 목표 금액', req: false, placeholder: '예: 300000', key: 'limit', type: 'amount', extra: {} },
           { label: '결제일', req: false, placeholder: '예: 15', key: 'billingDay', type: 'number', extra: { min: '1', max: '31' } },
         ]
 
@@ -575,8 +576,9 @@ export default function MyPageNeu(props) {
                   {CARD_FIELDS.map(({ label, req, placeholder, key, type, extra }, i, arr) => (
                     <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label}{req && <span style={{ color: '#FF5A5F' }}> *</span>}</p>
-                      <input className="neu-inset" style={neuInputStyle} type={type} placeholder={placeholder}
-                        value={data[key] || ''} onChange={e => setData(c => ({ ...c, [key]: e.target.value }))} {...extra} />
+                      {type === 'amount' ? <AmountInput className="neu-inset" style={neuInputStyle} placeholder={placeholder}
+                        value={data[key] || ''} onChange={v => setData(c => ({ ...c, [key]: v }))} /> : <input className="neu-inset" style={neuInputStyle} type={type} placeholder={placeholder}
+                        value={data[key] || ''} onChange={e => setData(c => ({ ...c, [key]: e.target.value }))} {...extra} />}
                     </div>
                   ))}
                 </div>
@@ -846,14 +848,15 @@ export default function MyPageNeu(props) {
                   <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>필수 항목</p>
                   {[
                     { label: '대출 이름', key: 'name', placeholder: '예: 국민은행 신용대출', type: 'text' },
-                    { label: '대출 원금', key: 'principal', placeholder: '예: 10000000', type: 'number' },
-                    { label: '잔여 원금', key: 'remainingPrincipal', placeholder: '예: 7500000', type: 'number' },
+                    { label: '대출 원금', key: 'principal', placeholder: '예: 10000000', type: 'amount' },
+                    { label: '잔여 원금', key: 'remainingPrincipal', placeholder: '예: 7500000', type: 'amount' },
                     { label: '대출 일자', key: 'startDate', placeholder: '', type: 'date' },
                   ].map(({ label, key, placeholder, type }, i, arr) => (
                     <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label} <span style={{ color: '#FF5A5F' }}>*</span></p>
-                      <input className="neu-inset" style={{ ...neuInputStyle, height: 52 }} type={type} placeholder={placeholder}
-                        value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />
+                      {type === 'amount' ? <AmountInput className="neu-inset" style={{ ...neuInputStyle, height: 52 }} placeholder={placeholder}
+                        value={loanForm[key]} onChange={v => setLoanForm(f => ({ ...f, [key]: v }))} /> : <input className="neu-inset" style={{ ...neuInputStyle, height: 52 }} type={type} placeholder={placeholder}
+                        value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />}
                     </div>
                   ))}
                 </div>
@@ -888,14 +891,15 @@ export default function MyPageNeu(props) {
                     )}
                   </div>
                   {[
-                    { label: '월 상환액', key: 'monthlyPayment', placeholder: '예: 500000', type: 'number' },
+                    { label: '월 상환액', key: 'monthlyPayment', placeholder: '예: 500000', type: 'amount' },
                     { label: '상환일', key: 'paymentDay', placeholder: '예: 25', type: 'number' },
                     { label: '만기일', key: 'maturityDate', placeholder: '', type: 'date' },
                   ].map(({ label, key, placeholder, type }, i, arr) => (
                     <div key={key} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>{label}</p>
-                      <input className="neu-inset" style={{ ...neuInputStyle, height: 52 }} type={type} placeholder={placeholder}
-                        value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />
+                      {type === 'amount' ? <AmountInput className="neu-inset" style={{ ...neuInputStyle, height: 52 }} placeholder={placeholder}
+                        value={loanForm[key]} onChange={v => setLoanForm(f => ({ ...f, [key]: v }))} /> : <input className="neu-inset" style={{ ...neuInputStyle, height: 52 }} type={type} placeholder={placeholder}
+                        value={loanForm[key]} onChange={e => setLoanForm(f => ({ ...f, [key]: e.target.value }))} />}
                     </div>
                   ))}
                 </div>

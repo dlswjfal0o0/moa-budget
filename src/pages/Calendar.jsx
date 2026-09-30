@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import YearMonthPicker from '../components/YearMonthPicker'
 import LockedFeature from '../components/LockedFeature'
 import PaywallModal from '../components/PaywallModal'
@@ -556,7 +557,7 @@ export default function Calendar() {
                 </div>
                 <div>
                   <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
-                  <input style={inputStyle} type="number" placeholder="0" value={editFixedData.amount} onChange={e => setEditFixedData(d => ({ ...d, amount: e.target.value }))} />
+                  <AmountInput style={inputStyle} placeholder="0" value={editFixedData.amount} onChange={v => setEditFixedData(d => ({ ...d, amount: v }))} />
                 </div>
                 <div>
                   <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>
@@ -713,7 +714,7 @@ export default function Calendar() {
                 </div>
                 <div>
                   <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
-                  <input style={inputStyle} type="number" placeholder="0" value={newFixed.amount} onChange={e => setNewFixed(f => ({ ...f, amount: e.target.value }))} />
+                  <AmountInput style={inputStyle} placeholder="0" value={newFixed.amount} onChange={v => setNewFixed(f => ({ ...f, amount: v }))} />
                 </div>
                 <div>
                   <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>

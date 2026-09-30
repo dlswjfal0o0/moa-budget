@@ -12,6 +12,7 @@ import {
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import YearMonthPicker from '../components/YearMonthPicker'
 import { getCategoryColor } from '../styles/theme'
 import { inputStyle } from '../styles/styles'
@@ -1425,7 +1426,7 @@ export default function Ledger() {
             <div style={{ background: '#fff', borderRadius: 20, padding: '20px 24px', marginBottom: 16 }}>
               <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>금액</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <input type="number" className="input-plain" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                <AmountInput className="input-plain" value={form.amount} onChange={v => setForm(f => ({ ...f, amount: v }))}
                   placeholder="0"
                   style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 38, fontWeight: 700,
                     color: form.type === 'expense' ? '#FF5A5F' : form.type === 'income' ? '#2ECC71' : '#191F28',

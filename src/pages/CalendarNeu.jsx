@@ -1,5 +1,6 @@
 import YearMonthPicker from '../components/YearMonthPicker'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import { getColoredShadow } from '../utils/neuColors'
 
 const neuInputStyle = {
@@ -36,7 +37,7 @@ function FixedExpenseForm({ title, data, setData, categories, accNames, userCard
           </div>
           <div>
             <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>금액</p>
-            <input className="neu-inset" style={neuInputStyle} type="number" placeholder="0" value={data.amount} onChange={e => setData(f => ({ ...f, amount: e.target.value }))} />
+            <AmountInput className="neu-inset" style={neuInputStyle} placeholder="0" value={data.amount} onChange={v => setData(f => ({ ...f, amount: v }))} />
           </div>
           <div>
             <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 6, fontWeight: 600 }}>납부일 (선택)</p>

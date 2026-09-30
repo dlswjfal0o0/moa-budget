@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import ThinkingOrbs from '../components/ThinkingOrbs'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
@@ -954,8 +955,8 @@ export default function Analysis() {
                 <div style={{ width: 36, height: 4, borderRadius: 99, background: '#E5E8EB', margin: '0 auto 20px' }} />
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>{newUtility.type} 입력</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                  <input type="number" placeholder="금액 (원)" value={newUtility.amount}
-                    onChange={e => setNewUtility(p => ({ ...p, amount: e.target.value }))}
+                  <AmountInput placeholder="금액 (원)" value={newUtility.amount}
+                    onChange={v => setNewUtility(p => ({ ...p, amount: v }))}
                     style={{ padding: '14px 16px', borderRadius: 12, border: '1.5px solid #E5E8EB', fontSize: 15, outline: 'none', background: '#F7F8FA', color: '#191F28' }} />
                   <input type="number" placeholder="납부일 (예: 15)" min="1" max="31" value={newUtility.day}
                     onChange={e => setNewUtility(p => ({ ...p, day: e.target.value }))}
