@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import LockedFeature from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
 import ThinkingOrbs from '../components/ThinkingOrbs'
@@ -38,7 +39,7 @@ function BudgetForm({ data, setData, categories, primary, onCancel, onSubmit, su
         </div>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
-          <input className="neu-inset" style={neuInputStyle} type="number" placeholder="예: 300000" value={data.amount} onChange={e => setData(d => ({ ...d, amount: e.target.value }))} />
+          <AmountInput className="neu-inset" style={neuInputStyle} placeholder="예: 300,000" value={data.amount} onChange={v => setData(d => ({ ...d, amount: v }))} />
         </div>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>

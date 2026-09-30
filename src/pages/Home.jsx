@@ -9,6 +9,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import ThinkingOrbs from '../components/ThinkingOrbs'
 import LockedFeature from '../components/LockedFeature'
 import PaywallModal from '../components/PaywallModal'
@@ -862,7 +863,7 @@ export default function Home() {
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액 <span style={{ color: '#FF5A5F' }}>*</span></p>
-              <input style={inputStyle} type="number" placeholder="예: 300000" value={newBudget.amount} onChange={e => setNewBudget(b => ({ ...b, amount: e.target.value }))} />
+              <AmountInput style={inputStyle} placeholder="예: 300,000" value={newBudget.amount} onChange={v => setNewBudget(b => ({ ...b, amount: v }))} />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간 <span style={{ color: '#FF5A5F' }}>*</span></p>
@@ -931,7 +932,7 @@ export default function Home() {
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>금액</p>
-              <input style={inputStyle} type="number" placeholder="예: 300000" value={editBudgetData.amount} onChange={e => setEditBudgetData(d => ({ ...d, amount: e.target.value }))} />
+              <AmountInput style={inputStyle} placeholder="예: 300,000" value={editBudgetData.amount} onChange={v => setEditBudgetData(d => ({ ...d, amount: v }))} />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', marginBottom: 8 }}>기간</p>

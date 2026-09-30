@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
+import AmountInput from '../components/AmountInput'
 import { ProBadge } from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
 import ThinkingOrbs from '../components/ThinkingOrbs'
@@ -590,8 +591,8 @@ export default function AnalysisNeu(props) {
                 <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(163,177,198,0.4)', margin: '0 auto 20px' }} />
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#191F28', marginBottom: 16 }}>{newUtility.type} 입력</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                  <input type="number" placeholder="금액 (원)" value={newUtility.amount} className="neu-inset"
-                    onChange={e => setNewUtility(p => ({ ...p, amount: e.target.value }))}
+                  <AmountInput placeholder="금액 (원)" value={newUtility.amount} className="neu-inset"
+                    onChange={v => setNewUtility(p => ({ ...p, amount: v }))}
                     style={neuInputStyle} />
                   <input type="number" placeholder="납부일 (예: 15)" min="1" max="31" value={newUtility.day} className="neu-inset"
                     onChange={e => setNewUtility(p => ({ ...p, day: e.target.value }))}
