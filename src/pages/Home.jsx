@@ -737,7 +737,7 @@ export default function Home() {
                       <p style={{ fontSize: 13, color: '#8B95A1' }}>매월 {f.dueDay}일</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 6 }}>-{fmt(f.amount)}원</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 3 }}>-{fmt(f.amount)}원</p>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 9999, padding: '3px 9px' }}>
                         {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
                       </span>
