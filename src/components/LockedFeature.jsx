@@ -12,6 +12,19 @@ export function ProBadge({ style }) {
   )
 }
 
+// 닉네임 옆에 붙는 구독 등급 마크. 유료 구독 중엔 Pro 구독자, 아니면(무료체험 포함) 일반으로 표시.
+// 테마색 헤더 배너 위에 올라가므로 흰색 반투명 톤을 쓴다.
+export function SubscriptionBadge({ isSubscribed, style }) {
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, borderRadius: 9999, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap',
+      color: isSubscribed ? '#fff' : 'rgba(255,255,255,0.85)',
+      background: isSubscribed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+      ...style,
+    }}>{isSubscribed ? '✨ Pro 구독자' : '일반'}</span>
+  )
+}
+
 function LockIcon({ color = '#191F28', size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

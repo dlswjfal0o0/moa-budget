@@ -17,7 +17,7 @@ import { useLoans } from '../contexts/LoansContext'
 import { haptic } from '../utils/haptics'
 import SToggle from '../components/SToggle'
 import AIStyleSlider from '../components/AIStyleSlider'
-import LockedFeature, { ProBadge } from '../components/LockedFeature'
+import LockedFeature, { ProBadge, SubscriptionBadge } from '../components/LockedFeature'
 import PaywallModal from '../components/PaywallModal'
 import { usePurchases } from '../contexts/PurchasesContext'
 import { requestPaymentNotificationPermission } from '../utils/paymentNotifications'
@@ -1341,13 +1341,9 @@ export default function MyPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                    <SubscriptionBadge isSubscribed={isSubscribed} />
                     <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
                   </div>
-                  {isSubscribed && (
-                    <span style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(255,255,255,0.25)', borderRadius: 9999, padding: '3px 9px' }}>
-                      ✨ Pro 구독자
-                    </span>
-                  )}
                 </div>
               )}
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{user?.email}</p>
