@@ -3,6 +3,7 @@ import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
+import CreditCardBills from '../components/CreditCardBills'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -98,6 +99,7 @@ export default function HomeNeu({
   handleAddBudget, editingBudgetId, setEditingBudgetId, editBudgetData, setEditBudgetData, handleSaveBudget,
   expandedBudgetEditId, setExpandedBudgetEditId, expandedTipIds, setExpandedTipIds,
   loadingInsightId, getAiInsight, saveBudgets, upcomingPayments, categoryData, colorMap,
+  creditBills, billMonthLabel, toggleCreditBill, billBusyCardId,
   transactions, navigate,
 }) {
   const primary = themeData.primary
@@ -280,6 +282,10 @@ export default function HomeNeu({
             </div>
           </div>
         )}
+
+        {/* 신용카드 대금 — 신용카드 등록자에게만 노출 */}
+        <CreditCardBills neu bills={creditBills} billMonthLabel={billMonthLabel} fmt={fmt}
+          primary={primary} onToggle={toggleCreditBill} busyCardId={billBusyCardId} />
 
         {/* 카테고리별 지출 */}
         <div className="neu-card" style={{ borderRadius: 22, padding: '20px', marginBottom: 32 }}>
