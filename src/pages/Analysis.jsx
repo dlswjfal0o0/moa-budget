@@ -477,7 +477,7 @@ export default function Analysis() {
         dailyData={dailyData} maxExpense={maxExpense}
         categoryData={categoryData} colorMap={colorMap}
         aiFeedbackData={aiFeedbackData} aiFeedbackRaw={aiFeedbackRaw} loadingAi={loadingAi} getAiFeedback={getAiFeedback} aiIsSaved={aiIsSaved}
-        aiAnalysisStyle={aiAnalysisStyle} byCategory={byCategory}
+        aiAnalysisStyle={aiAnalysisStyle} byCategory={byCategory} aiShowAdvice={aiShowAdvice}
         expenses={expenses}
         expandedPayments={expandedPayments} setExpandedPayments={setExpandedPayments}
         utilities={utilities} utilityTypes={utilityTypes}
@@ -659,7 +659,7 @@ export default function Analysis() {
             <AiConsumptionReport
               data={aiFeedbackData} raw={aiFeedbackRaw} loading={loadingAi} saved={aiIsSaved} onAnalyze={getAiFeedback}
               primary={primary} primaryLight={primaryLight} text={themeData.text || '#191F28'} fmt={fmt}
-              styleLevel={aiAnalysisStyle} categorySpend={byCategory}
+              styleLevel={aiAnalysisStyle} categorySpend={byCategory} showAdvice={aiShowAdvice} hasData={expenses.length > 0}
             />
           </div>
 
