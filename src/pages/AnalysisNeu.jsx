@@ -52,7 +52,7 @@ export default function AnalysisNeu(props) {
     totalExpense, totalIncome, lastTotalExpense, lastTotalIncome, expenseDiff, incomeDiff,
     dailyData, maxExpense,
     categoryData, colorMap,
-    aiFeedbackData, aiFeedbackRaw, loadingAi, getAiFeedback, aiIsSaved,
+    aiFeedbackData, aiFeedbackRaw, loadingAi, getAiFeedback, aiIsSaved, aiAnalysisStyle, byCategory,
     expenses,
     expandedPayments, setExpandedPayments,
     utilities, utilityTypes,
@@ -230,6 +230,7 @@ export default function AnalysisNeu(props) {
             <AiConsumptionReport
               data={aiFeedbackData} raw={aiFeedbackRaw} loading={loadingAi} saved={aiIsSaved} onAnalyze={getAiFeedback}
               primary={primary} primaryLight={primaryLight} fmt={fmt}
+              styleLevel={aiAnalysisStyle} categorySpend={byCategory}
               neumorphism coloredShadow={coloredShadow}
             />
           </div>
