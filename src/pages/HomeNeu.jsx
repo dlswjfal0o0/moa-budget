@@ -3,6 +3,7 @@ import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
 import LockedFeature from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
+import ThinkingOrbs from '../components/ThinkingOrbs'
 import { TipIcon } from './Home'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -230,7 +231,9 @@ export default function HomeNeu({
                     })()}
                     <button onClick={e => { e.stopPropagation(); getAiInsight(b, spent) }} disabled={loadingInsightId === b.id}
                       className="neu-btn" style={{ width: '100%', marginTop: 12, borderRadius: 12, padding: '10px 0', color: primary, fontSize: 13, fontWeight: 600 }}>
-                      {loadingInsightId === b.id ? '분석 중...' : aiText ? '🔄 다시 분석' : '✨ AI 조언 보기'}
+                      {loadingInsightId === b.id
+                        ? <ThinkingOrbs color={primary} size={20} label="분석하는 중...." fontSize={13} />
+                        : aiText ? '🔄 다시 분석' : '✨ AI 조언 보기'}
                     </button>
                   </div>
                   {expandedBudgetEditId === b.id && (

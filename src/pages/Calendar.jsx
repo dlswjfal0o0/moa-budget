@@ -14,6 +14,7 @@ import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
+import { toMonthKey, resolveFixedForMonth, fixedListForMonth, createFixed, editFixedFromMonth, deleteFixedFromMonth } from '../utils/fixedExpenses'
 import CalendarNeu from './CalendarNeu'
 
 export default function Calendar() {
@@ -88,12 +89,14 @@ export default function Calendar() {
           const todayDay = nowDate.getDate()
           const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
           const promises = []
-          const processed = fixedList.map(f => {
-            if (!isPro || !f.autoRegister || !f.dueDate) return f // Pro 아니면 자동 등록 건너뜀(데이터는 유지)
+          const processed = fixedList.map(raw => {
+            const f = resolveFixedForMonth(raw, nowMonthKey) // 이번 달에 적용되는 버전 기준
+            if (!f) return raw // 이번 달엔 존재하지 않는 항목(추가 전/삭제 후)
+            if (!isPro || !f.autoRegister || !f.dueDate) return raw // Pro 아니면 자동 등록 건너뜀(데이터는 유지)
             const dueDay = parseInt(f.dueDate.split('-')[2])
-            if (isNaN(dueDay) || todayDay < dueDay) return f
-            const registeredMonths = f.autoRegisteredMonths || []
-            if (registeredMonths.includes(nowMonthKey)) return f
+            if (isNaN(dueDay) || todayDay < dueDay) return raw
+            const registeredMonths = raw.autoRegisteredMonths || []
+            if (registeredMonths.includes(nowMonthKey)) return raw
             const dueDateStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
             promises.push(addDoc(collection(db, 'transactions'), {
               uid: u.uid, month: nowMonthKey, type: 'expense',
@@ -103,9 +106,9 @@ export default function Calendar() {
               isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
             }))
             // 자동 등록 시 체크박스도 '완료' 상태로 표시해 이중 등록을 방지
-            const doneMonths = f.doneMonths || []
+            const doneMonths = raw.doneMonths || []
             return {
-              ...f,
+              ...raw,
               autoRegisteredMonths: [...registeredMonths, nowMonthKey],
               doneMonths: doneMonths.includes(nowMonthKey) ? doneMonths : [...doneMonths, nowMonthKey]
             }
@@ -155,11 +158,12 @@ export default function Calendar() {
 
   const handleAddFixed = () => {
     if (!newFixed.title || !newFixed.amount) return
-    const updated = [...fixedExpenses, {
-      id: Date.now(), title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate,
+    // 보고 있는 달부터 존재 (이전 달에는 표시되지 않음)
+    const updated = [...fixedExpenses, createFixed({
+      title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate,
       category: newFixed.category || '기타', payment: newFixed.payment || '현금',
-      autoRegister: newFixed.autoRegister, doneMonths: [], autoRegisteredMonths: []
-    }]
+      autoRegister: newFixed.autoRegister
+    }, toMonthKey(viewYear, viewMonth))]
     saveFixed(updated)
     setNewFixed(EMPTY_FIXED)
     setShowAddFixed(false)
@@ -167,7 +171,8 @@ export default function Calendar() {
 
   const handleToggleFixed = async (id) => {
     const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-    const f = fixedExpenses.find(x => x.id === id)
+    const raw = fixedExpenses.find(x => x.id === id)
+    const f = raw && resolveFixedForMonth(raw, monthKey) // 보고 있는 달에 적용되는 버전 기준
     if (!f || !user) return
     const doneMonths = f.doneMonths || []
     const isDone = doneMonths.includes(monthKey)
@@ -213,17 +218,22 @@ export default function Calendar() {
   }
 
   const handleDeleteFixed = (id) => {
-    const updated = fixedExpenses.filter(f => f.id !== id)
+    // 보고 있는 달부터 삭제 (이전 달은 기존 데이터 유지)
+    const monthKey = toMonthKey(viewYear, viewMonth)
+    const updated = fixedExpenses
+      .map(f => f.id === id ? deleteFixedFromMonth(f, monthKey) : f)
+      .filter(Boolean)
     saveFixed(updated)
   }
 
   const handleSaveFixed = () => {
     if (!editFixedData.title || !editFixedData.amount) return
-    const updated = fixedExpenses.map(f => f.id === editingFixedId ? {
-      ...f, title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate,
+    // 보고 있는 달부터 변경 (이전 달은 기존 데이터 유지)
+    const updated = fixedExpenses.map(f => f.id === editingFixedId ? editFixedFromMonth(f, {
+      title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate,
       category: editFixedData.category || '기타', payment: editFixedData.payment || '현금',
       autoRegister: editFixedData.autoRegister
-    } : f)
+    }, toMonthKey(viewYear, viewMonth)) : f)
     saveFixed(updated)
     setEditingFixedId(null)
   }
@@ -265,15 +275,17 @@ export default function Calendar() {
   const selectedDateStr = selectedDate ? `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}` : null
   const selectedTxs = selectedDateStr ? transactions.filter(t => !t.mergedInto && !t.isHidden && t.date === selectedDateStr) : []
   const currentMonthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-  const fixedDueDays = fixedExpenses
+  // 보고 있는 달에 적용되는 고정지출만 (월별 버전 반영)
+  const monthFixed = fixedListForMonth(fixedExpenses, currentMonthKey)
+  const fixedDueDays = monthFixed
     .filter(f => !(f.doneMonths || []).includes(currentMonthKey))
     .map(f => f.dueDate ? parseInt(f.dueDate.split('-')[2]) : null)
     .filter(Boolean)
 
   // 고정지출 뱃지용 총액
-  const fixedTotal = fixedExpenses.reduce((s, f) => s + f.amount, 0)
+  const fixedTotal = monthFixed.reduce((s, f) => s + f.amount, 0)
 
-  const sortedFixed = [...fixedExpenses].sort((a, b) => {
+  const sortedFixed = [...monthFixed].sort((a, b) => {
     const da = parseInt(a.dueDate?.split('-')[2] || '99')
     const db_ = parseInt(b.dueDate?.split('-')[2] || '99')
     return da - db_
@@ -293,7 +305,7 @@ export default function Calendar() {
         selectedTxs={selectedTxs} isCreditExcluded={isCreditExcluded} showLoan={showLoan}
         weekExpense={weekExpense} weekIncome={weekIncome} totalExpense={totalExpense} totalIncome={totalIncome}
         fmt={fmt}
-        fixedExpenses={fixedExpenses} fixedTotal={fixedTotal} sortedFixed={sortedFixed} currentMonthKey={currentMonthKey}
+        fixedExpenses={monthFixed} fixedTotal={fixedTotal} sortedFixed={sortedFixed} currentMonthKey={currentMonthKey}
         setShowAddFixed={setShowAddFixed}
         expandedFixedId={expandedFixedId} setExpandedFixedId={setExpandedFixedId}
         handleToggleFixed={handleToggleFixed} handleDeleteFixed={handleDeleteFixed}
@@ -458,9 +470,9 @@ export default function Calendar() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>고정지출</p>
-              {fixedExpenses.length > 0 && (
+              {monthFixed.length > 0 && (
                 <span style={{ fontSize: 11, color: '#8B95A1', background: '#F2F4F6', borderRadius: 9999, padding: '3px 9px', fontWeight: 700 }}>
-                  {fixedExpenses.length}개 · 월 {fmt(fixedTotal)}원
+                  {monthFixed.length}개 · 월 {fmt(fixedTotal)}원
                 </span>
               )}
             </div>
@@ -472,7 +484,7 @@ export default function Calendar() {
 
           {/* 고정지출 목록 */}
           <div style={{ background: '#fff', padding: '8px 14px 14px' }}>
-            {fixedExpenses.length === 0 && (
+            {monthFixed.length === 0 && (
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>고정지출을 추가해보세요</p>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

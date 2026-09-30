@@ -23,9 +23,9 @@ export function injectDemoData() {
 
   // ── 카드 ──────────────────────────────────────────
   const cards = [
-    { id: 1, cardType: '체크', name: '신한 체크카드', limit: 0, cardNumber: '1234', expiry: '28/08', linkedAccount: '신한은행', billingDay: '', creditTracking: '', color: '#3182F6' },
-    { id: 2, cardType: '신용', name: 'KB국민 신용카드', limit: 500000, cardNumber: '5678', expiry: '29/03', linkedAccount: '', billingDay: '15', creditTracking: '', color: '#FFB300' },
-    { id: 3, cardType: '신용', name: '삼성 신용카드', limit: 1000000, cardNumber: '9012', expiry: '28/11', linkedAccount: '', billingDay: '10', creditTracking: '', color: '#1B2B4B' },
+    { id: 1, cardType: 'debit', name: '신한 체크카드', limit: 0, cardNumber: '1234', expiry: '28/08', linkedAccount: '신한은행', billingDay: '', creditTracking: '', color: '#3182F6' },
+    { id: 2, cardType: 'credit', name: 'KB국민 신용카드', limit: 500000, cardNumber: '5678', expiry: '29/03', linkedAccount: '', billingDay: '15', creditTracking: '', color: '#FFB300' },
+    { id: 3, cardType: 'credit', name: '삼성 신용카드', limit: 1000000, cardNumber: '9012', expiry: '28/11', linkedAccount: '', billingDay: '10', creditTracking: '', color: '#1B2B4B' },
   ]
   localStorage.setItem('moa_cards', JSON.stringify(cards))
 

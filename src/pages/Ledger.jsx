@@ -444,20 +444,45 @@ export default function Ledger() {
 
     const loadingTimer = setTimeout(() => setFormSaveState('loading'), 300)
     try {
+      const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
       const monthDate = new Date(form.date)
       const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth()+1).padStart(2,'0')}`
       const isInstallmentEligible = form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit')
       const installmentMonths = isInstallmentEligible && form.installmentMonths ? Number(form.installmentMonths) : null
-      const data = { ...form, amount: Number(form.amount), uid: user.uid, month: monthStr, createdAt: new Date().toISOString(), installmentMonths }
+      const data = { ...form, amount: Number(form.amount), uid: user ? user.uid : 'demo', month: monthStr, createdAt: new Date().toISOString(), installmentMonths }
       let savedId
-      if (editItem) {
+      if (isDemo) {
+        // Firestore 대신 로컬 상태 + moa_txns_ 캐시(월별)에 직접 반영해서
+        // MY 탭의 카드 실적 등 다른 화면이 즉시 같은 데이터를 보게 한다.
+        savedId = editItem ? editItem.id : `demo-${Date.now()}`
+        if (editItem) {
+          // 수정으로 날짜(월)가 바뀌었을 수 있으니 모든 월별 캐시에서 기존 항목을 먼저 제거
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k?.startsWith('moa_txns_')) {
+              const txns = JSON.parse(localStorage.getItem(k) || '[]')
+              if (txns.some(t => t.id === editItem.id)) {
+                localStorage.setItem(k, JSON.stringify(txns.filter(t => t.id !== editItem.id)))
+              }
+            }
+          }
+        }
+        const key = `moa_txns_${monthStr}`
+        const monthTxns = JSON.parse(localStorage.getItem(key) || '[]')
+        localStorage.setItem(key, JSON.stringify([{ ...data, id: savedId }, ...monthTxns]))
+        const demoMonths = JSON.parse(localStorage.getItem('moa_demo_months') || '[]')
+        if (!demoMonths.includes(monthStr)) localStorage.setItem('moa_demo_months', JSON.stringify([...demoMonths, monthStr]))
+        setTransactions(prev => editItem
+          ? prev.map(t => t.id === editItem.id ? { ...t, ...data, id: editItem.id } : t)
+          : [{ ...data, id: savedId }, ...prev])
+      } else if (editItem) {
         await updateDoc(doc(db, 'transactions', editItem.id), data)
         savedId = editItem.id
       } else {
         const ref = await addDoc(collection(db, 'transactions'), data)
         savedId = ref.id
       }
-      if (isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
+      if (!isDemo && isPro && form.type === 'expense') await autoUpdateUtility(form.title, form.amount, form.date)
 
       // 합산 내역의 세부 항목 수정 시 부모 합산 내역 재계산
       if (editItem) {
@@ -495,7 +520,7 @@ export default function Ledger() {
       setEditItem(null)
       setForm({ type: 'expense', title: '', amount: '', category: categories.expense[0] || '기타', date: today(), time: '12:00', memo: '', payment: '카드', cardBilling: false, toAccount: '', isLoan: false, creditCardBilling: false, loanId: '', daysElapsed: '', installmentMonths: '' })
       if (savedId && !editItem) setNewTxnId(savedId)
-      await fetchTransactions()
+      if (!isDemo) await fetchTransactions()
       setTimeout(() => setNewTxnId(null), 1000)
     } catch {
       clearTimeout(loadingTimer)
@@ -526,6 +551,16 @@ export default function Ledger() {
       await deleteDoc(doc(db, 'transactions', id))
       for (const originalId of mergedOriginalIds) {
         await updateDoc(doc(db, 'transactions', originalId), { mergedInto: null })
+      }
+    } else if (isDemo) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k?.startsWith('moa_txns_')) {
+          const txns = JSON.parse(localStorage.getItem(k) || '[]')
+          if (txns.some(t => t.id === id)) {
+            localStorage.setItem(k, JSON.stringify(txns.filter(t => t.id !== id)))
+          }
+        }
       }
     }
     setTransactions(prev => {
@@ -1358,7 +1393,9 @@ export default function Ledger() {
       {/* ── 내역 추가/수정 폼 ── */}
       <BottomSheet variant="full" open={showForm} showHandle={false} background="#F7F8FA"
         onClose={() => { setShowForm(false); setEditItem(null) }}>
-        <div>
+        <div onKeyDown={e => {
+          if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); handleSubmit() }
+        }}>
           {/* 헤더 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 16px', background: '#fff', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <button onClick={() => { setShowForm(false); setEditItem(null) }} aria-label="뒤로가기" className="pressable" style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 12, padding: 4, color: '#191F28' }}><BackIcon /></button>
@@ -1662,14 +1699,14 @@ export default function Ledger() {
                   <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {form.date ? form.date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$1. $2. $3.') : '날짜'}
                   </div>
-                  <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  <input type="date" className="dt-tap-overlay" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
                 <div style={{ flex: 1, position: 'relative' }}>
                   <div style={{ padding: '14px 0', borderRadius: 12, background: '#F2F4F6', textAlign: 'center', fontSize: 15, fontWeight: 600, color: '#191F28' }}>
                     {formatTime(form.time)}
                   </div>
-                  <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                  <input type="time" className="dt-tap-overlay" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
                 </div>
               </div>

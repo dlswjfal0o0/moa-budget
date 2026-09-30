@@ -3,6 +3,7 @@ import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import { ProBadge } from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
+import ThinkingOrbs from '../components/ThinkingOrbs'
 import { UtilityIcon, UtilityChart } from './Analysis'
 import { getColoredShadow } from '../utils/neuColors'
 
@@ -233,9 +234,7 @@ export default function AnalysisNeu(props) {
             </div>
             {loadingAi && (
               <div style={{ textAlign: 'center', padding: '28px 0' }}>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>🤔</div>
-                <p style={{ fontSize: 14, color: '#8B95A1' }}>AI가 소비 패턴을 분석하고 있어요...</p>
-                <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 4 }}>잠시만 기다려주세요</p>
+                <ThinkingOrbs color={primary} size={40} label="소비 패턴을 분석하는 중...." />
               </div>
             )}
             {!loadingAi && !aiFeedbackData && !aiFeedbackRaw && (
@@ -533,7 +532,7 @@ export default function AnalysisNeu(props) {
             {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#8B95A1', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
             {loadingUtilityAI && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <p style={{ fontSize: 14, color: '#8B95A1' }}>공과금 패턴을 분석하고 있어요...</p>
+                <ThinkingOrbs color={primary} size={36} label="공과금 패턴을 비교하는 중...." fontSize={14} />
               </div>
             )}
             {utilityAI && (
