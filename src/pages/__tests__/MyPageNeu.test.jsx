@@ -73,11 +73,11 @@ describe('MyPageNeu — 대출 Pro 게이팅', () => {
     expect(screen.queryByText('Pro 구독하고 확인하기')).not.toBeInTheDocument()
   })
 
-  it('isSubscribed=true면 닉네임 옆에 Pro 구독자 배지가 뜬다', () => {
+  it('isSubscribed=true면 닉네임 옆에 Pro 배지가 뜬다', () => {
     purchasesState.isPro = true
     purchasesState.isSubscribed = true
     render(<MyPageNeu {...baseProps} />)
-    expect(screen.getByText('✨ Pro 구독자')).toBeInTheDocument()
+    expect(screen.getByText('✨ Pro')).toBeInTheDocument()
     purchasesState.isSubscribed = false
   })
 })

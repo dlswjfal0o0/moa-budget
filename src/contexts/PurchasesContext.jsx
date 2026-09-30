@@ -20,12 +20,16 @@ const isConfigurable = () => isNative() && !!REVENUECAT_API_KEY
 export function PurchasesProvider({ children }) {
   // isSubscribed: RevenueCat 유료 구독 활성 여부. isPro(기능 접근 가능 여부)는 이것과 무료체험을 합친 값.
   const [isSubscribed, setIsSubscribed] = useState(false)
+  // 현재 구독 중인 App Store 상품 ID (구독 안내에서 '구독 중' / '구독 변경하기' 구분용)
+  const [activeProductId, setActiveProductId] = useState(null)
   const [loading, setLoading] = useState(isConfigurable())
   const [trialStartedAt, setTrialStartedAt] = useState(null)
   const configuredRef = useRef(false)
 
   const applyCustomerInfo = useCallback((customerInfo) => {
-    setIsSubscribed(!!customerInfo?.entitlements?.active?.[PRO_ENTITLEMENT_ID])
+    const entitlement = customerInfo?.entitlements?.active?.[PRO_ENTITLEMENT_ID]
+    setIsSubscribed(!!entitlement)
+    setActiveProductId(entitlement?.productIdentifier ?? null)
   }, [])
 
   // 가입 시 Auth.jsx가 기록한 trialStartedAt을 로그인할 때마다 불러온다 (RevenueCat 설정 여부와 무관하게 항상 동작)
@@ -125,7 +129,7 @@ export function PurchasesProvider({ children }) {
 
   return (
     <PurchasesContext.Provider value={{
-      isPro, isSubscribed, isTrialActive, trialEndsAt, trialDaysLeft,
+      isPro, isSubscribed, activeProductId, isTrialActive, trialEndsAt, trialDaysLeft,
       loading, getOfferings, purchasePackage, restorePurchases,
     }}>
       {children}
