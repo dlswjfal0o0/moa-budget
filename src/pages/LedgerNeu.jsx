@@ -7,6 +7,8 @@ import SToggle from '../components/SToggle'
 import { getCategoryColor } from '../styles/theme'
 import { CatIcon, BackIcon, guessIconKey } from './Ledger'
 import { getColoredShadow } from '../utils/neuColors'
+import DateTimeField from '../components/DateTimeField'
+import SelectField from '../components/SelectField'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -436,10 +438,10 @@ export default function LedgerNeu(props) {
         )}
         {period === '직접' && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input type="date" className="neu-inset" value={customStart} onChange={e => setCustomStart(e.target.value)}
+            <DateTimeField className="neu-inset" placeholder="시작일" value={customStart} onChange={e => setCustomStart(e.target.value)}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
             <span style={{ display: 'flex', alignItems: 'center', color: '#8B95A1', fontSize: 13 }}>~</span>
-            <input type="date" className="neu-inset" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+            <DateTimeField className="neu-inset" placeholder="종료일" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
           </div>
         )}
@@ -708,13 +710,13 @@ export default function LedgerNeu(props) {
             {form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit') && (
               <div className="neu-card" style={{ borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>할부 개월</p>
-                <select value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
+                <SelectField value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
                   className="neu-inset" style={neuInputStyle}>
                   <option value="">일시불</option>
                   {Array.from({ length: 35 }, (_, i) => i + 2).map(m => (
                     <option key={m} value={m}>{m}개월</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             )}
 
@@ -1004,10 +1006,10 @@ export default function LedgerNeu(props) {
           )}
           {searchPeriod === '직접' && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              <input type="date" className="neu-inset" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
+              <DateTimeField className="neu-inset" placeholder="시작일" value={searchCustomStart} onChange={e => setSearchCustomStart(e.target.value)}
                 style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
               <span style={{ display: 'flex', alignItems: 'center', color: '#8B95A1', fontSize: 13 }}>~</span>
-              <input type="date" className="neu-inset" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
+              <DateTimeField className="neu-inset" placeholder="종료일" value={searchCustomEnd} onChange={e => setSearchCustomEnd(e.target.value)}
                 style={{ flex: 1, padding: '8px 10px', borderRadius: 16, border: 'none', fontSize: 13, outline: 'none', color: '#191F28' }} />
             </div>
           )}

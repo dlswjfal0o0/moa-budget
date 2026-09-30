@@ -10,8 +10,9 @@ export default function AIStyleSlider({ value, onChange, primary }) {
       </div>
       <input
         type="range" min="1" max="5" step="1" value={value}
+        className="range-slider" aria-label="AI 분석 스타일"
         onChange={e => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: primary, cursor: 'pointer' }}
+        style={{ '--range-color': primary, '--range-pct': `${((value - 1) / 4) * 100}%` }}
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
         {LEVEL_LABELS.map((label, i) => {
