@@ -1341,7 +1341,7 @@ export default function MyPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
-                    <SubscriptionBadge isSubscribed={isSubscribed} />
+                    <SubscriptionBadge isSubscribed={isSubscribed} onPress={() => setShowPaywall(true)} />
                     <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
                   </div>
                 </div>

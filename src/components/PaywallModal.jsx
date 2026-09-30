@@ -45,9 +45,19 @@ export default function PaywallModal({ open, onClose }) {
               </div>
               <p style={{ fontSize: 28, fontWeight: 800, color: '#111', letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 10 }}>모아 Pro</p>
               <p style={{ fontSize: 13.5, color: 'rgba(0,0,0,0.45)', marginTop: 6, marginBottom: 20, lineHeight: 1.6 }}>
-                결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
-                <br />
-                더 많은 기능을 이용해보세요.
+                {purchases?.isSubscribed ? (
+                  <>
+                    지금 Pro를 이용하고 있어요.
+                    <br />
+                    다른 요금제를 고르면 구독을 변경할 수 있어요.
+                  </>
+                ) : (
+                  <>
+                    결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
+                    <br />
+                    더 많은 기능을 이용해보세요.
+                  </>
+                )}
               </p>
 
               {plans}

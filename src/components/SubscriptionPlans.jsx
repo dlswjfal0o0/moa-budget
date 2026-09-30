@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePurchases } from '../contexts/PurchasesContext'
 
@@ -45,13 +45,37 @@ export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
     return () => { cancelled = true }
   }, [purchases])
 
+  // 지금 구독 중인 요금제(TIERS의 id). RevenueCat 패키지의 상품 ID로 찾고, 없으면 상품 ID 자체가 우리 id와 같은지 본다.
+  const activeProductId = purchases?.isSubscribed ? purchases?.activeProductId : null
+  const currentPlanId = !activeProductId ? null
+    : (offering?.availablePackages?.find(p => p.product?.identifier === activeProductId)?.identifier
+      ?? (TIERS.some(tr => tr.monthly.id === activeProductId || tr.annual.id === activeProductId) ? activeProductId : null))
+
+  // 구독 중이면 처음 열 때 현재 요금제를 선택해 둔다 (한 번만 — 이후엔 사용자가 고른 걸 존중)
+  const syncedRef = useRef(false)
+  useEffect(() => {
+    if (!currentPlanId || syncedRef.current) return
+    for (const tr of TIERS) {
+      for (const p of PERIODS) {
+        if (tr[p.key].id === currentPlanId) {
+          syncedRef.current = true
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- 비동기로 알게 된 현재 구독을 초기 선택에 반영
+          setTierKey(tr.key)
+          setPeriod(p.key)
+        }
+      }
+    }
+  }, [currentPlanId])
+
   const tier = TIERS.find(x => x.key === tierKey)
   const periodMeta = PERIODS.find(p => p.key === period)
   const plan = tier[period]
   const annualSavingsPercent = Math.round((1 - tier.annual.price / (tier.monthly.price * 12)) * 100)
   const standardTier = TIERS.find(x => x.key === 'standard')
+  const isCurrentPlan = !!currentPlanId && plan.id === currentPlanId
 
   const handleSubscribe = async () => {
+    if (isCurrentPlan) return
     setError('')
     setBusy(true)
     try {
@@ -120,7 +144,12 @@ export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
               )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ marginBottom: 2, fontSize: 15, fontWeight: 700, color: '#111' }}>{tr.label}</div>
+                  <div style={{ marginBottom: 2, fontSize: 15, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {tr.label}
+                    {currentPlanId && p.id === currentPlanId && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: primary, background: `${primary}1A`, padding: '2px 7px', borderRadius: 9999 }}>이용 중</span>
+                    )}
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 22, fontWeight: 800, color: sel ? primary : '#555', letterSpacing: '-0.02em' }}>{fmt(p.price)}원</span>
                     <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: 13 }}>/{periodMeta.unit}</span>
@@ -159,17 +188,26 @@ export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
     <div>
       {error && <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>{error}</p>}
 
-      <button onClick={handleSubscribe} disabled={busy}
+      <button onClick={handleSubscribe} disabled={busy || isCurrentPlan}
         style={{
-          width: '100%', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', height: 56, display: 'flex', alignItems: 'center', justifyContent: isCurrentPlan ? 'center' : 'space-between',
           padding: '0 24px', borderRadius: 16, border: 'none',
-          background: `linear-gradient(135deg, ${primary} 0%, #5BA3F8 100%)`,
-          color: '#fff', fontSize: 17, fontWeight: 700,
-          boxShadow: `0 8px 32px ${primary}59`,
-          cursor: busy ? 'not-allowed' : 'pointer',
+          background: isCurrentPlan ? 'rgba(0,0,0,0.06)' : `linear-gradient(135deg, ${primary} 0%, #5BA3F8 100%)`,
+          color: isCurrentPlan ? 'rgba(0,0,0,0.45)' : '#fff', fontSize: 17, fontWeight: 700,
+          boxShadow: isCurrentPlan ? 'none' : `0 8px 32px ${primary}59`,
+          cursor: busy ? 'not-allowed' : isCurrentPlan ? 'default' : 'pointer',
         }}>
-        <span>{busy ? '처리 중...' : `${fmt(plan.price)}원/${periodMeta.unit} 구독하기`}</span>
-        <span style={{ fontSize: 20 }}>›</span>
+        {isCurrentPlan ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            구독 중
+          </span>
+        ) : (
+          <>
+            <span>{busy ? '처리 중...' : currentPlanId ? '구독 변경하기' : `${fmt(plan.price)}원/${periodMeta.unit} 구독하기`}</span>
+            <span style={{ fontSize: 20 }}>›</span>
+          </>
+        )}
       </button>
     </div>
   )

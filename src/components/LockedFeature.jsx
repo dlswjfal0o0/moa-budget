@@ -14,14 +14,17 @@ export function ProBadge({ style }) {
 
 // 닉네임 옆에 붙는 구독 등급 마크. 유료 구독 중엔 Pro, 아니면(무료체험 포함) 일반으로 표시.
 // 테마색 헤더 배너 위에 올라가므로 흰색 반투명 톤을 쓴다.
-export function SubscriptionBadge({ isSubscribed, style }) {
+// onPress를 넘기면 버튼으로 동작한다 (MY에서 누르면 구독 안내가 열림).
+export function SubscriptionBadge({ isSubscribed, onPress, style }) {
+  const Tag = onPress ? 'button' : 'span'
   return (
-    <span style={{
+    <Tag onClick={onPress} aria-label={onPress ? (isSubscribed ? 'Pro 구독 관리' : 'Pro 구독 안내 보기') : undefined} style={{
+      border: 'none', cursor: onPress ? 'pointer' : undefined, fontFamily: 'inherit', lineHeight: 'normal',
       fontSize: 11, fontWeight: 700, borderRadius: 9999, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap',
       color: isSubscribed ? '#fff' : 'rgba(255,255,255,0.85)',
       background: isSubscribed ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
       ...style,
-    }}>{isSubscribed ? '✨ Pro' : '일반'}</span>
+    }}>{isSubscribed ? '✨ Pro' : '일반'}</Tag>
   )
 }
 
