@@ -9,6 +9,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import LoadError from '../components/LoadError'
+import ThinkingOrbs from '../components/ThinkingOrbs'
 import LockedFeature from '../components/LockedFeature'
 import PaywallModal from '../components/PaywallModal'
 import TrialWelcomeModal from '../components/TrialWelcomeModal'
@@ -578,7 +579,9 @@ export default function Home() {
                     })()}
                     <button onClick={e => { e.stopPropagation(); getAiInsight(b, spent) }} disabled={loadingInsightId === b.id}
                       style={{ width: '100%', marginTop: 12, background: themeData.primary + '10', border: 'none', borderRadius: 12, padding: '10px 0', color: themeData.primary, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-                      {loadingInsightId === b.id ? '분석 중...' : aiText ? '🔄 다시 분석' : '✨ AI 조언 보기'}
+                      {loadingInsightId === b.id
+                        ? <ThinkingOrbs color={themeData.primary} size={20} label="분석하는 중...." fontSize={13} />
+                        : aiText ? '🔄 다시 분석' : '✨ AI 조언 보기'}
                     </button>
                   </div>
                   {expandedBudgetEditId === b.id && (

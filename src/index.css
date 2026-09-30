@@ -198,6 +198,11 @@ input.neu-inset:focus, textarea.neu-inset:focus {
     animation-duration: 0.9s !important;
     animation-iteration-count: infinite !important;
   }
+  /* AI 분석 로딩 문구의 빛 번짐은 상태 전달용이라 느리게라도 유지한다 */
+  .thinking-orbs-text {
+    animation-duration: 3.6s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* ── Global Motion System ─────────────────────────── */
@@ -370,4 +375,25 @@ input.neu-inset:focus, textarea.neu-inset:focus {
 .neu-toggle-dot {
   width: 8px; height: 8px; border-radius: 50%;
   transition: background 200ms ease;
+}
+/* ── Thinking Orbs (AI 분석 로딩) ─────────────────── */
+/* 점 구(canvas)는 ThinkingOrbs.jsx에서 그린다. 여기선 문구 빛 번짐만 담당 */
+.thinking-orbs-text {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: #8B95A1;
+  background: linear-gradient(90deg,
+    #8B95A1 0%, #8B95A1 38%,
+    var(--orb-color) 50%,
+    #8B95A1 62%, #8B95A1 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinkingOrbsShimmer 1.8s ease-in-out infinite;
+}
+@keyframes thinkingOrbsShimmer {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
 }
