@@ -35,43 +35,49 @@ export default function PaywallModal({ open, onClose }) {
           </button>
         </div>
 
-        <div style={{ overflowY: 'auto', flex: 1, padding: '8px 24px calc(env(safe-area-inset-bottom, 0px) + 24px)', WebkitOverflowScrolling: 'touch' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 12px', borderRadius: 9999, background: 'rgba(49,130,246,0.1)', border: '1px solid rgba(49,130,246,0.3)' }}>
-            <span style={{ fontSize: 12 }}>💎</span>
-            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#3182F6' }}>PRO</span>
-          </div>
-          <p style={{ fontSize: 28, fontWeight: 800, color: '#111', letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 10 }}>모아 Pro</p>
-          <p style={{ fontSize: 13.5, color: 'rgba(0,0,0,0.45)', marginTop: 6, marginBottom: 20, lineHeight: 1.6 }}>
-            결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
-            <br />
-            더 많은 기능을 이용해보세요.
-          </p>
+        <SubscriptionPlanList onPurchased={onClose} renderLayout={({ plans, cta }) => (
+          <>
+            {/* 소개 + 요금제 선택. 내용이 한 화면에 들어가므로 스크롤 없이 고정 배치한다 */}
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '8px 24px 16px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 12px', borderRadius: 9999, background: 'rgba(49,130,246,0.1)', border: '1px solid rgba(49,130,246,0.3)' }}>
+                <span style={{ fontSize: 12 }}>💎</span>
+                <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', color: '#3182F6' }}>PRO</span>
+              </div>
+              <p style={{ fontSize: 28, fontWeight: 800, color: '#111', letterSpacing: '-0.02em', lineHeight: 1.1, marginTop: 10 }}>모아 Pro</p>
+              <p style={{ fontSize: 13.5, color: 'rgba(0,0,0,0.45)', marginTop: 6, marginBottom: 20, lineHeight: 1.6 }}>
+                결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
+                <br />
+                더 많은 기능을 이용해보세요.
+              </p>
 
-          <SubscriptionPlanList onPurchased={onClose} />
-
-          {error && <p style={{ fontSize: 13, color: '#ef4444', marginTop: 4 }}>{error}</p>}
-
-          <div style={{ marginTop: 20, padding: '0 4px 20px' }}>
-            <p style={{ textAlign: 'center', lineHeight: 1.6, color: 'rgba(0,0,0,0.35)', fontSize: 12 }}>
-              구독을 해지하거나 체험이 끝나도 Pro 데이터는 삭제되지 않아요.
-              <br />
-              다시 구독하면 그대로 이어서 사용할 수 있어요.
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
-              <button onClick={handleRestore} disabled={busy}
-                style={{ background: 'none', border: 'none', padding: 0, textDecoration: 'underline', textUnderlineOffset: '2px', color: 'rgba(0,0,0,0.35)', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer' }}>
-                {busy ? '복원하는 중...' : '이전 구매 복원하기'}
-              </button>
-              <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
-              <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.35)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px' }}>이용약관</a>
-              <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
-              <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.35)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px' }}>개인정보처리방침</a>
+              {plans}
             </div>
-            <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, marginTop: 10 }}>
-              구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.
-            </p>
-          </div>
-        </div>
+
+            {/* 하단 고정: 구독 버튼 + 안내·약정 문구(모두 버튼 아래). 기기 높이와 상관없이 홈 인디케이터 바로 위에 붙는다 */}
+            <div style={{ flexShrink: 0, padding: '12px 24px calc(env(safe-area-inset-bottom, 0px) + 12px)', background: '#F5F5F7', }}>
+              {cta}
+              {error && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', marginTop: 8 }}>{error}</p>}
+              <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.5, marginTop: 10 }}>
+                구독을 해지하거나 체험이 끝나도 Pro 데이터는 삭제되지 않아요.
+                <br />
+                다시 구독하면 그대로 이어서 사용할 수 있어요.
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.5, marginTop: 6 }}>
+                구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 }}>
+                <button onClick={handleRestore} disabled={busy}
+                  style={{ background: 'none', border: 'none', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '2px', color: 'rgba(0,0,0,0.4)', fontSize: 11, cursor: busy ? 'not-allowed' : 'pointer' }}>
+                  {busy ? '복원하는 중...' : '이전 구매 복원하기'}
+                </button>
+                <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
+                <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>이용약관</a>
+                <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
+                <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>개인정보처리방침</a>
+              </div>
+            </div>
+          </>
+        )} />
       </div>
     </BottomSheet>
   )

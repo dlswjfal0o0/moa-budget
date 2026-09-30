@@ -24,7 +24,9 @@ const PERIODS = [
 const fmt = (n) => n.toLocaleString('ko-KR')
 
 // 요금제 목록(1년 프로모션 / 일반 × 월간 / 연간). PaywallModal, TrialWelcomeModal이 공유.
-export default function SubscriptionPlanList({ onPurchased }) {
+// renderLayout을 넘기면 요금제 선택부(plans)와 구독 버튼(cta)을 호출부가 원하는 위치에 배치할 수 있다
+// (전체화면 페이월은 버튼을 화면 하단에 고정한다). 없으면 목록 아래에 버튼을 이어 붙인다.
+export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
   const { themeData: t } = useTheme() || {}
   const primary = t?.primary || '#3182F6'
   const purchases = usePurchases()
@@ -64,7 +66,7 @@ export default function SubscriptionPlanList({ onPurchased }) {
     }
   }
 
-  return (
+  const plans = (
     <div>
       {/* 결제 주기 토글 */}
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.06)', borderRadius: 12, padding: 4, marginBottom: 16 }}>
@@ -150,7 +152,11 @@ export default function SubscriptionPlanList({ onPurchased }) {
           )
         })}
       </div>
+    </div>
+  )
 
+  const cta = (
+    <div>
       {error && <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>{error}</p>}
 
       <button onClick={handleSubscribe} disabled={busy}
@@ -167,4 +173,7 @@ export default function SubscriptionPlanList({ onPurchased }) {
       </button>
     </div>
   )
+
+  if (renderLayout) return renderLayout({ plans, cta })
+  return <div>{plans}{cta}</div>
 }

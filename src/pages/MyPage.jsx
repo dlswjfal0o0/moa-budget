@@ -1450,7 +1450,7 @@ export default function MyPage() {
                       <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#fee2e2' : '#e0f2fe', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>
                         {card.cardType === 'credit' ? '신용' : '체크'}
                       </span>
-                      {achieved && <span style={{ fontSize: 10, background: '#dcfce7', color: '#16a34a', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>✓ 달성</span>}
+                      {isPro && achieved && <span style={{ fontSize: 10, background: '#dcfce7', color: '#16a34a', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>✓ 달성</span>}
                     </div>
                     <button onClick={e => {
                       e.stopPropagation()
@@ -1471,17 +1471,24 @@ export default function MyPage() {
                   )}
                   <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
                   <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
-                    {card.limit > 0 && (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
-                        {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
-                  </div>
+                  {/* 실적 목표 달성 현황(목표·진행률 그래프)은 Pro 전용 */}
+                  {isPro ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: '#aaa' }}>목표 {fmt(card.limit || 0)}원</span>
+                        {card.limit > 0 && (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : t.primary }}>
+                            {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ background: '#f0f0f0', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : t.primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                      </div>
+                    </>
+                  ) : (
+                    <LockedFeature variant="compact" title="실적 달성 현황 보기" onPress={(e) => { e.stopPropagation(); setShowPaywall(true) }} />
+                  )}
                 </div>
                 {/* 수정/삭제 펼침 행 */}
                 {expandedCardId === card.id && (

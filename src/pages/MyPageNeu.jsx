@@ -200,7 +200,7 @@ export default function MyPageNeu(props) {
                       <span style={{ fontSize: 10, background: card.cardType === 'credit' ? '#FFE0E0' : '#DCEEFB', color: card.cardType === 'credit' ? '#ef4444' : '#0284c7', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>
                         {card.cardType === 'credit' ? '신용' : '체크'}
                       </span>
-                      {achieved && <span style={{ fontSize: 10, background: '#D9F5E3', color: '#16a34a', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>✓ 달성</span>}
+                      {isPro && achieved && <span style={{ fontSize: 10, background: '#D9F5E3', color: '#16a34a', borderRadius: 9999, padding: '2px 7px', fontWeight: 600 }}>✓ 달성</span>}
                     </div>
                     <button onClick={e => { e.stopPropagation(); setExpandedCardId(expandedCardId === card.id ? null : card.id) }}
                       aria-label={expandedCardId === card.id ? '카드 상세 접기' : '카드 상세 펼치기'}
@@ -220,17 +220,24 @@ export default function MyPageNeu(props) {
                   )}
                   <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>이번 달 사용</p>
                   <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, color: '#8B95A1' }}>목표 {fmt(card.limit || 0)}원</span>
-                    {card.limit > 0 && (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : primary }}>
-                        {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
-                      </span>
-                    )}
-                  </div>
-                  <div className="neu-inset" style={{ borderRadius: 99, height: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : primary, width: `${pct}%`, transition: 'width 0.3s' }} />
-                  </div>
+                  {/* 실적 목표 달성 현황(목표·진행률 그래프)은 Pro 전용 */}
+                  {isPro ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: '#8B95A1' }}>목표 {fmt(card.limit || 0)}원</span>
+                        {card.limit > 0 && (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: achieved ? '#22c55e' : primary }}>
+                            {achieved ? '✓ 달성' : `${Math.round(pct)}%`}
+                          </span>
+                        )}
+                      </div>
+                      <div className="neu-inset" style={{ borderRadius: 99, height: 6, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 99, background: achieved ? '#22c55e' : primary, width: `${pct}%`, transition: 'width 0.3s' }} />
+                      </div>
+                    </>
+                  ) : (
+                    <LockedFeature variant="compact" title="실적 달성 현황 보기" onPress={(e) => { e.stopPropagation(); setShowPaywall(true) }} />
+                  )}
                 </div>
                 {expandedCardId === card.id && (
                   <div className="neu-card" style={{ display: 'flex', borderRadius: 20, overflow: 'hidden', marginTop: 8 }}>
