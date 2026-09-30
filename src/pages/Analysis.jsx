@@ -396,8 +396,10 @@ export default function Analysis() {
 
   if (neumorphism) {
     return (
+      <>
       <AnalysisNeu
         showUtilities={showUtilities} loadError={loadError}
+        setShowPaywall={setShowPaywall}
         viewMonth={viewMonth} viewYear={viewYear} setViewYear={setViewYear} setViewMonth={setViewMonth}
         monthSlideDir={monthSlideDir} triggerMonthSlide={triggerMonthSlide}
         activeAnalysisTab={activeAnalysisTab} setActiveAnalysisTab={setActiveAnalysisTab}
@@ -418,6 +420,8 @@ export default function Analysis() {
         editingUtility={editingUtility} setEditingUtility={setEditingUtility}
         newUtility={newUtility} setNewUtility={setNewUtility} saveUtilities={saveUtilities}
       />
+      {showPaywall && <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />}
+      </>
     )
   }
 
