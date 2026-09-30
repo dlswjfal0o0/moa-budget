@@ -19,6 +19,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 import HomeNeu from './HomeNeu'
+import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -374,16 +375,23 @@ export default function Home() {
   const expenseByCategory = expenses.reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + t.amount; return acc }, {})
   const fmt = n => n.toLocaleString('ko-KR')
   const upcomingPayments = fixedExpenses
-    .filter(f => !f.done && f.dueDate)
-    .map(f => {
+    .filter(f => !f.done)
+    .map(raw => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)  // ← 자정 기준으로 정규화
-        const dueDay = parseInt(f.dueDate.split('-')[2])
-        let next = new Date(today.getFullYear(), today.getMonth(), dueDay)
-        if (next < today) next = new Date(today.getFullYear(), today.getMonth() + 1, dueDay)
-        const daysLeft = Math.ceil((next - today) / 86400000)
-        return { ...f, daysLeft, dueDay }
+        // 이번 달 → 다음 달 순으로, 그 달에 적용되는 고정지출 버전 기준의 다음 결제일
+        for (let i = 0; i < 2; i++) {
+          const f = resolveFixedForMonth(raw, toMonthKey(today.getFullYear(), today.getMonth() + i))
+          const dueDay = f?.dueDate ? parseInt(f.dueDate.split('-')[2]) : NaN
+          if (isNaN(dueDay)) continue
+          const next = new Date(today.getFullYear(), today.getMonth() + i, dueDay)
+          if (next < today) continue
+          const daysLeft = Math.ceil((next - today) / 86400000)
+          return { ...f, daysLeft, dueDay }
+        }
+        return null
     })
+    .filter(Boolean)
     .filter(f => f.daysLeft >= 0 && f.daysLeft <= 10)
     .sort((a, b) => a.daysLeft - b.daysLeft)
   const categoryData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
