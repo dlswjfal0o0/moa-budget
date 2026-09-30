@@ -51,19 +51,18 @@ export default function PaywallModal({ open, onClose }) {
               </p>
 
               {plans}
-
-              <p style={{ textAlign: 'center', lineHeight: 1.6, color: 'rgba(0,0,0,0.35)', fontSize: 12, marginTop: 4 }}>
-                구독을 해지하거나 체험이 끝나도 Pro 데이터는 삭제되지 않아요.
-                <br />
-                다시 구독하면 그대로 이어서 사용할 수 있어요.
-              </p>
             </div>
 
-            {/* 하단 고정: 구독 버튼 + 약정 문구. 기기 높이와 상관없이 홈 인디케이터 바로 위에 붙는다 */}
+            {/* 하단 고정: 구독 버튼 + 안내·약정 문구(모두 버튼 아래). 기기 높이와 상관없이 홈 인디케이터 바로 위에 붙는다 */}
             <div style={{ flexShrink: 0, padding: '12px 24px calc(env(safe-area-inset-bottom, 0px) + 12px)', background: '#F5F5F7', boxShadow: '0 -8px 16px -8px rgba(0,0,0,0.08)' }}>
               {cta}
               {error && <p style={{ fontSize: 12, color: '#ef4444', textAlign: 'center', marginTop: 8 }}>{error}</p>}
               <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.5, marginTop: 10 }}>
+                구독을 해지하거나 체험이 끝나도 Pro 데이터는 삭제되지 않아요.
+                <br />
+                다시 구독하면 그대로 이어서 사용할 수 있어요.
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.5, marginTop: 6 }}>
                 구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 }}>
