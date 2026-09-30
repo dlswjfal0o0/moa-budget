@@ -1434,7 +1434,7 @@ export default function Ledger() {
                 <span style={{ fontSize: 22, fontWeight: 600, color: '#8B95A1' }}>원</span>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                {[1000, 5000, 10000, 50000].map(amt => (
+                {[5000, 10000, 50000, 100000].map(amt => (
                   <button key={amt} onClick={() => setForm(f => ({ ...f, amount: String(Number(f.amount || 0) + amt) }))}
                     style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: '#F2F4F6', color: '#191F28', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     +{amt.toLocaleString()}
