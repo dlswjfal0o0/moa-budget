@@ -102,6 +102,7 @@ export default function AiConsumptionReport({
   data, raw, loading, saved, onAnalyze,
   primary, primaryLight, text = '#191F28', fmt,
   styleLevel = 3, categorySpend = {}, showAdvice = true, hasData = true,
+  month, totalExpense = 0, lastTotalExpense = 0,
   neumorphism = false, coloredShadow,
 }) {
   const mode = styleMode(styleLevel)
@@ -162,10 +163,36 @@ export default function AiConsumptionReport({
       {/* 분석 전: 받게 될 결과 미리보기 + 시작 버튼 */}
       {isEmpty && (
         <div>
-          <p style={{ fontSize: 15, color: body, lineHeight: 1.6, wordBreak: 'keep-all' }}>
-            이번 달 지출을 지난달과 비교해 소비 습관을 분석해드려요.
+          <p style={{ fontSize: 18, fontWeight: 800, color: text, letterSpacing: '-0.03em', lineHeight: 1.35, wordBreak: 'keep-all' }}>
+            {month ? `${month}월 소비, ` : '이번 달 소비, '}<span style={{ color: primary }}>AI가 짚어드릴게요</span>
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${previews.length}, 1fr)`, gap: 8, marginTop: 14 }}>
+          <p style={{ fontSize: 13.5, color: muted, lineHeight: 1.55, marginTop: 4, wordBreak: 'keep-all' }}>
+            지난달과 비교해 어디에 많이 썼는지, 무엇이 달라졌는지 알려드려요.
+          </p>
+
+          {/* 이번 달 실제 수치 — 분석 전에도 내 데이터가 반영된 카드처럼 보이도록 */}
+          {hasData && (() => {
+            const diffPct = lastTotalExpense > 0 ? Math.round(((totalExpense - lastTotalExpense) / lastTotalExpense) * 100) : null
+            const up = diffPct !== null && diffPct > 0
+            const diffColor = diffPct === null || diffPct === 0 ? muted : up ? '#F04452' : GREEN
+            return (
+              <div {...panel} style={{ ...panel.style, borderRadius: 14, padding: '12px 14px', marginTop: 14, display: 'flex', alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>이번 달 지출</p>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalExpense)}원</p>
+                </div>
+                <div style={{ width: 1, alignSelf: 'stretch', background: divider, margin: '0 14px' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>지난달 대비</p>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: diffColor, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {diffPct === null ? '비교 없음' : diffPct === 0 ? '변화 없음' : `${up ? '▲' : '▼'} ${Math.abs(diffPct)}%`}
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
+          <p style={{ fontSize: 12, fontWeight: 700, color: muted, marginTop: 18, marginBottom: 8 }}>분석하면 알 수 있어요</p>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${previews.length}, 1fr)`, gap: 8 }}>
             {previews.map(pv => (
               <div key={pv.kind} {...panel} style={{ ...panel.style, borderRadius: 14, padding: '14px 6px 12px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

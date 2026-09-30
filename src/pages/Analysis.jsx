@@ -660,6 +660,7 @@ export default function Analysis() {
               data={aiFeedbackData} raw={aiFeedbackRaw} loading={loadingAi} saved={aiIsSaved} onAnalyze={getAiFeedback}
               primary={primary} primaryLight={primaryLight} text={themeData.text || '#191F28'} fmt={fmt}
               styleLevel={aiAnalysisStyle} categorySpend={byCategory} showAdvice={aiShowAdvice} hasData={expenses.length > 0}
+              month={viewMonth + 1} totalExpense={totalExpense} lastTotalExpense={lastTotalExpense}
             />
           </div>
 

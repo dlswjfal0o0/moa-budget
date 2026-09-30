@@ -231,6 +231,7 @@ export default function AnalysisNeu(props) {
               data={aiFeedbackData} raw={aiFeedbackRaw} loading={loadingAi} saved={aiIsSaved} onAnalyze={getAiFeedback}
               primary={primary} primaryLight={primaryLight} fmt={fmt}
               styleLevel={aiAnalysisStyle} categorySpend={byCategory} showAdvice={aiShowAdvice} hasData={expenses.length > 0}
+              month={viewMonth + 1} totalExpense={totalExpense} lastTotalExpense={lastTotalExpense}
               neumorphism coloredShadow={coloredShadow}
             />
           </div>
