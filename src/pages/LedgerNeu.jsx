@@ -8,6 +8,7 @@ import { getCategoryColor } from '../styles/theme'
 import { CatIcon, BackIcon, guessIconKey } from './Ledger'
 import { getColoredShadow } from '../utils/neuColors'
 import DateTimeField from '../components/DateTimeField'
+import SelectField from '../components/SelectField'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -709,13 +710,13 @@ export default function LedgerNeu(props) {
             {form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit') && (
               <div className="neu-card" style={{ borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>할부 개월</p>
-                <select value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
+                <SelectField value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
                   className="neu-inset" style={neuInputStyle}>
                   <option value="">일시불</option>
                   {Array.from({ length: 35 }, (_, i) => i + 2).map(m => (
                     <option key={m} value={m}>{m}개월</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             )}
 

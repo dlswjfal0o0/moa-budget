@@ -23,6 +23,7 @@ import { useIsPro } from '../contexts/PurchasesContext'
 import { animateSpring, createVelocityTracker, getSpringPreset, useReducedMotion } from '../utils/motion'
 import LedgerNeu from './LedgerNeu'
 import DateTimeField from '../components/DateTimeField'
+import SelectField from '../components/SelectField'
 
 const toDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 const today = () => toDateStr(new Date())
@@ -1617,13 +1618,13 @@ export default function Ledger() {
             {form.type === 'expense' && userCardsList.some(c => c.name === form.payment && c.cardType === 'credit') && (
               <div style={{ background: '#fff', borderRadius: 20, padding: '18px 20px', marginBottom: 12 }}>
                 <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 12, fontWeight: 600 }}>할부 개월</p>
-                <select value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
+                <SelectField value={form.installmentMonths || ''} onChange={e => setForm(f => ({ ...f, installmentMonths: e.target.value }))}
                   style={inputStyle}>
                   <option value="">일시불</option>
                   {Array.from({ length: 35 }, (_, i) => i + 2).map(m => (
                     <option key={m} value={m}>{m}개월</option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             )}
 
