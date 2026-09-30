@@ -275,22 +275,22 @@ export default function CalendarNeu(props) {
 
         {/* 이번 주 / 이번 달 요약 */}
         <div style={{ padding: '12px 20px 0' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+            <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 지출</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(weekExpense)}원</p>
             </div>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
+            <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 수입</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(weekIncome)}원</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 지출</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
             </div>
-            <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
+            <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 수입</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
             </div>
