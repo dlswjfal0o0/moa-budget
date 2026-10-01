@@ -23,6 +23,7 @@ import HomeNeu from './HomeNeu'
 import CreditCardBills from '../components/CreditCardBills'
 import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
 import DateTimeField from '../components/DateTimeField'
+import { buildDemoBudgetInsight } from '../utils/demoData'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -174,26 +175,6 @@ export default function Home() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       try { const b = localStorage.getItem('moa_budgets'); if (b) setBudgets(JSON.parse(b)) } catch { /* ignore */ }
       try { const f = localStorage.getItem('moa_fixed_expenses'); setFixedExpenses(f ? JSON.parse(f) : []) } catch { setFixedExpenses([]) }
-      setBudgetInsights({
-        1: {
-          status: 'warning',
-          summary: '생활비 예산의 51%를 사용했어요. 남은 기간 동안 하루 약 15,000원씩 쓸 수 있어요.',
-          tips: [
-            { icon: 'food',   title: '식비 조절이 필요해요', detail: '이번 달 배달음식 지출이 늘었어요. 집밥 횟수를 늘리면 남은 예산을 여유 있게 유지할 수 있어요.' },
-            { icon: 'chart',  title: '지출 패턴 점검', detail: '주말 지출이 평일보다 높은 편이에요. 주말 소비 계획을 미리 세워두면 초과를 막을 수 있어요.' },
-            { icon: 'adjust', title: '마지막 일주일 전략', detail: '남은 예산을 7일로 나눠 일일 한도를 정해보세요. 작은 목표가 예산 관리를 쉽게 만들어줘요.' },
-          ],
-        },
-        2: {
-          status: 'good',
-          summary: '교통비 예산을 훌륭하게 관리하고 있어요! 현재 사용률 54%로 여유가 있어요.',
-          tips: [
-            { icon: 'chart',  title: '이번 달 교통비 우수', detail: '지난달 대비 교통비가 안정적으로 유지되고 있어요. 현재 패턴을 그대로 유지해보세요.' },
-            { icon: 'adjust', title: '남은 예산 활용 팁', detail: '남은 교통 예산으로 카풀이나 자전거 이용을 더 늘리면 다음 달 예산을 더 줄일 수도 있어요.' },
-            { icon: 'food',   title: '대중교통 최적화', detail: '정기권이나 교통카드 할인 혜택을 활용하면 매달 교통비를 10~15% 절약할 수 있어요.' },
-          ],
-        },
-      })
       return
     }
     const unsub = onAuthStateChanged(auth, async u => {
@@ -511,6 +492,12 @@ export default function Home() {
     background: '#F7F8FA', color: '#191F28', boxSizing: 'border-box'
   }
 
+  // 데모 모드는 실제 사용액으로 만든 조언을 기본으로 보여준다 ('다시 분석'으로 받은 실제 AI 결과가 있으면 그쪽을 우선)
+  const getBudgetInsight = (b, spent) => {
+    if (budgetInsights[b.id] || localStorage.getItem('moa_demo_mode') !== 'true') return budgetInsights[b.id]
+    return buildDemoBudgetInsight(b, spent)
+  }
+
   // 뉴모피즘 화면(HomeNeu)에 넘길 예산별 파생 데이터. 기존 카드 렌더링(map 내부)과
   // 동일한 신용카드 필터/집계 규칙을 따르되, 프레젠테이션 컴포넌트가 재계산하지 않도록 미리 합쳐 둔다.
   const budgetsWithStats = currentMonthBudgets.map(b => {
@@ -520,7 +507,7 @@ export default function Home() {
     const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
     const exceeded = spent > b.amount
     const color = exceeded ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary
-    return { ...b, spent, pct, exceeded, color, aiText: budgetInsights[b.id] }
+    return { ...b, spent, pct, exceeded, color, aiText: getBudgetInsight(b, spent) }
   })
 
   if (neumorphism) {
@@ -610,7 +597,7 @@ export default function Home() {
               const pct = b.amount > 0 ? Math.min((spent / b.amount) * 100, 100) : 0
               const exceeded = spent > b.amount
               const color = exceeded ? '#FF5A5F' : pct >= 80 ? '#F59E0B' : themeData.primary
-              const aiText = budgetInsights[b.id]
+              const aiText = getBudgetInsight(b, spent)
               // eslint-disable-next-line no-unused-vars
               const _arcLen = Math.PI * 34
               return (

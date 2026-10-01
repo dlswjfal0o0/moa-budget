@@ -242,8 +242,7 @@ export default function Analysis() {
 
   useEffect(() => {
     const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isDemo) { fetchDemoData(); return }
+    if (isDemo) return // 데모 데이터는 아래 월 변경 effect가 불러온다
     const unsub = onAuthStateChanged(auth, async u => {
       if (!u) {
         // 세션 복원이 아직 안 끝난 상태에서 첫 콜백이 null로 먼저 올 수 있다 —
@@ -259,6 +258,12 @@ export default function Analysis() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (user) fetchData() }, [user, viewYear, viewMonth]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 데모 모드는 user가 없어 위 effect가 돌지 않으므로, 월을 넘길 때마다 해당 월의 로컬 시드 거래를 다시 읽는다
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (localStorage.getItem('moa_demo_mode') === 'true') fetchDemoData()
+  }, [viewYear, viewMonth]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 계정 기준 AI 캐시 로드: 로그인 시 Firestore에서 저장된 분석 결과를 불러옴
   useEffect(() => {
