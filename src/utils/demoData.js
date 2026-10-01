@@ -173,29 +173,6 @@ export function injectDemoData() {
   ]
   localStorage.setItem('moa_loans', JSON.stringify(loans))
 
-  // ── 예산 AI 조언 샘플 ─────────────────────────────
-  const budgetInsights = {
-    1: {
-      status: 'warning',
-      summary: '생활비 예산의 72%를 사용했어요. 남은 기간 동안 하루 약 7,400원씩 쓸 수 있어요.',
-      tips: [
-        { icon: 'food',   title: '식비 조절이 필요해요', detail: '이번 달 배달음식 지출이 늘었어요. 집밥 횟수를 늘리면 남은 예산을 여유 있게 유지할 수 있어요.' },
-        { icon: 'chart',  title: '지출 패턴 점검', detail: '주말 지출이 평일보다 높은 편이에요. 주말 소비 계획을 미리 세워두면 초과를 막을 수 있어요.' },
-        { icon: 'adjust', title: '마지막 일주일 전략', detail: '남은 예산을 7일로 나눠 일일 한도를 정해보세요. 작은 목표가 예산 관리를 쉽게 만들어줘요.' },
-      ],
-    },
-    2: {
-      status: 'good',
-      summary: '교통비 예산을 훌륭하게 관리하고 있어요! 현재 사용률 57%로 여유가 있어요.',
-      tips: [
-        { icon: 'chart',  title: '이번 달 교통비 우수', detail: '지난달 대비 교통비가 안정적으로 유지되고 있어요. 현재 패턴을 그대로 유지해보세요.' },
-        { icon: 'adjust', title: '남은 예산 활용 팁', detail: '남은 교통 예산으로 카풀이나 자전거 이용을 더 늘리면 다음 달 예산을 더 줄일 수도 있어요.' },
-        { icon: 'food',   title: '대중교통 최적화', detail: '정기권이나 교통카드 할인 혜택을 활용하면 매달 교통비를 10~15% 절약할 수 있어요.' },
-      ],
-    },
-  }
-  localStorage.setItem('moa_demo_budget_insights', JSON.stringify(budgetInsights))
-
   // ── AI 소비 분석 샘플 ─────────────────────────────
   const aiFeedback = {
     score: 72,
@@ -232,4 +209,43 @@ export function injectDemoData() {
 
   // 앱 시작 시 localStorage를 한 번만 읽는 컨텍스트(카드·대출·구독)가 새로고침 없이 데모 데이터를 반영하도록 알린다.
   window.dispatchEvent(new Event(DEMO_DATA_EVENT))
+}
+
+// 데모 모드 예산 AI 조언. 고정 문구를 쓰면 실제 사용률(예: 1%)과 문구(예: 51%)가 어긋나므로
+// 화면에 보이는 사용액·남은 기간으로 요약과 조언을 그때그때 만든다. 상태 기준은 Home의 getAiInsight와 같다.
+export function buildDemoBudgetInsight(budget, spent, now = new Date()) {
+  const fmt = (n) => n.toLocaleString('ko-KR')
+  const amount = Number(budget.amount) || 0
+  const pct = amount > 0 ? Math.round((spent / amount) * 100) : 0
+  const remaining = amount - spent
+  const end = new Date(`${budget.endDate}T23:59:59`)
+  const daysLeft = Math.max(1, Math.ceil((end - now) / 86400000))
+  const daily = Math.max(0, Math.floor(remaining / daysLeft / 100) * 100)
+  const status = pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : 'good'
+  const label = budget.label || '예산'
+
+  const summary = status === 'danger'
+    ? `${label} 예산을 ${fmt(spent - amount)}원 초과했어요. 남은 ${daysLeft}일 동안은 꼭 필요한 지출만 해보세요.`
+    : status === 'warning'
+      ? `${label} 예산의 ${pct}%를 사용했어요. 남은 ${daysLeft}일 동안 하루 약 ${fmt(daily)}원씩 쓸 수 있어요.`
+      : `${label} 예산을 여유 있게 관리하고 있어요. 지금까지 ${pct}%를 사용했고, 남은 ${daysLeft}일 동안 하루 약 ${fmt(daily)}원씩 쓸 수 있어요.`
+
+  const dailyTip = status === 'danger'
+    ? { icon: 'adjust', title: '다음 예산 다시 잡기', detail: `이번 달은 ${fmt(spent - amount)}원을 초과했어요. 다음 달 예산을 실제 지출에 맞게 조정해보는 건 어떨까요?` }
+    : { icon: 'calendar', title: '하루 한도 정하기', detail: `남은 예산 ${fmt(remaining)}원을 ${daysLeft}일로 나누면 하루 약 ${fmt(daily)}원이에요. 이 금액을 하루 한도로 정해보세요.` }
+
+  const isTransit = Array.isArray(budget.categories) && budget.categories.includes('교통')
+  const tips = isTransit
+    ? [
+        dailyTip,
+        { icon: 'chart', title: '이동 패턴 점검', detail: '주유나 택시처럼 금액이 큰 이동이 몰리는 날을 확인해보세요. 대중교통으로 바꿀 수 있는 이동부터 줄여보는 게 좋아요.' },
+        { icon: 'money', title: '교통 할인 활용', detail: '정기권이나 교통카드 할인 혜택을 활용하면 매달 교통비를 10~15% 아낄 수 있어요.' },
+      ]
+    : [
+        dailyTip,
+        { icon: 'food', title: '식비 먼저 살펴보기', detail: '배달음식과 카페 지출은 횟수가 쌓이기 쉬워요. 주에 몇 번까지 쓸지 미리 정해두면 예산을 지키기 쉬워요.' },
+        { icon: 'chart', title: '주말 지출 계획', detail: '주말 지출이 평일보다 높은 편이에요. 주말 소비 계획을 미리 세워두면 초과를 막을 수 있어요.' },
+      ]
+
+  return { status, summary, tips }
 }
