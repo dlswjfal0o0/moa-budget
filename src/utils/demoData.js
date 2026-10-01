@@ -2,6 +2,9 @@ import { auth } from '../firebase/config'
 
 export const DEMO_DATA_EVENT = 'moa-demo-data-injected'
 
+// 데모 데이터 구성을 바꾸면 올린다 → 이미 데모 데이터가 들어 있는 기기도 앱을 열 때 새 구성으로 다시 만든다
+const DEMO_DATA_VERSION = '2'
+
 // App Store 심사용 데모 계정.
 // 이 이메일로 로그인하면 데모 데이터가 자동으로 로드되고 Pro 구독 상태로 보인다(심사자 전용).
 // Firebase Authentication 콘솔에서 이 이메일 + 비밀번호로 계정을 미리 만들어 두세요.
@@ -31,7 +34,6 @@ export function injectDemoData() {
     months.push({ off, y, m, key: `${y}-${pad(m)}`, days: new Date(y, m, 0).getDate() })
   }
   const cur = months[0]
-  const todayDate = now.getDate()
 
   // 월별로 금액에 소폭 변동을 줘서 시간대별로 다양하게 보이도록
   const vary = (base, off, seed) => {
@@ -101,14 +103,15 @@ export function injectDemoData() {
     { d: 28, t: 'expense', name: '약국',            amt: 8900,  cat: '의료/건강',   pay: '현금',            time: '13:50' },
   ]
 
+  // 이번 달도 한 달치 거래를 날짜 그대로 모두 넣는다(미래 날짜 포함). 오늘까지만 넣으면 월초에는
+  // 카드 실적·예산이 0~1%로 비어 보여서 베타 테스트·심사 때 기능을 확인하기 어렵다.
   months.forEach((info) => {
-    const maxDay = info.off === 0 ? todayDate : 99
     const base = 1000 + info.off * 100
     const rows = []
     // 월급 (매달 1일)
     rows.push(tx(base, `${info.key}-01`, 'income', `${info.m}월 월급`, 3200000, '급여', '신한은행', '', '09:00'))
     template.forEach((r, i) => {
-      if (r.d > maxDay || r.d > info.days) return
+      if (r.d > info.days) return
       const amount = r.t === 'income' ? r.amt : vary(r.amt, info.off, i)
       rows.push(
         tx(base + i + 1, `${info.key}-${pad(r.d)}`, r.t, r.name, amount, r.cat, r.pay, r.memo ? `${info.m}월분` : '', r.time)
@@ -204,6 +207,7 @@ export function injectDemoData() {
 
   // ── 데모 모드 플래그 ──────────────────────────────
   localStorage.setItem('moa_demo_mode', 'true')
+  localStorage.setItem('moa_demo_version', DEMO_DATA_VERSION)
   localStorage.setItem('moa_logged_in', 'true')
   localStorage.setItem('moa_nickname', '모아 moa')
 
@@ -248,4 +252,18 @@ export function buildDemoBudgetInsight(budget, spent, now = new Date()) {
       ]
 
   return { status, summary, tips }
+}
+
+// 데모 데이터는 주입한 날의 달을 '이번 달'로 만든다(예산 기간·카드 실적·카드 대금·고정지출 날짜).
+// 달이 바뀐 뒤 앱을 열면 지난달 기준으로 남아 홈 예산·MY 카드 실적이 비어 보이므로, 이번 달 기준으로 다시 만든다.
+// 데모 데이터 구성(DEMO_DATA_VERSION)이 바뀐 경우에도 다시 만든다.
+// 다시 만들었으면 true를 돌려준다.
+export function refreshDemoDataIfStale(now = new Date()) {
+  if (localStorage.getItem('moa_demo_mode') !== 'true') return false
+  const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  let months = []
+  try { months = JSON.parse(localStorage.getItem('moa_demo_months') || '[]') } catch { /* 다시 만든다 */ }
+  if (months[0] === key && localStorage.getItem('moa_demo_version') === DEMO_DATA_VERSION) return false
+  injectDemoData()
+  return true
 }
