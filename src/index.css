@@ -48,15 +48,25 @@ body {
 
 #root {
   width: 100%;
-  max-width: 430px;
   background: #F7F8FA;
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
   /* transform이 있는 요소는 position:fixed 자손의 containing block이 되므로,
      태블릿/데스크톱에서도 하단 네비/모달/바텀시트가 뷰포트 전체가 아닌
-     이 430px 프레임 안에서만 고정되도록 한다(반응형 폭 넓이는 그대로 유지). */
+     이 프레임 안에서만 고정되도록 한다(반응형 폭 넓이는 그대로 유지). */
   transform: translateZ(0);
+}
+
+/* 430px 캡은 마우스/트랙패드 기반 데스크톱 브라우저에서만 적용한다 — 모바일
+   앱처럼 보이게 가운데 정렬하려는 의도. 터치 기반 기기(네이티브 앱의
+   WKWebView 포함)는 여기서 제외해야, 430pt보다 넓은 기기(iPhone 17 Pro Max
+   등 440pt)가 나와도 화면 양옆에 여백이 생기지 않는다. 특정 px로 다시
+   하드코딩하면 다음에 더 넓은 기기가 나올 때마다 같은 문제가 반복된다. */
+@media (hover: hover) and (pointer: fine) {
+  #root {
+    max-width: 430px;
+  }
 }
 
 /* 버튼 기본 reset */
