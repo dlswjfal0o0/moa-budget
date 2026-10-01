@@ -3,7 +3,7 @@ import { auth } from '../firebase/config'
 export const DEMO_DATA_EVENT = 'moa-demo-data-injected'
 
 // 데모 데이터 구성을 바꾸면 올린다 → 이미 데모 데이터가 들어 있는 기기도 앱을 열 때 새 구성으로 다시 만든다
-const DEMO_DATA_VERSION = '2'
+const DEMO_DATA_VERSION = '3'
 
 // App Store 심사용 데모 계정.
 // 이 이메일로 로그인하면 데모 데이터가 자동으로 로드되고 Pro 구독 상태로 보인다(심사자 전용).
@@ -73,19 +73,21 @@ export function injectDemoData() {
 
   // 한 달 거래 내역 템플릿 — 일자(d)와 시간(time)을 다양하게 분포
   // t: income|expense, memo:true 이면 "N월분" 자동 부여(공과금)
+  // fixedId: 체크(완료)된 고정지출과 연결된 거래 — 캘린더에서 체크할 때 만들어지는 거래와 같은 형태로, 금액도 고정지출 그대로 둔다
   const template = [
     { d: 1,  t: 'expense', name: '스타벅스',        amt: 6500,  cat: '식비',        pay: '신한 체크카드',   time: '08:32' },
     { d: 2,  t: 'expense', name: '이마트',          amt: 87300, cat: '식비',        pay: '신한 체크카드',   time: '18:45' },
     { d: 2,  t: 'expense', name: '지하철',          amt: 1500,  cat: '교통',        pay: '카카오뱅크 체크카드', time: '08:10' },
     { d: 3,  t: 'expense', name: '올리브영',        amt: 43000, cat: '생활',        pay: 'KB국민 신용카드', time: '14:20' },
-    { d: 3,  t: 'expense', name: '넷플릭스',        amt: 17000, cat: '구독',        pay: 'KB국민 신용카드', time: '00:05' },
+    { d: 3,  t: 'expense', name: '넷플릭스',        amt: 17000, cat: '구독',        pay: 'KB국민 신용카드', time: '00:00', fixedId: 2 },
+    { d: 5,  t: 'expense', name: '월세',            amt: 550000,cat: '주거',        pay: '신한은행',        time: '00:00', fixedId: 1 },
     { d: 5,  t: 'expense', name: '주유',            amt: 65000, cat: '교통',        pay: 'KB국민 신용카드', time: '17:55' },
     { d: 6,  t: 'expense', name: '카페라떼',        amt: 8500,  cat: '식비',        pay: '카카오뱅크 체크카드', time: '09:15' },
     { d: 7,  t: 'expense', name: '의류 구매',       amt: 89000, cat: '쇼핑',        pay: '삼성 신용카드',   time: '15:40' },
     { d: 8,  t: 'expense', name: '병원비',          amt: 15000, cat: '의료/건강',   pay: '현금',            time: '11:00' },
     { d: 9,  t: 'expense', name: '마트 장보기',     amt: 56800, cat: '식비',        pay: '신한 체크카드',   time: '19:20' },
     { d: 10, t: 'income',  name: '프리랜서 수입',   amt: 300000,cat: '부수입',      pay: '카카오뱅크',      time: '10:00' },
-    { d: 11, t: 'expense', name: '헬스장',          amt: 80000, cat: '스포츠/레저', pay: 'KB국민 신용카드', time: '07:30' },
+    { d: 11, t: 'expense', name: '헬스장',          amt: 80000, cat: '스포츠/레저', pay: 'KB국민 신용카드', time: '00:00', fixedId: 3 },
     { d: 13, t: 'expense', name: '배달음식',        amt: 32000, cat: '식비',        pay: '신한 체크카드',   time: '19:05' },
     { d: 15, t: 'expense', name: '아메리카노',      amt: 7000,  cat: '식비',        pay: '신한 체크카드',   time: '08:55' },
     { d: 16, t: 'expense', name: '온라인 쇼핑',     amt: 56000, cat: '쇼핑',        pay: '삼성 신용카드',   time: '02:30' },
@@ -112,10 +114,10 @@ export function injectDemoData() {
     rows.push(tx(base, `${info.key}-01`, 'income', `${info.m}월 월급`, 3200000, '급여', '신한은행', '', '09:00'))
     template.forEach((r, i) => {
       if (r.d > info.days) return
-      const amount = r.t === 'income' ? r.amt : vary(r.amt, info.off, i)
-      rows.push(
-        tx(base + i + 1, `${info.key}-${pad(r.d)}`, r.t, r.name, amount, r.cat, r.pay, r.memo ? `${info.m}월분` : '', r.time)
-      )
+      const amount = r.t === 'income' || r.fixedId ? r.amt : vary(r.amt, info.off, i)
+      const memo = r.fixedId ? '고정지출' : r.memo ? `${info.m}월분` : ''
+      const row = tx(base + i + 1, `${info.key}-${pad(r.d)}`, r.t, r.name, amount, r.cat, r.pay, memo, r.time)
+      rows.push(r.fixedId ? { ...row, fixedExpenseId: String(r.fixedId), isAutoRegistered: true } : row)
     })
     localStorage.setItem(`moa_txns_${info.key}`, JSON.stringify(rows))
   })
@@ -134,10 +136,12 @@ export function injectDemoData() {
   localStorage.setItem('moa_utilities', JSON.stringify(utilities))
 
   // ── 고정지출 (이번 달 기준) ────────────────────────
+  // 월세·넷플릭스·헬스장은 데모 기간 내내 체크(완료) 상태 — 위 템플릿의 fixedId 거래와 짝을 이룬다
+  const allMonthKeys = months.map((x) => x.key)
   const fixedExpenses = [
-    { id: 1, title: '월세',              amount: 550000, dueDate: `${cur.key}-05`, category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-    { id: 2, title: '넷플릭스',          amount: 17000,  dueDate: `${cur.key}-03`, category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
-    { id: 3, title: '헬스장',            amount: 80000,  dueDate: `${cur.key}-11`, category: '스포츠/레저', payment: 'KB국민 신용카드', autoRegister: false, doneMonths: [], autoRegisteredMonths: [] },
+    { id: 1, title: '월세',              amount: 550000, dueDate: `${cur.key}-05`, category: '주거',        payment: '신한은행',        autoRegister: true,  doneMonths: allMonthKeys, autoRegisteredMonths: allMonthKeys },
+    { id: 2, title: '넷플릭스',          amount: 17000,  dueDate: `${cur.key}-03`, category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: allMonthKeys, autoRegisteredMonths: allMonthKeys },
+    { id: 3, title: '헬스장',            amount: 80000,  dueDate: `${cur.key}-11`, category: '스포츠/레저', payment: 'KB국민 신용카드', autoRegister: false, doneMonths: allMonthKeys, autoRegisteredMonths: [] },
     { id: 4, title: '전세자금대출 이자', amount: 285000, dueDate: `${cur.key}-25`, category: '금융',        payment: '신한은행',        autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
     { id: 5, title: '자동차 할부',       amount: 280000, dueDate: `${cur.key}-10`, category: '교통',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
     { id: 6, title: '유튜브 프리미엄',   amount: 14900,  dueDate: `${cur.key}-18`, category: '구독',        payment: 'KB국민 신용카드', autoRegister: true,  doneMonths: [], autoRegisteredMonths: [] },
