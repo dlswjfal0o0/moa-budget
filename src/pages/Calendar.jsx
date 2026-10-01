@@ -54,9 +54,7 @@ export default function Calendar() {
       try { const a = localStorage.getItem('moa_accounts'); if (a) setUserAccounts(JSON.parse(a)) } catch { /* ignore */ }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       try { const c = localStorage.getItem('moa_cards'); if (c) setUserCards(JSON.parse(c)) } catch { /* ignore */ }
-      const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      try { const t = localStorage.getItem(`moa_txns_${monthStr}`); if (t) setTransactions(JSON.parse(t)) } catch { /* ignore */ }
+      // 거래 내역은 아래 데모 전용 effect가 월별로 불러온다
       // eslint-disable-next-line react-hooks/set-state-in-effect
       try { const f = localStorage.getItem('moa_fixed_expenses'); setFixedExpenses(f ? JSON.parse(f) : []) } catch { setFixedExpenses([]) }
       return
@@ -140,6 +138,14 @@ export default function Calendar() {
       })
   }, [user, viewYear, viewMonth, refreshTrigger])
 
+  // 데모 모드는 user가 없어 위 effect가 돌지 않으므로, 보고 있는 달의 로컬 시드 거래를 읽는다(월 이동·고정지출 체크 시 다시 읽음)
+  useEffect(() => {
+    if (localStorage.getItem('moa_demo_mode') !== 'true') return
+    const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    try { setTransactions(JSON.parse(localStorage.getItem(`moa_txns_${monthStr}`) || '[]')) } catch { setTransactions([]) }
+  }, [viewYear, viewMonth, refreshTrigger])
+
   useEffect(() => {
     syncPaymentNotifications({
       fixedExpenses,
@@ -154,6 +160,7 @@ export default function Calendar() {
 
   const saveFixed = async (updated) => {
     setFixedExpenses(updated)
+    if (localStorage.getItem('moa_demo_mode') === 'true') localStorage.setItem('moa_fixed_expenses', JSON.stringify(updated))
     if (user) await setDoc(doc(db, 'users', user.uid), { fixedExpenses: updated }, { merge: true })
   }
 
@@ -174,11 +181,34 @@ export default function Calendar() {
     const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
     const raw = fixedExpenses.find(x => x.id === id)
     const f = raw && resolveFixedForMonth(raw, monthKey) // 보고 있는 달에 적용되는 버전 기준
-    if (!f || !user) return
+    const isDemo = localStorage.getItem('moa_demo_mode') === 'true'
+    if (!f || (!user && !isDemo)) return
     const doneMonths = f.doneMonths || []
     const isDone = doneMonths.includes(monthKey)
 
-    if (!isDone) {
+    if (isDemo) {
+      // 데모 모드: Firestore 대신 로컬 시드 거래에 같은 형태로 추가/삭제
+      const txKey = `moa_txns_${monthKey}`
+      let txns = []
+      try { txns = JSON.parse(localStorage.getItem(txKey) || '[]') } catch { /* 빈 목록으로 시작 */ }
+      if (!isDone) {
+        if (!txns.some(t => t.fixedExpenseId === String(f.id))) {
+          const dueDay = f.dueDate ? parseInt(f.dueDate.split('-')[2]) : 1
+          const dateStr = `${monthKey}-${String(isNaN(dueDay) ? 1 : dueDay).padStart(2, '0')}`
+          txns = [...txns, {
+            id: `demo-fixed-${f.id}-${monthKey}`, uid: 'demo', month: monthKey, type: 'expense',
+            title: f.title, amount: f.amount,
+            category: f.category || '기타', payment: f.payment || '현금',
+            date: dateStr, time: '00:00', memo: '고정지출',
+            fixedExpenseId: String(f.id), isAutoRegistered: true, createdAt: new Date().toISOString()
+          }]
+        }
+      } else {
+        txns = txns.filter(t => t.fixedExpenseId !== String(f.id))
+      }
+      localStorage.setItem(txKey, JSON.stringify(txns))
+      setRefreshTrigger(t => t + 1)
+    } else if (!isDone) {
       // 체크 ON → 가계부에 내역 추가
       // 자동 등록 등으로 이미 동일 고정지출 내역이 있으면 중복 추가하지 않음
       const dupQ = query(collection(db, 'transactions'),
