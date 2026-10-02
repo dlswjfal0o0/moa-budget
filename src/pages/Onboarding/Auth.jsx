@@ -13,7 +13,8 @@ import {
 } from 'firebase/auth'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth, db } from '../../firebase/config'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { TRIAL_STARTED_EVENT } from '../../contexts/PurchasesContext'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
 import { openLink, TERMS_URL, PRIVACY_URL } from '../../utils/openLink'
@@ -26,8 +27,11 @@ const isNative = () => {
 // Pro 게이팅은 네이티브 앱에서만 적용되므로(웹은 항상 무료), 웹 가입에서는 건너뛴다.
 const startFreeTrial = async (uid) => {
   if (!isNative()) return
-  await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
+  // 시작일은 서버 시간으로만 한 번 기록할 수 있다(firestore.rules) — 기기 시계를 바꿔도 늘어나지 않는다
+  await setDoc(doc(db, 'users', uid), { trialStartedAt: serverTimestamp() }, { merge: true })
   localStorage.setItem('moa_show_trial_popup', 'true')
+  // 가입 직후 PurchasesContext가 이미 users 문서를 읽었을 수 있으므로 체험 정보를 다시 읽게 알린다
+  window.dispatchEvent(new Event(TRIAL_STARTED_EVENT))
 }
 
 // 약관/연령 동의용 커스텀 체크박스. 네이티브 accentColor는 브라우저마다

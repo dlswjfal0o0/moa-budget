@@ -11,6 +11,9 @@ const PRO_ENTITLEMENT_ID = 'pro'
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY
 const TRIAL_DAYS = 30
 
+// Auth.jsx가 가입 직후 체험 시작일을 기록한 뒤 보내는 이벤트
+export const TRIAL_STARTED_EVENT = 'moa-trial-started'
+
 const isNative = () => {
   try { return window.Capacitor?.isNativePlatform?.() ?? false } catch { return false }
 }
@@ -25,6 +28,9 @@ export function PurchasesProvider({ children }) {
   const [activeProductId, setActiveProductId] = useState(null)
   const [loading, setLoading] = useState(isConfigurable())
   const [trialStartedAt, setTrialStartedAt] = useState(null)
+  const [trialLoaded, setTrialLoaded] = useState(false)
+  // RevenueCat에 현재 로그인 사용자(uid)로 연결해 그 사용자의 구독 정보를 받았는지
+  const [rcUserSynced, setRcUserSynced] = useState(false)
   const configuredRef = useRef(false)
   // 베타 테스트 로그인(데모 모드)은 Pro 구독자로 취급 — 개발/베타 빌드에서만 켜진다 (isDemoProActive 참고)
   const [demoPro, setDemoPro] = useState(isDemoProActive)
@@ -44,18 +50,25 @@ export function PurchasesProvider({ children }) {
   }, [])
 
   // 가입 시 Auth.jsx가 기록한 trialStartedAt을 로그인할 때마다 불러온다 (RevenueCat 설정 여부와 무관하게 항상 동작)
+  // trialLoaded: 로그인한 사용자의 체험 정보를 한 번이라도 읽었는지 — isPro가 '확정'됐는지 판단할 때 쓴다(ready 참고)
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { setTrialStartedAt(null); return }
+    const load = async (user) => {
+      if (!user) { setTrialStartedAt(null); setTrialLoaded(false); return }
       try {
         const snap = await getDoc(doc(db, 'users', user.uid))
         const raw = snap.exists() ? snap.data().trialStartedAt : null
-        setTrialStartedAt(raw ? new Date(raw) : null)
+        // 새 가입자는 서버 Timestamp, 기존 가입자는 ISO 문자열로 저장돼 있다
+        setTrialStartedAt(raw ? (typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw)) : null)
       } catch (err) {
         console.error('[Purchases] 무료체험 정보 로딩 실패', err)
+      } finally {
+        setTrialLoaded(true)
       }
-    })
-    return unsub
+    }
+    const unsub = onAuthStateChanged(auth, load)
+    const onTrialStarted = () => load(auth.currentUser)
+    window.addEventListener(TRIAL_STARTED_EVENT, onTrialStarted)
+    return () => { unsub(); window.removeEventListener(TRIAL_STARTED_EVENT, onTrialStarted) }
   }, [])
 
   useEffect(() => {
@@ -91,6 +104,7 @@ export function PurchasesProvider({ children }) {
   useEffect(() => {
     if (!isConfigurable()) return
     const unsub = onAuthStateChanged(auth, async (user) => {
+      setRcUserSynced(false)
       try {
         if (user) {
           const { customerInfo } = await Purchases.logIn({ appUserID: user.uid })
@@ -101,6 +115,9 @@ export function PurchasesProvider({ children }) {
         }
       } catch (err) {
         console.error('[Purchases] 로그인 연동 실패', err)
+      } finally {
+        // 실패해도 true로 둔다 — 영원히 '확정 안 됨'으로 남으면 자동 등록 등이 아예 멈추므로
+        setRcUserSynced(true)
       }
     })
     return unsub
@@ -139,11 +156,14 @@ export function PurchasesProvider({ children }) {
   const trialDaysLeft = isTrialActive ? Math.max(0, Math.ceil((trialEndsAt - now) / 86400000)) : 0
   // 웹에는 결제 수단이 없고 기존 웹 사용자는 이미 전체 무료로 써왔으므로, Pro 게이팅은 네이티브 앱에서만 적용한다.
   const isPro = !isNative() || subscribed || isTrialActive
+  // isPro가 확정됐는지: 구독 정보(RevenueCat)와 체험 정보를 모두 읽은 뒤에만 true.
+  // 그 전의 isPro=false는 '아직 모름'일 수 있으므로, Pro 여부로 데이터를 쓰는 작업(고정지출 자동 등록 등)은 이 값을 기다린다.
+  const ready = !isNative() || (trialLoaded && (!isConfigurable() || (!loading && rcUserSynced)))
 
   return (
     <PurchasesContext.Provider value={{
       isPro, isSubscribed: subscribed, activeProductId: currentProductId, isTrialActive, trialEndsAt, trialDaysLeft,
-      loading, getOfferings, purchasePackage, restorePurchases,
+      loading, ready, getOfferings, purchasePackage, restorePurchases,
     }}>
       {children}
     </PurchasesContext.Provider>

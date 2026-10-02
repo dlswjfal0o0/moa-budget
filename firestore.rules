@@ -11,7 +11,26 @@ service cloud.firestore {
     // 사용자 개인 문서 (문서 ID = uid)
     // 예: 예산(budgets), 고정지출(fixedExpenses), 카드, 계좌, 설정 등
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      function isOwner() {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // 무료체험 시작일(trialStartedAt)은 서버 시간으로 처음 한 번만 기록할 수 있다.
+      // 클라이언트가 날짜를 미래로 바꾸거나 지웠다가 다시 써서 체험을 늘리지 못하게 한다.
+      // (기존 가입자의 ISO 문자열 값도 "바꾸지 않는 한" 그대로 허용된다)
+      function trialStartOk() {
+        return !('trialStartedAt' in request.resource.data)
+          || request.resource.data.trialStartedAt == request.time;
+      }
+      function trialUnchanged() {
+        return 'trialStartedAt' in request.resource.data
+          && request.resource.data.trialStartedAt == resource.data.trialStartedAt;
+      }
+
+      allow read, delete: if isOwner();
+      allow create: if isOwner() && trialStartOk();
+      allow update: if isOwner()
+        && ('trialStartedAt' in resource.data ? trialUnchanged() : trialStartOk());
     }
 
     // 원격 설정 / 강제 업데이트 기준값 — 로그인 전에도 읽어야 하므로 공개 읽기 허용.
