@@ -16,6 +16,7 @@ import { auth, db } from '../../firebase/config'
 import { doc, setDoc } from 'firebase/firestore'
 import { SignInWithApple } from '@capacitor-community/apple-sign-in'
 import { Sentry } from '../../utils/sentry'
+import { openLink, TERMS_URL, PRIVACY_URL } from '../../utils/openLink'
 
 const isNative = () => {
   try { return window.Capacitor?.isNativePlatform?.() ?? false } catch { return false }
@@ -383,12 +384,12 @@ export default function Auth() {
           {mode === 'signup' && (
             <CheckBox checked={termsConfirmed} onChange={e => setTermsConfirmed(e.target.checked)} style={stagger()}>
               <span
-                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
+                onClick={(e) => { e.preventDefault(); openLink(TERMS_URL) }}
                 style={{ color: '#3182F6', textDecoration: 'underline' }}
               >이용약관</span>
               {' '}및{' '}
               <span
-                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
+                onClick={(e) => { e.preventDefault(); openLink(PRIVACY_URL) }}
                 style={{ color: '#3182F6', textDecoration: 'underline' }}
               >개인정보 처리방침</span>
               에 동의합니다
