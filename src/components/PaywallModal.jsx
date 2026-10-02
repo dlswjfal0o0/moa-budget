@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { usePurchases } from '../contexts/PurchasesContext'
 import SubscriptionPlanList from './SubscriptionPlans'
 import BottomSheet from './BottomSheet'
+import { openLink, TERMS_URL, PRIVACY_URL } from '../utils/openLink'
 
 export default function PaywallModal({ open, onClose }) {
   const purchases = usePurchases()
@@ -81,9 +82,9 @@ export default function PaywallModal({ open, onClose }) {
                   {busy ? '복원하는 중...' : '이전 구매 복원하기'}
                 </button>
                 <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
-                <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>이용약관</a>
+                <a href={TERMS_URL} onClick={e => { e.preventDefault(); openLink(TERMS_URL) }} style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>이용약관</a>
                 <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 11 }}>·</span>
-                <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>개인정보처리방침</a>
+                <a href={PRIVACY_URL} onClick={e => { e.preventDefault(); openLink(PRIVACY_URL) }} style={{ color: 'rgba(0,0,0,0.4)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: '2px', padding: '4px 0' }}>개인정보처리방침</a>
               </div>
             </div>
           </>

@@ -4,6 +4,7 @@ import AmountInput from '../components/AmountInput'
 import LockedFeature from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { getColoredShadow } from '../utils/neuColors'
+import FitText from '../components/FitText'
 
 const neuInputStyle = {
   width: '100%', padding: '14px 16px', borderRadius: 14, border: 'none',
@@ -265,7 +266,7 @@ export default function CalendarNeu(props) {
                     <p style={{ fontSize: 12, color: '#8B95A1' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
                   </div>
                   <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#8B95A1' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
-                    {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                    <FitText>{t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원</FitText>
                   </p>
                 </div>
               ))
@@ -278,21 +279,21 @@ export default function CalendarNeu(props) {
           <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
             <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 지출</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(weekExpense)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}><FitText>-{fmt(weekExpense)}원</FitText></p>
             </div>
             <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 수입</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(weekIncome)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}><FitText>+{fmt(weekIncome)}원</FitText></p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 지출</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}><FitText>-{fmt(totalExpense)}원</FitText></p>
             </div>
             <div className="neu-card" style={{ flex: 1, borderRadius: 20, padding: '13px 14px' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 수입</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}><FitText>+{fmt(totalIncome)}원</FitText></p>
             </div>
           </div>
         </div>
@@ -351,7 +352,7 @@ export default function CalendarNeu(props) {
                       )}
                     </div>
                     <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#8B95A1' : '#FF5A5F', flexShrink: 0 }}>
-                      -{fmt(f.amount)}원
+                      <FitText>-{fmt(f.amount)}원</FitText>
                     </p>
                   </div>
                   {expandedFixedId === f.id && (

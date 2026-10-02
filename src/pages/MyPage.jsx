@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
-import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
+import { onAuthStateChanged, signOut, updateProfile, deleteUser, reauthenticateWithCredential, EmailAuthProvider, revokeAccessToken } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
@@ -24,6 +24,10 @@ import { requestPaymentNotificationPermission } from '../utils/paymentNotificati
 import MyPageNeu from './MyPageNeu'
 import SettingsNeu from './SettingsNeu'
 import DateTimeField from '../components/DateTimeField'
+import { openLink, TERMS_URL, PRIVACY_URL } from '../utils/openLink'
+import { getGoogleCredential, getAppleCredential } from '../utils/nativeSignIn'
+import { Sentry } from '../utils/sentry'
+import FitText from '../components/FitText'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
 const APP_VERSION = __APP_VERSION__
@@ -74,6 +78,8 @@ export default function MyPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteChecked, setDeleteChecked] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
   const [settingsCatTab, setSettingsCatTab] = useState('expense')
   const [settingsNewCatName, setSettingsNewCatName] = useState('')
   const [accounts, setAccounts] = useState(() => {
@@ -283,11 +289,37 @@ export default function MyPage() {
     saveToFirestore({ theme: name })
   }
 
+  // 로그인 방식(이메일/Google/Apple). 탈퇴 전 본인 확인 방법을 고르는 데 쓴다
+  const signInProvider = user?.providerData?.[0]?.providerId
+
+  // 탈퇴는 본인 확인 → 데이터 삭제 → (Apple) 연결 해제 → 계정 삭제 순서로 진행한다.
+  // 먼저 본인 확인을 받아야 Firebase가 '최근 로그인 필요'로 계정 삭제를 거부하지 않는다 —
+  // 예전에는 데이터를 지운 뒤 계정 삭제만 실패해 계정이 남는 경우가 있었다.
+  // 실패하면 어느 단계에서 멈췄는지(무엇이 지워졌는지) 시트에 그대로 알려준다.
   const handleWithdrawAccount = async () => {
     if (!user || deletingAccount) return
+    if (signInProvider === 'password' && !deletePassword) {
+      setDeleteError('본인 확인을 위해 비밀번호를 입력해주세요.')
+      return
+    }
     setDeletingAccount(true)
+    setDeleteError('')
+    let stage = 'reauth'
     try {
-      // Firestore writeBatch는 최대 500개 쓰기 제한이 있어 500건씩 나눠서 커밋한다.
+      // 1) 본인 확인
+      let appleAuthorizationCode = null
+      if (signInProvider === 'password') {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, deletePassword))
+      } else if (signInProvider === 'google.com') {
+        await reauthenticateWithCredential(user, await getGoogleCredential())
+      } else if (signInProvider === 'apple.com') {
+        const { credential, authorizationCode } = await getAppleCredential()
+        await reauthenticateWithCredential(user, credential)
+        appleAuthorizationCode = authorizationCode
+      }
+
+      // 2) 데이터 삭제 — Firestore writeBatch는 최대 500개 쓰기 제한이 있어 500건씩 나눠서 커밋한다.
+      stage = 'data'
       const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid)))
       const refs = txSnap.docs.map(d => d.ref)
       for (let i = 0; i < refs.length; i += 500) {
@@ -296,16 +328,39 @@ export default function MyPage() {
         await batch.commit()
       }
       await deleteDoc(doc(db, 'users', user.uid))
-      localStorage.clear()
+
+      // 3) Sign in with Apple 연결 해제(심사 지침 5.1.1(v)). 실패해도 탈퇴 자체는 막지 않고 기록만 남긴다 —
+      //    Firebase 콘솔의 Apple 제공업체에 서비스 ID·키가 설정돼 있어야 동작한다.
+      if (appleAuthorizationCode) {
+        try {
+          await revokeAccessToken(auth, appleAuthorizationCode)
+        } catch (err) {
+          console.error('[MyPage] Apple 연결 해제 실패', err)
+          Sentry.captureException(err)
+        }
+      }
+
+      // 4) 계정 삭제
+      stage = 'account'
       await deleteUser(user)
+
+      localStorage.clear()
+      setShowDeleteModal(false)
+      alert('탈퇴가 완료됐어요. 그동안 모아를 이용해주셔서 감사합니다.')
       navigate('/', { replace: true })
     } catch (e) {
-      if (e.code === 'auth/requires-recent-login') {
-        alert('보안을 위해 재로그인 후 탈퇴를 진행해주세요.')
-        await signOut(auth)
-        navigate('/auth', { replace: true })
+      console.error('[MyPage] 탈퇴 실패', stage, e.code, e.message)
+      const cancelled = /cancel/i.test(e?.code || '') || /cancel/i.test(e?.message || '') || e?.code === '1001'
+      if (stage === 'reauth') {
+        if (cancelled) setDeleteError('')
+        else if (['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials'].includes(e.code)) setDeleteError('비밀번호가 맞지 않아요. 아무것도 삭제되지 않았어요.')
+        else if (e.code === 'auth/user-mismatch') setDeleteError('지금 로그인한 계정과 다른 계정으로 확인했어요. 같은 계정으로 다시 시도해주세요. 아무것도 삭제되지 않았어요.')
+        else if (e.code === 'auth/too-many-requests') setDeleteError('시도가 너무 많아요. 잠시 후 다시 시도해주세요. 아무것도 삭제되지 않았어요.')
+        else setDeleteError('본인 확인에 실패했어요. 아무것도 삭제되지 않았어요. 다시 시도해주세요.')
       } else {
-        alert('탈퇴 중 오류가 발생했습니다.')
+        Sentry.captureException(e)
+        if (stage === 'data') setDeleteError('데이터를 삭제하던 중 오류가 났어요. 일부 데이터가 이미 지워졌을 수 있고, 계정은 아직 남아 있어요. 다시 시도하면 남은 데이터와 계정까지 삭제돼요.')
+        else setDeleteError('데이터는 모두 삭제됐지만 계정 삭제에 실패했어요. 다시 시도해주세요. 계속 실패하면 고객센터로 문의해주세요.')
       }
       setDeletingAccount(false)
     }
@@ -833,13 +888,13 @@ export default function MyPage() {
                       {settingsChevron}
                     </button>
                     <div style={{ height: 1, background: '#F2F4F6', margin: '0 16px' }} />
-                    <button onClick={() => window.open('https://moa-budget.vercel.app/terms.html', '_blank')}
+                    <button onClick={() => openLink(TERMS_URL)}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F2F4F6' }}>
                       <SIcon bg={t.primary}><SI><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>이용약관</p>
                       {settingsChevron}
                     </button>
-                    <button onClick={() => window.open('https://moa-budget.vercel.app/privacy.html', '_blank')}
+                    <button onClick={() => openLink(PRIVACY_URL)}
                       style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
                       <SIcon bg={t.primary}><SI><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></SI></SIcon>
                       <p style={{ flex: 1, fontSize: 15, fontWeight: 600, color: '#191F28', textAlign: 'left' }}>개인정보 처리방침</p>
@@ -1198,6 +1253,7 @@ export default function MyPage() {
                       '예산, 고정지출 등 설정이 모두 삭제됩니다',
                       '카드, 계좌 등 MY 정보가 삭제됩니다',
                       '삭제된 데이터는 복구할 수 없습니다',
+                      'Pro 구독은 탈퇴해도 자동으로 해지되지 않아요 (iPhone 설정 → Apple 계정 → 구독에서 해지)',
                     ].map((item, i, arr) => (
                       <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? 8 : 0 }}>
                         <span style={{ color: '#FF3B30', flexShrink: 0 }}>•</span>
@@ -1253,10 +1309,26 @@ export default function MyPage() {
 
   // ── 계정 탈퇴 최종 확인 바텀시트 ──
   const deleteAccountSheet = (
-      <BottomSheet open={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxOpacity={0.5}>
+      <BottomSheet open={showDeleteModal} onClose={() => { if (deletingAccount) return; setShowDeleteModal(false); setDeletePassword(''); setDeleteError('') }} maxOpacity={0.5}>
         <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}>
             <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 8, textAlign: 'center' }}>정말 탈퇴할까요?</p>
-            <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
+            <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 16, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
+            <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', marginBottom: 20, lineHeight: 1.6, background: '#F7F8FA', borderRadius: 12, padding: '10px 12px' }}>
+              Pro를 구독 중이라면 탈퇴해도 결제가 자동으로 해지되지 않아요.<br/>iPhone 설정 → Apple 계정 → 구독에서 해지해주세요.
+            </p>
+            {signInProvider === 'password' && (
+              <input type="password" placeholder="본인 확인을 위해 비밀번호 입력" autoComplete="current-password"
+                value={deletePassword} onChange={e => { setDeletePassword(e.target.value); setDeleteError('') }}
+                style={{ ...inputStyle, marginBottom: 12 }} />
+            )}
+            {(signInProvider === 'google.com' || signInProvider === 'apple.com') && (
+              <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', marginBottom: 12 }}>
+                탈퇴하기를 누르면 본인 확인을 위해 {signInProvider === 'apple.com' ? 'Apple' : 'Google'} 로그인 창이 한 번 더 떠요.
+              </p>
+            )}
+            {deleteError && (
+              <p role="alert" style={{ fontSize: 13, color: '#FF3B30', textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>{deleteError}</p>
+            )}
             <button onClick={() => setShowDeleteModal(false)} className="pressable-subtle"
               style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', background: t.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
               계속 사용할게요
@@ -1328,7 +1400,7 @@ export default function MyPage() {
       {/* 헤더 */}
       <div style={{ background: t.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
             <div onClick={() => fileRef.current.click()} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)' }}>
                 {profileImg ? <img src={profileImg} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#fff' }}>{nickname[0] || '?'}</span>}
@@ -1341,7 +1413,7 @@ export default function MyPage() {
               </div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfileImg} />
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingNick ? (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <input value={nickname} onChange={e => setNickname(e.target.value)}
@@ -1351,13 +1423,14 @@ export default function MyPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                    {/* 긴 닉네임은 줄바꿈 대신 말줄임 — 배지·수정 버튼은 항상 같은 줄에 남는다 */}
+                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nickname}</p>
                     <SubscriptionBadge isSubscribed={isSubscribed} onPress={() => setShowPaywall(true)} />
-                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>수정</button>
                   </div>
                 </div>
               )}
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{user?.email}</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
             </div>
           </div>
 
@@ -1395,17 +1468,17 @@ export default function MyPage() {
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}>{fmt(totalAsset)}원</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}><FitText>{fmt(totalAsset)}원</FitText></p>
           <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.primary, flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>계좌</span>
-              <span style={{ fontSize: 12, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
+              <span style={{ fontSize: 12, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}><FitText>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</FitText></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ECC71', flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>현금</span>
-              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}>{fmt(getCashBalance())}원</span>
+              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}><FitText>{fmt(getCashBalance())}원</FitText></span>
             </div>
           </div>
         </div>
@@ -1467,14 +1540,14 @@ export default function MyPage() {
                     </button>
                   </div>
                   {(card.billingDay || card.cardNumber) && (
-                    <p style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>
+                    <p className="one-line" style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>
                       {card.billingDay ? `결제일 매월 ${card.billingDay}일` : ''}
                       {card.billingDay && card.cardNumber ? ' · ' : ''}
                       {card.cardNumber ? `**** ${card.cardNumber}` : ''}
                     </p>
                   )}
                   <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
-                  <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}><FitText>{fmt(cardUsed)}원</FitText></p>
                   {/* 실적 목표 달성 현황(목표·진행률 그래프)은 Pro 전용 */}
                   {isPro ? (
                     <>
@@ -1801,10 +1874,10 @@ export default function MyPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28' }}>{acc.name}</p>
-                  {acc.number && <p style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
+                  {acc.number && <p className="one-line" style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : t.text || '#191F28' }}><FitText>{fmt(getAccountBalance(acc))}원</FitText></p>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </div>
@@ -1843,7 +1916,7 @@ export default function MyPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px 0', marginTop: 4, borderTop: '1px solid #F2F4F6' }}>
               <span style={{ fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>계좌 합계</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>
-                {fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원
+                <FitText>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</FitText>
               </span>
             </div>
           )}
@@ -1925,7 +1998,7 @@ export default function MyPage() {
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 36, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(getCashBalance())}원</p>
+            <p style={{ fontSize: 36, fontWeight: 700, color: t.text || '#191F28' }}><FitText>{fmt(getCashBalance())}원</FitText></p>
           )}
         </div>
 
@@ -1969,7 +2042,7 @@ export default function MyPage() {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>
-                        {fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원
+                        <FitText>{fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원</FitText>
                       </p>
                       {loan.rate && <p style={{ fontSize: 11, color: '#8B95A1', marginTop: 1 }}>월 이자 {fmt(monthlyInterest)}원</p>}
                     </div>
@@ -2152,7 +2225,7 @@ export default function MyPage() {
                                             </span>
                                             <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                                             <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
-                                                -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                                                <FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText>
                                             </span>
                                         </div>
                                         {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
@@ -2162,7 +2235,7 @@ export default function MyPage() {
                                                     <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
                                                 </div>
                                                 <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                                                    {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
+                                                    <FitText>{tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원</FitText>
                                                 </p>
                                             </div>
                                         ))}
@@ -2256,7 +2329,7 @@ export default function MyPage() {
                       </span>
                       <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                       <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
-                        -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                        <FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText>
                       </span>
                     </div>
                     {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
@@ -2267,7 +2340,7 @@ export default function MyPage() {
                         </div>
                         <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap',
                           color: tx.type === 'expense' ? '#ef4444' : tx.type === 'income' ? '#22c55e' : '#888' }}>
-                          {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원
+                          <FitText>{tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원</FitText>
                         </p>
                       </div>
                     ))}
@@ -2432,11 +2505,11 @@ export default function MyPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                   <div>
                     <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
-                    <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}>-{fmt(totalWithInterest)}원</p>
+                    <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}><FitText>-{fmt(totalWithInterest)}원</FitText></p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 원금</p>
-                    <p style={{ fontSize: 18, fontWeight: 700 }}>{fmt(loan.remainingPrincipal)}원</p>
+                    <p style={{ fontSize: 18, fontWeight: 700 }}><FitText>{fmt(loan.remainingPrincipal)}원</FitText></p>
                   </div>
                 </div>
 
@@ -2458,11 +2531,11 @@ export default function MyPage() {
                 {/* 메타 정보 */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                   {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600 }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
-                  {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(loan.monthlyPayment)}원</p></div>}
+                  {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(loan.monthlyPayment)}원</FitText></p></div>}
                   {loan.paymentDay && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600 }}>매월 {loan.paymentDay}일</p></div>}
                   {loan.startDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.startDate}</p></div>}
                   {loan.maturityDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.maturityDate}</p></div>}
-                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(monthlyInterest)}원</p></div>}
+                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(monthlyInterest)}원</FitText></p></div>}
                 </div>
               </div>
 

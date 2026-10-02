@@ -37,6 +37,9 @@ body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 15px;
   letter-spacing: -0.3px;
+  /* 한글이 단어 중간(예: '수/정', '체/크')에서 줄바꿈되지 않게 한다 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   background: #F7F8FA;
   overscroll-behavior: none;
   display: flex;
@@ -67,6 +70,24 @@ body {
   #root {
     max-width: 430px;
   }
+}
+
+/* FitText(한 줄 고정 금액)를 담은 칸은 내용보다 좁아질 수 있어야 금액이 줄어들어 맞춰진다.
+   flex 항목은 기본 min-width:auto라 한 줄 금액 폭 아래로 줄어들지 못하고 화면 밖으로 밀려난다
+   (작은 기기 + 큰 글자 설정). 금액의 부모·조부모까지만 풀어준다. */
+/* 거래 목록의 보조 문구(시간·카테고리·결제수단), 계좌·카드번호처럼 한 줄이어야 하는 글은
+   줄바꿈 대신 말줄임(…)으로 자른다. 부모가 좁아질 수 있어야 말줄임이 동작한다. */
+.one-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:has(> .fit-text),
+:has(> * > .fit-text),
+:has(> .one-line),
+:has(> * > .one-line) {
+  min-width: 0;
 }
 
 /* 버튼 기본 reset */

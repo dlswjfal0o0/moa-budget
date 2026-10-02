@@ -1,4 +1,5 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import ChartContainer from '../components/ChartContainer'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
@@ -8,6 +9,7 @@ import ThinkingOrbs from '../components/ThinkingOrbs'
 import AiConsumptionReport from '../components/AiConsumptionReport'
 import { UtilityIcon, UtilityChart } from './Analysis'
 import { getColoredShadow } from '../utils/neuColors'
+import FitText from '../components/FitText'
 
 const UTILITY_STYLES = {
   관리비: { color: '#6B7280' },
@@ -21,7 +23,7 @@ function NeuBarTooltip({ active, payload, label }) {
   return (
     <div className="neu-card" style={{ borderRadius: 12, padding: '8px 14px' }}>
       <p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 4 }}>{label}일</p>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>-{payload[0].value.toLocaleString()}원</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}><FitText>-{payload[0].value.toLocaleString()}원</FitText></p>
     </div>
   )
 }
@@ -31,7 +33,7 @@ function NeuPieTooltip({ active, payload }) {
   return (
     <div className="neu-card" style={{ borderRadius: 12, padding: '8px 14px' }}>
       <p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 4 }}>{payload[0].name}</p>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{payload[0].value.toLocaleString()}원</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}><FitText>{payload[0].value.toLocaleString()}원</FitText></p>
     </div>
   )
 }
@@ -122,7 +124,7 @@ export default function AnalysisNeu(props) {
             <div style={{ display: 'flex', gap: 12 }}>
               <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: 14 }}>
                 <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>지출</p>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#FF5A5F' }}>{fmt(totalExpense)}원</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#FF5A5F' }}><FitText>{fmt(totalExpense)}원</FitText></p>
                 {lastTotalExpense > 0 && (
                   <p style={{ fontSize: 12, marginTop: 6, color: expenseDiff > 0 ? '#FF5A5F' : '#2ECC71', fontWeight: 600 }}>
                     {expenseDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(expenseDiff))}원 {expenseDiff > 0 ? '증가' : '감소'}
@@ -131,7 +133,7 @@ export default function AnalysisNeu(props) {
               </div>
               <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: 14 }}>
                 <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>수입</p>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#2ECC71' }}>{fmt(totalIncome)}원</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#2ECC71' }}><FitText>{fmt(totalIncome)}원</FitText></p>
                 {lastTotalIncome > 0 && (
                   <p style={{ fontSize: 12, marginTop: 6, color: incomeDiff > 0 ? '#2ECC71' : '#FF5A5F', fontWeight: 600 }}>
                     {incomeDiff > 0 ? '↑' : '↓'} {fmt(Math.abs(incomeDiff))}원 {incomeDiff > 0 ? '증가' : '감소'}
@@ -149,7 +151,7 @@ export default function AnalysisNeu(props) {
             ) : (
               <>
                 <div className="neu-inset" style={{ borderRadius: 16, padding: '12px 8px' }}>
-                  <ResponsiveContainer width="100%" height={170}>
+                  <ChartContainer height={170}>
                     <BarChart data={dailyData} margin={{ top: 4, right: 12, left: 10, bottom: 0 }}>
                       <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8B95A1' }} tickLine={false} axisLine={false} interval={4} />
                       <YAxis tick={{ fontSize: 10, fill: '#8B95A1' }} tickLine={false} axisLine={false}
@@ -166,7 +168,7 @@ export default function AnalysisNeu(props) {
                         ))}
                       </Bar>
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 </div>
                 {maxExpense > 0 && (() => {
                   const maxDay = dailyData.find(d => d.amount === maxExpense)
@@ -286,7 +288,7 @@ export default function AnalysisNeu(props) {
                       </div>
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>{label}</span>
                       <span style={{ fontSize: 11, fontWeight: 600, color: primary, background: `${primary}18`, padding: '2px 8px', borderRadius: 9999 }}>{pct}%</span>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#191F28', textAlign: 'right' }}>{fmt(amount)}원</span>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#191F28', textAlign: 'right' }}><FitText>{fmt(amount)}원</FitText></span>
                       <span style={{ fontSize: 15, color: '#8B95A1', marginLeft: 4, display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
                     </div>
                     {isExpanded && (
@@ -294,7 +296,7 @@ export default function AnalysisNeu(props) {
                         {Object.entries(detail).filter(([,v]) => v > 0).sort(([,a],[,b]) => b - a).map(([k, v]) => (
                           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0' }}>
                             <span style={{ fontSize: 13, color: '#8B95A1' }}>{k}</span>
-                            <span style={{ fontSize: 13, color: '#191F28', fontWeight: 500 }}>{fmt(v)}원</span>
+                            <span style={{ fontSize: 13, color: '#191F28', fontWeight: 500 }}><FitText>{fmt(v)}원</FitText></span>
                           </div>
                         ))}
                       </div>
@@ -324,7 +326,7 @@ export default function AnalysisNeu(props) {
           <div style={{ background: primary, borderRadius: 20, padding: '18px 20px', marginBottom: 16, boxShadow: coloredShadow.drop }}>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>이번 달 공과금 합계</p>
             <p style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: prevMonthTotal > 0 || currentMonthTotal === 0 ? 6 : 0 }}>
-              {fmt(currentMonthTotal)}원
+              <FitText>{fmt(currentMonthTotal)}원</FitText>
             </p>
             {prevMonthTotal > 0 && (
               <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
@@ -372,7 +374,7 @@ export default function AnalysisNeu(props) {
                     {cur ? (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 4 }}>
-                          <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}>{fmt(cur.amount)}원</p>
+                          <p style={{ fontSize: 22, fontWeight: 700, color: '#191F28' }}><FitText>{fmt(cur.amount)}원</FitText></p>
                           <div style={{ textAlign: 'right' }}>
                             {diff !== null ? (
                               <>
