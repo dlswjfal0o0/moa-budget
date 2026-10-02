@@ -5,7 +5,8 @@ import { useStagger } from '../hooks/useStagger'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import ChartContainer from '../components/ChartContainer'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
@@ -581,7 +582,7 @@ export default function Analysis() {
               <p style={{ fontSize: 14, color: '#C9CDD4', textAlign: 'center', padding: '20px 0' }}>지출 내역이 없어요</p>
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={180}>
+                <ChartContainer height={180}>
                   <BarChart data={dailyData} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
                     <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false} interval={4} />
                     <YAxis tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false}
@@ -598,7 +599,7 @@ export default function Analysis() {
                       ))}
                     </Bar>
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
                 {maxExpense > 0 && (() => {
                   const maxDay = dailyData.find(d => d.amount === maxExpense)
                   return (

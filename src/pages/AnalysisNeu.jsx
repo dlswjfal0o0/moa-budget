@@ -1,4 +1,5 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import ChartContainer from '../components/ChartContainer'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
@@ -150,7 +151,7 @@ export default function AnalysisNeu(props) {
             ) : (
               <>
                 <div className="neu-inset" style={{ borderRadius: 16, padding: '12px 8px' }}>
-                  <ResponsiveContainer width="100%" height={170}>
+                  <ChartContainer height={170}>
                     <BarChart data={dailyData} margin={{ top: 4, right: 12, left: 10, bottom: 0 }}>
                       <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8B95A1' }} tickLine={false} axisLine={false} interval={4} />
                       <YAxis tick={{ fontSize: 10, fill: '#8B95A1' }} tickLine={false} axisLine={false}
@@ -167,7 +168,7 @@ export default function AnalysisNeu(props) {
                         ))}
                       </Bar>
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 </div>
                 {maxExpense > 0 && (() => {
                   const maxDay = dailyData.find(d => d.amount === maxExpense)
