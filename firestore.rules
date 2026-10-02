@@ -33,6 +33,12 @@ service cloud.firestore {
         && ('trialStartedAt' in resource.data ? trialUnchanged() : trialStartOk());
     }
 
+    // AI 하루 사용 횟수 — 서버(/api/ai, 서비스 계정)만 기록한다. 서비스 계정은 규칙을 거치지 않으므로
+    // 클라이언트는 읽기·쓰기 모두 막아 횟수를 되돌리지 못하게 한다.
+    match /aiUsage/{userId} {
+      allow read, write: if false;
+    }
+
     // 원격 설정 / 강제 업데이트 기준값 — 로그인 전에도 읽어야 하므로 공개 읽기 허용.
     // 클라이언트에서 직접 쓰지 못하게 하고, 값 갱신은 Firebase 콘솔에서 수동으로 한다.
     match /config/{docId} {
