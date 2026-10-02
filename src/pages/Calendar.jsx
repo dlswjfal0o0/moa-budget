@@ -15,6 +15,7 @@ import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
+import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
 import { toMonthKey, resolveFixedForMonth, fixedListForMonth, createFixed, editFixedFromMonth, deleteFixedFromMonth } from '../utils/fixedExpenses'
 import CalendarNeu from './CalendarNeu'
 
@@ -82,42 +83,8 @@ export default function Calendar() {
           // Load accounts (same source as MyPage: data.accounts array with `name` field)
           if (data.accounts?.length > 0) setUserAccounts(data.accounts)
 
-          // Auto-register fixed expenses for the current real month
-          const fixedList = data.fixedExpenses || []
-          const nowDate = new Date()
-          const todayDay = nowDate.getDate()
-          const nowMonthKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`
-          const promises = []
-          const processed = fixedList.map(raw => {
-            const f = resolveFixedForMonth(raw, nowMonthKey) // 이번 달에 적용되는 버전 기준
-            if (!f) return raw // 이번 달엔 존재하지 않는 항목(추가 전/삭제 후)
-            if (!isPro || !f.autoRegister || !f.dueDate) return raw // Pro 아니면 자동 등록 건너뜀(데이터는 유지)
-            const dueDay = parseInt(f.dueDate.split('-')[2])
-            if (isNaN(dueDay) || todayDay < dueDay) return raw
-            const registeredMonths = raw.autoRegisteredMonths || []
-            if (registeredMonths.includes(nowMonthKey)) return raw
-            const dueDateStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
-            promises.push(addDoc(collection(db, 'transactions'), {
-              uid: u.uid, month: nowMonthKey, type: 'expense',
-              title: f.title, amount: f.amount,
-              category: f.category || '기타', payment: f.payment || '현금',
-              date: dueDateStr, time: '00:00', memo: '고정지출 자동 등록',
-              isAutoRegistered: true, fixedExpenseId: String(f.id), createdAt: new Date().toISOString()
-            }))
-            // 자동 등록 시 체크박스도 '완료' 상태로 표시해 이중 등록을 방지
-            const doneMonths = raw.doneMonths || []
-            return {
-              ...raw,
-              autoRegisteredMonths: [...registeredMonths, nowMonthKey],
-              doneMonths: doneMonths.includes(nowMonthKey) ? doneMonths : [...doneMonths, nowMonthKey]
-            }
-          })
-          if (promises.length > 0) {
-            await Promise.all(promises)
-            await setDoc(doc(db, 'users', u.uid), { fixedExpenses: processed }, { merge: true })
-            setRefreshTrigger(t => t + 1)
-          }
-          setFixedExpenses(processed)
+          // 결제일 자동 등록은 앱 전체에서 FixedExpenseAutoRegister가 처리한다(끝나면 아래 이벤트로 다시 읽음)
+          setFixedExpenses(data.fixedExpenses || [])
         } catch (err) {
           console.error('[Calendar] 사용자 데이터 로딩 실패', err)
           setLoadError('데이터를 불러오지 못했어요.')
@@ -126,6 +93,19 @@ export default function Calendar() {
     })
     return unsub
   }, [])
+
+  // 자동 등록이 끝나면 체크 상태(고정지출)와 거래를 다시 읽는다 — 오래된 목록으로 저장해 등록 기록을 덮어쓰지 않도록
+  useEffect(() => {
+    if (!user) return
+    const reload = () => {
+      getDoc(doc(db, 'users', user.uid))
+        .then(snap => { setFixedExpenses(snap.exists() ? snap.data().fixedExpenses || [] : []) })
+        .catch(err => console.error('[Calendar] 고정지출 다시 읽기 실패', err))
+      setRefreshTrigger(t => t + 1)
+    }
+    window.addEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+    return () => window.removeEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+  }, [user])
 
   useEffect(() => {
     if (!user) return

@@ -24,6 +24,7 @@ import CreditCardBills from '../components/CreditCardBills'
 import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
 import DateTimeField from '../components/DateTimeField'
 import { buildDemoBudgetInsight } from '../utils/demoData'
+import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -136,6 +137,7 @@ export default function Home() {
     () => localStorage.getItem('moa_show_trial_popup') === 'true'
   )
   const [user, setUser] = useState(null)
+  const [txnReloadKey, setTxnReloadKey] = useState(0)
   const [transactions, setTransactions] = useState(() => {
     try {
         const now = new Date()
@@ -214,7 +216,14 @@ export default function Home() {
         console.error('[Home] 거래내역 로딩 실패', err)
         setLoadError('거래내역을 불러오지 못했어요.')
     })
-  }, [user])
+  }, [user, txnReloadKey])
+
+  // 고정지출이 자동 등록되면 이번 달 거래를 다시 읽는다
+  useEffect(() => {
+    const reload = () => setTxnReloadKey(k => k + 1)
+    window.addEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+    return () => window.removeEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+  }, [])
 
   // 신용카드 대금 결산용 전월 내역 — 신용카드가 있을 때만 불러온다
   const hasCreditCard = cards.some(c => c.cardType === 'credit')
