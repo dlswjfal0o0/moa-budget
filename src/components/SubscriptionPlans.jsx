@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 import { usePurchases } from '../contexts/PurchasesContext'
+import FitText from './FitText'
 
 // RevenueCat에 실제 상품을 만들 때 이 식별자로 맞춰야 구독 버튼이 동작한다.
 const TIERS = [
@@ -151,10 +152,10 @@ export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 22, fontWeight: 800, color: sel ? primary : '#555', letterSpacing: '-0.02em' }}>{fmt(p.price)}원</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: sel ? primary : '#555', letterSpacing: '-0.02em' }}><FitText>{fmt(p.price)}원</FitText></span>
                     <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: 13 }}>/{periodMeta.unit}</span>
                     {originalPrice != null && (
-                      <span style={{ color: 'rgba(0,0,0,0.25)', fontSize: 13, textDecoration: 'line-through' }}>{fmt(originalPrice)}원</span>
+                      <span style={{ color: 'rgba(0,0,0,0.25)', fontSize: 13, textDecoration: 'line-through' }}><FitText>{fmt(originalPrice)}원</FitText></span>
                     )}
                   </div>
                 </div>

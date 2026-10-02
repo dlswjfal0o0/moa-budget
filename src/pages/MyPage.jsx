@@ -27,6 +27,7 @@ import DateTimeField from '../components/DateTimeField'
 import { openLink, TERMS_URL, PRIVACY_URL } from '../utils/openLink'
 import { getGoogleCredential, getAppleCredential } from '../utils/nativeSignIn'
 import { Sentry } from '../utils/sentry'
+import FitText from '../components/FitText'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
 const APP_VERSION = __APP_VERSION__
@@ -1399,7 +1400,7 @@ export default function MyPage() {
       {/* 헤더 */}
       <div style={{ background: t.primary, padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 28px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
             <div onClick={() => fileRef.current.click()} style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)' }}>
                 {profileImg ? <img src={profileImg} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#fff' }}>{nickname[0] || '?'}</span>}
@@ -1412,7 +1413,7 @@ export default function MyPage() {
               </div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfileImg} />
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {editingNick ? (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <input value={nickname} onChange={e => setNickname(e.target.value)}
@@ -1422,13 +1423,14 @@ export default function MyPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{nickname}</p>
+                    {/* 긴 닉네임은 줄바꿈 대신 말줄임 — 배지·수정 버튼은 항상 같은 줄에 남는다 */}
+                    <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nickname}</p>
                     <SubscriptionBadge isSubscribed={isSubscribed} onPress={() => setShowPaywall(true)} />
-                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>수정</button>
+                    <button onClick={() => setEditingNick(true)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 9999, padding: '3px 8px', color: '#fff', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>수정</button>
                   </div>
                 </div>
               )}
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{user?.email}</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
             </div>
           </div>
 
@@ -1466,17 +1468,17 @@ export default function MyPage() {
         {/* 총 자산 */}
         <div style={{ background: t.card, borderRadius: 20, padding: '16px', marginBottom: 16, border: `1.5px solid ${t.primary}33`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', ...sectionStagger(0) }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}>{fmt(totalAsset)}원</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: t.text || '#191F28', marginBottom: 12 }}><FitText>{fmt(totalAsset)}원</FitText></p>
           <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.primary, flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>계좌</span>
-              <span style={{ fontSize: 12, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</span>
+              <span style={{ fontSize: 12, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}><FitText>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</FitText></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ECC71', flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>현금</span>
-              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}>{fmt(getCashBalance())}원</span>
+              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}><FitText>{fmt(getCashBalance())}원</FitText></span>
             </div>
           </div>
         </div>
@@ -1538,14 +1540,14 @@ export default function MyPage() {
                     </button>
                   </div>
                   {(card.billingDay || card.cardNumber) && (
-                    <p style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>
+                    <p className="one-line" style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>
                       {card.billingDay ? `결제일 매월 ${card.billingDay}일` : ''}
                       {card.billingDay && card.cardNumber ? ' · ' : ''}
                       {card.cardNumber ? `**** ${card.cardNumber}` : ''}
                     </p>
                   )}
                   <p style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>이번 달 사용</p>
-                  <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: t.text || '#111', marginBottom: 6 }}><FitText>{fmt(cardUsed)}원</FitText></p>
                   {/* 실적 목표 달성 현황(목표·진행률 그래프)은 Pro 전용 */}
                   {isPro ? (
                     <>
@@ -1872,10 +1874,10 @@ export default function MyPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: t.text || '#191F28' }}>{acc.name}</p>
-                  {acc.number && <p style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
+                  {acc.number && <p className="one-line" style={{ fontSize: 12, color: '#C9CDD4', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : t.text || '#191F28' }}><FitText>{fmt(getAccountBalance(acc))}원</FitText></p>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9CDD4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </div>
@@ -1914,7 +1916,7 @@ export default function MyPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px 0', marginTop: 4, borderTop: '1px solid #F2F4F6' }}>
               <span style={{ fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>계좌 합계</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: accounts.reduce((s,a) => s + getAccountBalance(a), 0) < 0 ? '#FF5A5F' : t.text || '#191F28' }}>
-                {fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원
+                <FitText>{fmt(accounts.reduce((s,a) => s + getAccountBalance(a), 0))}원</FitText>
               </span>
             </div>
           )}
@@ -1996,7 +1998,7 @@ export default function MyPage() {
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 36, fontWeight: 700, color: t.text || '#191F28' }}>{fmt(getCashBalance())}원</p>
+            <p style={{ fontSize: 36, fontWeight: 700, color: t.text || '#191F28' }}><FitText>{fmt(getCashBalance())}원</FitText></p>
           )}
         </div>
 
@@ -2040,7 +2042,7 @@ export default function MyPage() {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>
-                        {fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원
+                        <FitText>{fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원</FitText>
                       </p>
                       {loan.rate && <p style={{ fontSize: 11, color: '#8B95A1', marginTop: 1 }}>월 이자 {fmt(monthlyInterest)}원</p>}
                     </div>
@@ -2223,7 +2225,7 @@ export default function MyPage() {
                                             </span>
                                             <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                                             <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
-                                                -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                                                <FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText>
                                             </span>
                                         </div>
                                         {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
@@ -2233,7 +2235,7 @@ export default function MyPage() {
                                                     <p style={{ fontSize: 11, color: '#bbb' }}>{tx.date} · {tx.category}</p>
                                                 </div>
                                                 <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                                                    {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
+                                                    <FitText>{tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원</FitText>
                                                 </p>
                                             </div>
                                         ))}
@@ -2327,7 +2329,7 @@ export default function MyPage() {
                       </span>
                       <div style={{ flex: 1, height: 0.5, background: '#e8e8e8' }} />
                       <span style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>
-                        -{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원
+                        <FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText>
                       </span>
                     </div>
                     {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
@@ -2338,7 +2340,7 @@ export default function MyPage() {
                         </div>
                         <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap',
                           color: tx.type === 'expense' ? '#ef4444' : tx.type === 'income' ? '#22c55e' : '#888' }}>
-                          {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원
+                          <FitText>{tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원</FitText>
                         </p>
                       </div>
                     ))}
@@ -2503,11 +2505,11 @@ export default function MyPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                   <div>
                     <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
-                    <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}>-{fmt(totalWithInterest)}원</p>
+                    <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}><FitText>-{fmt(totalWithInterest)}원</FitText></p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 원금</p>
-                    <p style={{ fontSize: 18, fontWeight: 700 }}>{fmt(loan.remainingPrincipal)}원</p>
+                    <p style={{ fontSize: 18, fontWeight: 700 }}><FitText>{fmt(loan.remainingPrincipal)}원</FitText></p>
                   </div>
                 </div>
 
@@ -2529,11 +2531,11 @@ export default function MyPage() {
                 {/* 메타 정보 */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                   {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600 }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
-                  {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(loan.monthlyPayment)}원</p></div>}
+                  {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(loan.monthlyPayment)}원</FitText></p></div>}
                   {loan.paymentDay && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600 }}>매월 {loan.paymentDay}일</p></div>}
                   {loan.startDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.startDate}</p></div>}
                   {loan.maturityDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.maturityDate}</p></div>}
-                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(monthlyInterest)}원</p></div>}
+                  {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(monthlyInterest)}원</FitText></p></div>}
                 </div>
               </div>
 

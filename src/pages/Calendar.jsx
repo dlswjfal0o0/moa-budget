@@ -18,6 +18,7 @@ import { syncPaymentNotifications } from '../utils/paymentNotifications'
 import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
 import { toMonthKey, resolveFixedForMonth, fixedListForMonth, createFixed, editFixedFromMonth, deleteFixedFromMonth } from '../utils/fixedExpenses'
 import CalendarNeu from './CalendarNeu'
+import FitText from '../components/FitText'
 
 export default function Calendar() {
   const { themeData, neumorphism } = useTheme()
@@ -431,7 +432,7 @@ export default function Calendar() {
                     <p style={{ fontSize: 12, color: '#C9CDD4' }}>{t.time} · {t.category} · {t.payment || '기타'}</p>
                   </div>
                   <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#fca5a5' : '#86efac') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
-                    {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                    <FitText>{t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원</FitText>
                   </p>
                 </div>
               ))
@@ -444,21 +445,21 @@ export default function Calendar() {
           <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
             <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '13px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 지출</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(weekExpense)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}><FitText>-{fmt(weekExpense)}원</FitText></p>
             </div>
             <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '13px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>이번 주 수입</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(weekIncome)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}><FitText>+{fmt(weekIncome)}원</FitText></p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '13px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 지출</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}><FitText>-{fmt(totalExpense)}원</FitText></p>
             </div>
             <div style={{ flex: 1, background: themeData.card, borderRadius: 20, padding: '13px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
               <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 3 }}>{viewMonth + 1}월 수입</p>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#2ECC71' }}><FitText>+{fmt(totalIncome)}원</FitText></p>
             </div>
           </div>
         </div>
@@ -533,7 +534,7 @@ export default function Calendar() {
                         )}
                       </div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: isDone ? '#C9CDD4' : '#FF5A5F', flexShrink: 0 }}>
-                        -{fmt(f.amount)}원
+                        <FitText>-{fmt(f.amount)}원</FitText>
                       </p>
                     </div>
                     {expandedFixedId === f.id && (

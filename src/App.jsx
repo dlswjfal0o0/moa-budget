@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
@@ -27,6 +27,20 @@ const MyPage = lazy(() => import('./pages/MyPage'))
 // BottomNav의 좌→우 표시 순서와 동일해야 탭 전환 방향이 맞다 (캘린더·가계부·홈·분석·MY)
 const TAB_PATHS = ['/calendar', '/ledger', '/home', '/analysis', '/my']
 
+// 글자 크기 설정은 화면 전체를 확대(zoom)한다. 확대한 뒤의 화면 폭이 이 값보다 좁아지면
+// 짧은 문구까지 줄바꿈되므로(예: iPhone SE + 가장 큰 글자), 이 폭이 유지되는 만큼까지만 확대한다.
+const MIN_LAYOUT_WIDTH = 320
+
+function useViewportWidth() {
+  const [width, setWidth] = useState(() => window.innerWidth)
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  return width
+}
+
 function RouteFallback() {
   const { themeData } = useTheme()
   return (
@@ -41,6 +55,8 @@ function AnimatedRoutes() {
   const navigationType = useNavigationType()
   const isTab = TAB_PATHS.includes(location.pathname)
   const { fontScale } = useSettings()
+  const viewportWidth = useViewportWidth()
+  const zoom = Math.min(fontScale, Math.max(1, viewportWidth / MIN_LAYOUT_WIDTH))
   const [lastTabIndex, setLastTabIndex] = useState(TAB_PATHS.indexOf(location.pathname))
 
   // 탭끼리는 BottomNav의 좌우 순서로, 그 외(온보딩 등)는 뒤로가기 여부로 방향을 정한다
@@ -58,7 +74,7 @@ function AnimatedRoutes() {
       <div
         key={location.pathname}
         style={{
-          zoom: fontScale,
+          zoom,
           animation: `${animationName} 280ms cubic-bezier(0.22,1,0.36,1) forwards`,
         }}
       >
