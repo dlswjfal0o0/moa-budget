@@ -498,6 +498,7 @@ export default function SettingsNeu(props) {
                   '예산, 고정지출 등 설정이 모두 삭제됩니다',
                   '카드, 계좌 등 MY 정보가 삭제됩니다',
                   '삭제된 데이터는 복구할 수 없습니다',
+                  'Pro 구독은 탈퇴해도 자동으로 해지되지 않아요 (iPhone 설정 → Apple 계정 → 구독에서 해지)',
                 ].map((item, i, arr) => (
                   <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? 8 : 0 }}>
                     <span style={{ color: '#FF3B30', flexShrink: 0 }}>•</span>

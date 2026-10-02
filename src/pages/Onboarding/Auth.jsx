@@ -7,15 +7,12 @@ import {
   signInWithEmailAndPassword,
   signInWithCredential,
   getAdditionalUserInfo,
-  GoogleAuthProvider,
-  OAuthProvider,
   sendPasswordResetEmail
 } from 'firebase/auth'
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth, db } from '../../firebase/config'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { TRIAL_STARTED_EVENT } from '../../contexts/PurchasesContext'
-import { SignInWithApple } from '@capacitor-community/apple-sign-in'
+import { getGoogleCredential, getAppleCredential } from '../../utils/nativeSignIn'
 import { Sentry } from '../../utils/sentry'
 import { openLink, TERMS_URL, PRIVACY_URL } from '../../utils/openLink'
 
@@ -157,10 +154,7 @@ export default function Auth() {
       // skipNativeAuth: true 설정 덕에 네이티브 SDK 자체는 로그인 상태를 커밋하지 않는다.
       // 실제 로그인 상태는 signInWithCredential로 웹 SDK(=Firestore가 쓰는 그 auth)에만
       // 반영해서, 인증 상태의 진실 소스를 웹 SDK 하나로 유지한다.
-      const { credential } = await FirebaseAuthentication.signInWithGoogle()
-      if (!credential?.idToken) throw new Error('Google 인증 토큰을 받지 못했어요.')
-      const authCredential = GoogleAuthProvider.credential(credential.idToken)
-      const result = await signInWithCredential(auth, authCredential)
+      const result = await signInWithCredential(auth, await getGoogleCredential())
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
       if (isNewUser) await startFreeTrial(result.user.uid)
@@ -179,14 +173,7 @@ export default function Auth() {
     if (mode === 'signup' && !termsConfirmed) return setError('이용약관 및 개인정보 처리방침에 동의해주세요.')
     setLoading(true)
     try {
-      const result = await SignInWithApple.authorize({
-        clientId: 'com.moa.budget',
-        redirectURI: 'https://moa-budget.firebaseapp.com/__/auth/handler',
-        scopes: 'email name',
-      })
-      const { identityToken } = result.response
-      const provider = new OAuthProvider('apple.com')
-      const credential = provider.credential({ idToken: identityToken })
+      const { credential } = await getAppleCredential()
       const signInResult = await signInWithCredential(auth, credential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser

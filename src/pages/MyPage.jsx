@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStagger } from '../hooks/useStagger'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
-import { onAuthStateChanged, signOut, updateProfile, deleteUser } from 'firebase/auth'
+import { onAuthStateChanged, signOut, updateProfile, deleteUser, reauthenticateWithCredential, EmailAuthProvider, revokeAccessToken } from 'firebase/auth'
 import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc, writeBatch } from 'firebase/firestore'
 import BottomSheet from '../components/BottomSheet'
 import FixedPortal from '../components/FixedPortal'
@@ -25,6 +25,8 @@ import MyPageNeu from './MyPageNeu'
 import SettingsNeu from './SettingsNeu'
 import DateTimeField from '../components/DateTimeField'
 import { openLink, TERMS_URL, PRIVACY_URL } from '../utils/openLink'
+import { getGoogleCredential, getAppleCredential } from '../utils/nativeSignIn'
+import { Sentry } from '../utils/sentry'
 
 // vite.config.js의 define에서 package.json 버전을 주입한다.
 const APP_VERSION = __APP_VERSION__
@@ -75,6 +77,8 @@ export default function MyPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteChecked, setDeleteChecked] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteError, setDeleteError] = useState('')
   const [settingsCatTab, setSettingsCatTab] = useState('expense')
   const [settingsNewCatName, setSettingsNewCatName] = useState('')
   const [accounts, setAccounts] = useState(() => {
@@ -284,11 +288,37 @@ export default function MyPage() {
     saveToFirestore({ theme: name })
   }
 
+  // 로그인 방식(이메일/Google/Apple). 탈퇴 전 본인 확인 방법을 고르는 데 쓴다
+  const signInProvider = user?.providerData?.[0]?.providerId
+
+  // 탈퇴는 본인 확인 → 데이터 삭제 → (Apple) 연결 해제 → 계정 삭제 순서로 진행한다.
+  // 먼저 본인 확인을 받아야 Firebase가 '최근 로그인 필요'로 계정 삭제를 거부하지 않는다 —
+  // 예전에는 데이터를 지운 뒤 계정 삭제만 실패해 계정이 남는 경우가 있었다.
+  // 실패하면 어느 단계에서 멈췄는지(무엇이 지워졌는지) 시트에 그대로 알려준다.
   const handleWithdrawAccount = async () => {
     if (!user || deletingAccount) return
+    if (signInProvider === 'password' && !deletePassword) {
+      setDeleteError('본인 확인을 위해 비밀번호를 입력해주세요.')
+      return
+    }
     setDeletingAccount(true)
+    setDeleteError('')
+    let stage = 'reauth'
     try {
-      // Firestore writeBatch는 최대 500개 쓰기 제한이 있어 500건씩 나눠서 커밋한다.
+      // 1) 본인 확인
+      let appleAuthorizationCode = null
+      if (signInProvider === 'password') {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, deletePassword))
+      } else if (signInProvider === 'google.com') {
+        await reauthenticateWithCredential(user, await getGoogleCredential())
+      } else if (signInProvider === 'apple.com') {
+        const { credential, authorizationCode } = await getAppleCredential()
+        await reauthenticateWithCredential(user, credential)
+        appleAuthorizationCode = authorizationCode
+      }
+
+      // 2) 데이터 삭제 — Firestore writeBatch는 최대 500개 쓰기 제한이 있어 500건씩 나눠서 커밋한다.
+      stage = 'data'
       const txSnap = await getDocs(query(collection(db, 'transactions'), where('uid', '==', user.uid)))
       const refs = txSnap.docs.map(d => d.ref)
       for (let i = 0; i < refs.length; i += 500) {
@@ -297,16 +327,39 @@ export default function MyPage() {
         await batch.commit()
       }
       await deleteDoc(doc(db, 'users', user.uid))
-      localStorage.clear()
+
+      // 3) Sign in with Apple 연결 해제(심사 지침 5.1.1(v)). 실패해도 탈퇴 자체는 막지 않고 기록만 남긴다 —
+      //    Firebase 콘솔의 Apple 제공업체에 서비스 ID·키가 설정돼 있어야 동작한다.
+      if (appleAuthorizationCode) {
+        try {
+          await revokeAccessToken(auth, appleAuthorizationCode)
+        } catch (err) {
+          console.error('[MyPage] Apple 연결 해제 실패', err)
+          Sentry.captureException(err)
+        }
+      }
+
+      // 4) 계정 삭제
+      stage = 'account'
       await deleteUser(user)
+
+      localStorage.clear()
+      setShowDeleteModal(false)
+      alert('탈퇴가 완료됐어요. 그동안 모아를 이용해주셔서 감사합니다.')
       navigate('/', { replace: true })
     } catch (e) {
-      if (e.code === 'auth/requires-recent-login') {
-        alert('보안을 위해 재로그인 후 탈퇴를 진행해주세요.')
-        await signOut(auth)
-        navigate('/auth', { replace: true })
+      console.error('[MyPage] 탈퇴 실패', stage, e.code, e.message)
+      const cancelled = /cancel/i.test(e?.code || '') || /cancel/i.test(e?.message || '') || e?.code === '1001'
+      if (stage === 'reauth') {
+        if (cancelled) setDeleteError('')
+        else if (['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials'].includes(e.code)) setDeleteError('비밀번호가 맞지 않아요. 아무것도 삭제되지 않았어요.')
+        else if (e.code === 'auth/user-mismatch') setDeleteError('지금 로그인한 계정과 다른 계정으로 확인했어요. 같은 계정으로 다시 시도해주세요. 아무것도 삭제되지 않았어요.')
+        else if (e.code === 'auth/too-many-requests') setDeleteError('시도가 너무 많아요. 잠시 후 다시 시도해주세요. 아무것도 삭제되지 않았어요.')
+        else setDeleteError('본인 확인에 실패했어요. 아무것도 삭제되지 않았어요. 다시 시도해주세요.')
       } else {
-        alert('탈퇴 중 오류가 발생했습니다.')
+        Sentry.captureException(e)
+        if (stage === 'data') setDeleteError('데이터를 삭제하던 중 오류가 났어요. 일부 데이터가 이미 지워졌을 수 있고, 계정은 아직 남아 있어요. 다시 시도하면 남은 데이터와 계정까지 삭제돼요.')
+        else setDeleteError('데이터는 모두 삭제됐지만 계정 삭제에 실패했어요. 다시 시도해주세요. 계속 실패하면 고객센터로 문의해주세요.')
       }
       setDeletingAccount(false)
     }
@@ -1199,6 +1252,7 @@ export default function MyPage() {
                       '예산, 고정지출 등 설정이 모두 삭제됩니다',
                       '카드, 계좌 등 MY 정보가 삭제됩니다',
                       '삭제된 데이터는 복구할 수 없습니다',
+                      'Pro 구독은 탈퇴해도 자동으로 해지되지 않아요 (iPhone 설정 → Apple 계정 → 구독에서 해지)',
                     ].map((item, i, arr) => (
                       <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? 8 : 0 }}>
                         <span style={{ color: '#FF3B30', flexShrink: 0 }}>•</span>
@@ -1254,10 +1308,26 @@ export default function MyPage() {
 
   // ── 계정 탈퇴 최종 확인 바텀시트 ──
   const deleteAccountSheet = (
-      <BottomSheet open={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxOpacity={0.5}>
+      <BottomSheet open={showDeleteModal} onClose={() => { if (deletingAccount) return; setShowDeleteModal(false); setDeletePassword(''); setDeleteError('') }} maxOpacity={0.5}>
         <div style={{ padding: '40px 24px calc(env(safe-area-inset-bottom, 0px) + 28px)' }}>
             <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 8, textAlign: 'center' }}>정말 탈퇴할까요?</p>
-            <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 28, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
+            <p style={{ fontSize: 14, color: '#8B95A1', textAlign: 'center', marginBottom: 16, lineHeight: 1.6 }}>모든 데이터가 영구적으로 삭제되며<br/>복구할 수 없습니다.</p>
+            <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', marginBottom: 20, lineHeight: 1.6, background: '#F7F8FA', borderRadius: 12, padding: '10px 12px' }}>
+              Pro를 구독 중이라면 탈퇴해도 결제가 자동으로 해지되지 않아요.<br/>iPhone 설정 → Apple 계정 → 구독에서 해지해주세요.
+            </p>
+            {signInProvider === 'password' && (
+              <input type="password" placeholder="본인 확인을 위해 비밀번호 입력" autoComplete="current-password"
+                value={deletePassword} onChange={e => { setDeletePassword(e.target.value); setDeleteError('') }}
+                style={{ ...inputStyle, marginBottom: 12 }} />
+            )}
+            {(signInProvider === 'google.com' || signInProvider === 'apple.com') && (
+              <p style={{ fontSize: 12, color: '#8B95A1', textAlign: 'center', marginBottom: 12 }}>
+                탈퇴하기를 누르면 본인 확인을 위해 {signInProvider === 'apple.com' ? 'Apple' : 'Google'} 로그인 창이 한 번 더 떠요.
+              </p>
+            )}
+            {deleteError && (
+              <p role="alert" style={{ fontSize: 13, color: '#FF3B30', textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>{deleteError}</p>
+            )}
             <button onClick={() => setShowDeleteModal(false)} className="pressable-subtle"
               style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', background: t.primary, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
               계속 사용할게요
