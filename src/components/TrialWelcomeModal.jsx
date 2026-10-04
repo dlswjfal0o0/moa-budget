@@ -1,6 +1,7 @@
 import { useTheme } from '../contexts/ThemeContext'
 import SubscriptionPlanList from './SubscriptionPlans'
 import FixedPortal from './FixedPortal'
+import { openLink, TERMS_URL, PRIVACY_URL } from '../utils/openLink'
 
 const PRO_FEATURES = [
   '결제 알림 (고정지출 결제일 전날 알림)',
@@ -62,9 +63,9 @@ export default function TrialWelcomeModal({ open, onClose }) {
         <p style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'center', lineHeight: 1.6, marginTop: 8 }}>
           구독은 결제 주기마다 자동 갱신되며 App Store에서 언제든 해지할 수 있어요.
           <br />
-          <a href="/terms.html" target="_blank" rel="noreferrer" style={{ color: '#8B95A1' }}>이용약관</a>
+          <a href={TERMS_URL} onClick={e => { e.preventDefault(); openLink(TERMS_URL) }} style={{ color: '#8B95A1' }}>이용약관</a>
           {' · '}
-          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ color: '#8B95A1' }}>개인정보처리방침</a>
+          <a href={PRIVACY_URL} onClick={e => { e.preventDefault(); openLink(PRIVACY_URL) }} style={{ color: '#8B95A1' }}>개인정보처리방침</a>
         </p>
       </div>
     </div>

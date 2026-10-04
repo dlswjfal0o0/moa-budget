@@ -9,6 +9,7 @@ import { CatIcon, BackIcon, guessIconKey } from './Ledger'
 import { getColoredShadow } from '../utils/neuColors'
 import DateTimeField from '../components/DateTimeField'
 import SelectField from '../components/SelectField'
+import FitText from '../components/FitText'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -117,14 +118,14 @@ export default function LedgerNeu(props) {
                 <div style={{ flex: 1, height: 1, background: 'rgba(163,177,198,0.25)' }} />
                 <span style={{ fontSize: 12, whiteSpace: 'nowrap', display: 'flex', gap: 8, fontWeight: 600 }}>
                   {dateGroups[date].some(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#FF5A5F' }}>-{dateGroups[date].filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                    <span style={{ color: '#FF5A5F' }}><FitText>-{dateGroups[date].filter(t => t.type === 'expense' && !isCreditExcluded(t) && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</FitText></span>
                   )}
                   {(() => {
                     const grayAmt = dateGroups[date].filter(t => t.type === 'expense' && isCreditExcluded(t)).reduce((s, t) => s + t.amount, 0)
-                    return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}>-{grayAmt.toLocaleString()}원</span> : null
+                    return grayAmt > 0 ? <span style={{ color: '#C9CDD4' }}><FitText>-{grayAmt.toLocaleString()}원</FitText></span> : null
                   })()}
                   {dateGroups[date].some(t => t.type === 'income' && (!showLoan || !t.isLoan)) && (
-                    <span style={{ color: '#2ECC71' }}>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</span>
+                    <span style={{ color: '#2ECC71' }}><FitText>+{dateGroups[date].filter(t => t.type === 'income' && (!showLoan || !t.isLoan)).reduce((s, t) => s + t.amount, 0).toLocaleString()}원</FitText></span>
                   )}
                 </span>
               </div>
@@ -193,7 +194,7 @@ export default function LedgerNeu(props) {
                             <p style={{ fontSize: 12, color: '#8B95A1' }}>{(t.mergedItems || []).length}건 묶음 {!selectionMode && (isExpanded ? '▲' : '▼')}</p>
                           </div>
                           <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0, color: amtColor }}>
-                            {t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}
+                            <FitText>{t.type === 'excluded' ? '0원 (미포함)' : `${amtPrefix}${fmt(t.amount)}원`}</FitText>
                           </p>
                         </div>
                       </div>
@@ -214,12 +215,12 @@ export default function LedgerNeu(props) {
                                   </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{item.title}</p>
-                                    <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                                    <p className="one-line" style={{ fontSize: 12, color: '#8B95A1' }}>
                                       {item.time ? `${item.time} · ` : ''}{item.category || '-'}
                                     </p>
                                   </div>
                                   <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: item.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
-                                    {item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원
+                                    <FitText>{item.type === 'income' ? '+' : '-'}{item.amount?.toLocaleString()}원</FitText>
                                   </p>
                                 </div>
                                 {isSubSel && (
@@ -315,7 +316,7 @@ export default function LedgerNeu(props) {
                               <span style={{ fontSize: 10, fontWeight: 600, color: '#8B95A1', background: 'rgba(163,177,198,0.2)', borderRadius: 9999, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>자동</span>
                             )}
                           </div>
-                          <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                          <p className="one-line" style={{ fontSize: 12, color: '#8B95A1' }}>
                             {t.type === 'transfer'
                               ? `${t.time} · ${t.payment || '-'} → ${t.toAccount || '-'}`
                               : `${t.time} · ${t.category} · ${t.payment || '현금'}`}
@@ -323,7 +324,7 @@ export default function LedgerNeu(props) {
                         </div>
                         <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
                           color: t.type === 'transfer' ? '#8B95A1' : t.creditCardBilling ? '#FF5A5F' : (t.type === 'expense' && isCreditExcluded(t)) ? '#C9CDD4' : (showLoan && t.isLoan) ? (t.type === 'expense' ? '#FFAEAE' : '#86EFAC') : t.type === 'expense' ? '#FF5A5F' : '#2ECC71' }}>
-                          {t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                          <FitText>{t.type === 'transfer' ? '↔' : t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원</FitText>
                         </p>
                       </div>
                     </div>
@@ -450,11 +451,11 @@ export default function LedgerNeu(props) {
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
           <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
             <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>지출</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#FF5A5F' }}>-{fmt(totalExpense)}원</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#FF5A5F' }}><FitText>-{fmt(totalExpense)}원</FitText></p>
           </div>
           <div className="neu-inset" style={{ flex: 1, borderRadius: 20, padding: '14px 16px' }}>
             <p style={{ fontSize: 13, color: '#8B95A1', marginBottom: 4 }}>수입</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: '#2ECC71' }}>+{fmt(totalIncome)}원</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#2ECC71' }}><FitText>+{fmt(totalIncome)}원</FitText></p>
           </div>
         </div>
 
@@ -506,7 +507,7 @@ export default function LedgerNeu(props) {
               const net = getMergedNet()
               return (
                 <p style={{ fontSize: 18, fontWeight: 700, color: net < 0 ? '#FF5A5F' : net > 0 ? '#2ECC71' : '#191F28' }}>
-                  {net > 0 ? '+' : ''}{net.toLocaleString()}원
+                  <FitText>{net > 0 ? '+' : ''}{net.toLocaleString()}원</FitText>
                 </p>
               )
             })()}
@@ -1065,13 +1066,13 @@ export default function LedgerNeu(props) {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{t.title}</p>
-                          <p style={{ fontSize: 12, color: '#8B95A1' }}>
+                          <p className="one-line" style={{ fontSize: 12, color: '#8B95A1' }}>
                             {t.date} · {t.type === 'transfer' ? `${t.payment} → ${t.toAccount}` : `${t.category} · ${t.payment || '현금'}`}
                           </p>
                         </div>
                         <p style={{ fontSize: 15, fontWeight: 700, flexShrink: 0,
                           color: t.type === 'transfer' ? '#8B95A1' : t.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
-                          {t.type === 'transfer' ? '↔' : t.type === 'income' ? '+' : '-'}{fmt(t.amount)}원
+                          <FitText>{t.type === 'transfer' ? '↔' : t.type === 'income' ? '+' : '-'}{fmt(t.amount)}원</FitText>
                         </p>
                       </div>
                       <div className="neu-inset">
@@ -1102,7 +1103,7 @@ export default function LedgerNeu(props) {
                   borderBottom: idx < getSelectedTxns().length - 1 ? '1px solid rgba(163,177,198,0.25)' : 'none' }}>
                   <p style={{ fontSize: 14, color: '#191F28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 12 }}>{t.title}</p>
                   <p style={{ fontSize: 14, fontWeight: 700, flexShrink: 0, color: t.type === 'income' ? '#2ECC71' : '#FF5A5F' }}>
-                    {t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()}원
+                    <FitText>{t.type === 'income' ? '+' : '-'}{t.amount.toLocaleString()}원</FitText>
                   </p>
                 </div>
               ))}
@@ -1112,7 +1113,7 @@ export default function LedgerNeu(props) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 0 2px' }}>
                     <p style={{ fontSize: 14, fontWeight: 700, color: '#191F28' }}>합산</p>
                     <p style={{ fontSize: 16, fontWeight: 700, color: net < 0 ? '#FF5A5F' : net > 0 ? '#2ECC71' : '#8B95A1' }}>
-                      {net > 0 ? '+' : ''}{net.toLocaleString()}원{net === 0 ? ' (미포함)' : ''}
+                      <FitText>{net > 0 ? '+' : ''}{net.toLocaleString()}원{net === 0 ? ' (미포함)' : ''}</FitText>
                     </p>
                   </div>
                 )

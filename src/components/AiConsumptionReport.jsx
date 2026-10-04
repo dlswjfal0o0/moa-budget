@@ -1,4 +1,5 @@
 import ThinkingOrbs from './ThinkingOrbs'
+import FitText from './FitText'
 
 // AI 소비 분석 카드 본문. 일반/뉴모피즘 분석 화면이 같은 레이아웃을 공유한다.
 // 파스텔 테마는 카드 배경·글자색이 테마마다 달라서, 본문/보조 글자색은 테마 text에 투명도를 줘 만든다.
@@ -179,7 +180,7 @@ export default function AiConsumptionReport({
               <div {...panel} style={{ ...panel.style, borderRadius: 14, padding: '12px 14px', marginTop: 14, display: 'flex', alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>이번 달 지출</p>
-                  <p style={{ fontSize: 17, fontWeight: 800, color: text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalExpense)}원</p>
+                  <p style={{ fontSize: 17, fontWeight: 800, color: text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}><FitText>{fmt(totalExpense)}원</FitText></p>
                 </div>
                 <div style={{ width: 1, alignSelf: 'stretch', background: divider, margin: '0 14px' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -274,7 +275,7 @@ export default function AiConsumptionReport({
             <div style={{ marginTop: 24 }}>
               <SectionTitle color={muted}
                 right={mode === 'data' && goal > 0 && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: muted }}>목표 <b style={{ color: GREEN, fontSize: 13 }}>{fmt(goal)}원</b></span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: muted }}>목표 <b style={{ color: GREEN, fontSize: 13, whiteSpace: 'nowrap' }}>{fmt(goal)}원</b></span>
                 )}>
                 {ADVICE_TITLES[mode]}
               </SectionTitle>
@@ -287,7 +288,7 @@ export default function AiConsumptionReport({
                     <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>{mode === 'warm' ? '아래 방법을 실천하면' : '이번 달 절감 목표'}</p>
                     <p style={{ fontSize: 14, fontWeight: 600, color: body }}>{mode === 'warm' ? '이만큼 아낄 수 있어요' : `${cuts.length}가지 방법으로`}</p>
                   </div>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: GREEN, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>{fmt(goal)}원</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: GREEN, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}><FitText>{fmt(goal)}원</FitText></span>
                 </div>
               )}
 
@@ -341,7 +342,7 @@ export default function AiConsumptionReport({
                       <div key={i} style={{ padding: '12px 0', borderTop: i === 0 ? 'none' : `1px solid ${divider}` }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                           <span style={{ fontSize: 14, fontWeight: 700, color: text, flex: 1, minWidth: 0 }}>{cut.category}</span>
-                          {spend > 0 && <span style={{ fontSize: 12, color: muted, fontVariantNumeric: 'tabular-nums' }}>{fmt(spend)}원</span>}
+                          {spend > 0 && <span style={{ fontSize: 12, color: muted, fontVariantNumeric: 'tabular-nums' }}><FitText>{fmt(spend)}원</FitText></span>}
                           {cut.save > 0 && <span style={{ fontSize: 14, fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>−{fmt(cut.save)}원</span>}
                           {rate !== null && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: `${GREEN}14`, padding: '2px 6px', borderRadius: 6, fontVariantNumeric: 'tabular-nums' }}>{rate}%</span>}
                         </div>

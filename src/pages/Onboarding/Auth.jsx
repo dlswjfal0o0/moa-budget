@@ -7,15 +7,14 @@ import {
   signInWithEmailAndPassword,
   signInWithCredential,
   getAdditionalUserInfo,
-  GoogleAuthProvider,
-  OAuthProvider,
   sendPasswordResetEmail
 } from 'firebase/auth'
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth, db } from '../../firebase/config'
-import { doc, setDoc } from 'firebase/firestore'
-import { SignInWithApple } from '@capacitor-community/apple-sign-in'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { TRIAL_STARTED_EVENT } from '../../contexts/PurchasesContext'
+import { getGoogleCredential, getAppleCredential } from '../../utils/nativeSignIn'
 import { Sentry } from '../../utils/sentry'
+import { openLink, TERMS_URL, PRIVACY_URL } from '../../utils/openLink'
 
 const isNative = () => {
   try { return window.Capacitor?.isNativePlatform?.() ?? false } catch { return false }
@@ -25,8 +24,11 @@ const isNative = () => {
 // Pro 게이팅은 네이티브 앱에서만 적용되므로(웹은 항상 무료), 웹 가입에서는 건너뛴다.
 const startFreeTrial = async (uid) => {
   if (!isNative()) return
-  await setDoc(doc(db, 'users', uid), { trialStartedAt: new Date().toISOString() }, { merge: true })
+  // 시작일은 서버 시간으로만 한 번 기록할 수 있다(firestore.rules) — 기기 시계를 바꿔도 늘어나지 않는다
+  await setDoc(doc(db, 'users', uid), { trialStartedAt: serverTimestamp() }, { merge: true })
   localStorage.setItem('moa_show_trial_popup', 'true')
+  // 가입 직후 PurchasesContext가 이미 users 문서를 읽었을 수 있으므로 체험 정보를 다시 읽게 알린다
+  window.dispatchEvent(new Event(TRIAL_STARTED_EVENT))
 }
 
 // 약관/연령 동의용 커스텀 체크박스. 네이티브 accentColor는 브라우저마다
@@ -152,10 +154,7 @@ export default function Auth() {
       // skipNativeAuth: true 설정 덕에 네이티브 SDK 자체는 로그인 상태를 커밋하지 않는다.
       // 실제 로그인 상태는 signInWithCredential로 웹 SDK(=Firestore가 쓰는 그 auth)에만
       // 반영해서, 인증 상태의 진실 소스를 웹 SDK 하나로 유지한다.
-      const { credential } = await FirebaseAuthentication.signInWithGoogle()
-      if (!credential?.idToken) throw new Error('Google 인증 토큰을 받지 못했어요.')
-      const authCredential = GoogleAuthProvider.credential(credential.idToken)
-      const result = await signInWithCredential(auth, authCredential)
+      const result = await signInWithCredential(auth, await getGoogleCredential())
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser
       if (isNewUser) await startFreeTrial(result.user.uid)
@@ -174,14 +173,7 @@ export default function Auth() {
     if (mode === 'signup' && !termsConfirmed) return setError('이용약관 및 개인정보 처리방침에 동의해주세요.')
     setLoading(true)
     try {
-      const result = await SignInWithApple.authorize({
-        clientId: 'com.moa.budget',
-        redirectURI: 'https://moa-budget.firebaseapp.com/__/auth/handler',
-        scopes: 'email name',
-      })
-      const { identityToken } = result.response
-      const provider = new OAuthProvider('apple.com')
-      const credential = provider.credential({ idToken: identityToken })
+      const { credential } = await getAppleCredential()
       const signInResult = await signInWithCredential(auth, credential)
       localStorage.removeItem('moa_demo_mode')
       const isNewUser = getAdditionalUserInfo(signInResult)?.isNewUser
@@ -383,12 +375,12 @@ export default function Auth() {
           {mode === 'signup' && (
             <CheckBox checked={termsConfirmed} onChange={e => setTermsConfirmed(e.target.checked)} style={stagger()}>
               <span
-                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/terms.html', '_blank') }}
+                onClick={(e) => { e.preventDefault(); openLink(TERMS_URL) }}
                 style={{ color: '#3182F6', textDecoration: 'underline' }}
               >이용약관</span>
               {' '}및{' '}
               <span
-                onClick={(e) => { e.preventDefault(); window.open('https://moa-budget.vercel.app/privacy.html', '_blank') }}
+                onClick={(e) => { e.preventDefault(); openLink(PRIVACY_URL) }}
                 style={{ color: '#3182F6', textDecoration: 'underline' }}
               >개인정보 처리방침</span>
               에 동의합니다

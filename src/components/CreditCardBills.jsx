@@ -1,3 +1,5 @@
+import FitText from './FitText'
+
 // [홈] 신용카드 대금 — 전월 사용분을 카드별로 결산해 보여주고,
 // 체크 시 연동계좌 + 금융 카테고리로 '신용카드 대금 납부' 내역을 가계부에 기재한다.
 // 계산/저장 로직은 Home.jsx가 담당하고, 이 컴포넌트는 표시만 한다.
@@ -11,7 +13,7 @@ export default function CreditCardBills({ bills, billMonthLabel, fmt, primary, o
     <div style={{ marginBottom: 32 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
         <p style={{ fontSize: 18, fontWeight: 700, color: textColor }}>신용카드 대금</p>
-        <p style={{ fontSize: 13, color: '#8B95A1' }}>{billMonthLabel} 사용분 · <span style={{ fontWeight: 700, color: textColor }}>{fmt(total)}원</span></p>
+        <p style={{ fontSize: 13, color: '#8B95A1' }}>{billMonthLabel} 사용분 · <span style={{ fontWeight: 700, color: textColor }}><FitText>{fmt(total)}원</FitText></span></p>
       </div>
       <div className={neu ? 'neu-card' : undefined}
         style={neu
@@ -64,7 +66,7 @@ export default function CreditCardBills({ bills, billMonthLabel, fmt, primary, o
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 700, marginBottom: badge ? 3 : 0,
                   color: b.paid ? '#B0B8C1' : '#FF5A5F', textDecoration: b.paid ? 'line-through' : 'none' }}>
-                  -{fmt(b.amount)}원
+                  <FitText>-{fmt(b.amount)}원</FitText>
                 </p>
                 {badge && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: badge.color, borderRadius: 9999, padding: '3px 9px' }}>
