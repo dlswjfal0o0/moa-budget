@@ -65,8 +65,9 @@ export default function CreditCardBills({ bills, billMonthLabel, fmt, primary, o
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 700, marginBottom: badge ? 3 : 0,
-                  color: b.paid ? '#B0B8C1' : '#FF5A5F', textDecoration: b.paid ? 'line-through' : 'none' }}>
-                  <FitText>-{fmt(b.amount)}원</FitText>
+                  color: b.paid ? '#B0B8C1' : '#FF5A5F' }}>
+                  {/* FitText는 inline-block이라 부모의 취소선이 전달되지 않아 직접 건다 */}
+                  <FitText style={{ textDecoration: b.paid ? 'line-through' : 'none' }}>-{fmt(b.amount)}원</FitText>
                 </p>
                 {badge && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: badge.color, borderRadius: 9999, padding: '3px 9px' }}>
