@@ -130,19 +130,6 @@ function FixedExpenseForm({ title, data, setData, categories, accNames, userCard
               </div>
             )}
           </div>
-          <div className="neu-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 16 }}>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
-              <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
-            </div>
-            <button onClick={() => setData(f => ({ ...f, autoRegister: !f.autoRegister }))} aria-label="가계부 자동 등록" aria-pressed={data.autoRegister}
-              className="neu-inset" style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0 }}>
-              <div className="neu-card" style={{ position: 'absolute', top: 2, left: data.autoRegister ? 20 : 2, width: 22, height: 22,
-                borderRadius: '50%', transition: 'left 0.2s' }}>
-                {data.autoRegister && <div style={{ position: 'absolute', inset: 0, margin: 'auto', width: 8, height: 8, borderRadius: '50%', background: primary }} />}
-              </div>
-            </button>
-          </div>
         </div>
       </div>
       <div style={{ padding: '12px 24px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', flexShrink: 0 }}>
@@ -359,7 +346,7 @@ export default function CalendarNeu(props) {
                     <div className="neu-card" style={{ display: 'flex', borderRadius: 20, overflow: 'hidden', marginTop: 8 }}>
                       <button onClick={() => {
                         setEditingFixedId(f.id)
-                        setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '', category: f.category || '기타', payment: f.payment || '현금', autoRegister: f.autoRegister !== false })
+                        setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '', category: f.category || '기타', payment: f.payment || '현금' })
                         setExpandedFixedId(null)
                       }} style={{ flex: 1, padding: '14px', border: 'none', background: 'none', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
