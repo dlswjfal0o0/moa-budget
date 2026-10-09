@@ -5,6 +5,7 @@ import AmountInput from '../components/AmountInput'
 import LockedFeature, { ProBadge, SubscriptionBadge } from '../components/LockedFeature'
 import { usePurchases } from '../contexts/PurchasesContext'
 import { getColoredShadow } from '../utils/neuColors'
+import FitText from '../components/FitText'
 
 const NEU_BG = 'var(--neu-bg)'
 
@@ -147,17 +148,17 @@ export default function MyPageNeu(props) {
         {/* 총 자산 */}
         <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 16 }}>
           <p style={{ fontSize: 13, color: '#8B95A1', fontWeight: 700, marginBottom: 8 }}>총 자산</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: '#191F28', marginBottom: 12 }}>{fmt(totalAsset)}원</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: '#191F28', marginBottom: 12 }}><FitText>{fmt(totalAsset)}원</FitText></p>
           <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: primary, flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>계좌</span>
-              <span style={{ fontSize: 12, color: accountsSum < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}>{fmt(accountsSum)}원</span>
+              <span style={{ fontSize: 12, color: accountsSum < 0 ? '#FF5A5F' : '#8B95A1', fontWeight: 500 }}><FitText>{fmt(accountsSum)}원</FitText></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2ECC71', flexShrink: 0 }} />
               <span style={{ fontSize: 12, color: '#8B95A1' }}>현금</span>
-              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}>{fmt(getCashBalance())}원</span>
+              <span style={{ fontSize: 12, color: '#8B95A1', fontWeight: 500 }}><FitText>{fmt(getCashBalance())}원</FitText></span>
             </div>
           </div>
         </div>
@@ -212,14 +213,14 @@ export default function MyPageNeu(props) {
                     </button>
                   </div>
                   {(card.billingDay || card.cardNumber) && (
-                    <p style={{ fontSize: 11, color: '#8B95A1', marginBottom: 8 }}>
+                    <p className="one-line" style={{ fontSize: 11, color: '#8B95A1', marginBottom: 8 }}>
                       {card.billingDay ? `결제일 매월 ${card.billingDay}일` : ''}
                       {card.billingDay && card.cardNumber ? ' · ' : ''}
                       {card.cardNumber ? `**** ${card.cardNumber}` : ''}
                     </p>
                   )}
                   <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>이번 달 사용</p>
-                  <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 6 }}>{fmt(cardUsed)}원</p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: '#191F28', marginBottom: 6 }}><FitText>{fmt(cardUsed)}원</FitText></p>
                   {/* 실적 목표 달성 현황(목표·진행률 그래프)은 Pro 전용 */}
                   {isPro ? (
                     <>
@@ -304,10 +305,10 @@ export default function MyPageNeu(props) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>{acc.name}</p>
-                  {acc.number && <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
+                  {acc.number && <p className="one-line" style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>{showAccountNumbers ? acc.number : maskAccountNumber(acc.number)}</p>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : '#191F28' }}>{fmt(getAccountBalance(acc))}원</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: getAccountBalance(acc) < 0 ? '#FF5A5F' : '#191F28' }}><FitText>{fmt(getAccountBalance(acc))}원</FitText></p>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B95A1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                 </div>
               </div>
@@ -335,7 +336,7 @@ export default function MyPageNeu(props) {
           {accounts.length > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px 0', marginTop: 4 }}>
               <span style={{ fontSize: 13, color: '#8B95A1', fontWeight: 500 }}>계좌 합계</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: accountsSum < 0 ? '#FF5A5F' : '#191F28' }}>{fmt(accountsSum)}원</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: accountsSum < 0 ? '#FF5A5F' : '#191F28' }}><FitText>{fmt(accountsSum)}원</FitText></span>
             </div>
           )}
 
@@ -412,7 +413,7 @@ export default function MyPageNeu(props) {
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 36, fontWeight: 700, color: '#191F28' }}>{fmt(getCashBalance())}원</p>
+            <p style={{ fontSize: 36, fontWeight: 700, color: '#191F28' }}><FitText>{fmt(getCashBalance())}원</FitText></p>
           )}
         </div>
 
@@ -459,7 +460,7 @@ export default function MyPageNeu(props) {
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F' }}>
-                          {fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원
+                          <FitText>{fmt(loan.rate ? loan.remainingPrincipal + monthlyInterest : loan.remainingPrincipal)}원</FitText>
                         </p>
                         {loan.rate && <p style={{ fontSize: 11, color: '#8B95A1', marginTop: 1 }}>월 이자 {fmt(monthlyInterest)}원</p>}
                       </div>
@@ -768,7 +769,7 @@ export default function MyPageNeu(props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: primary, whiteSpace: 'nowrap' }}>{month.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}</span>
                         <div style={{ flex: 1, height: 1, background: 'rgba(163,177,198,0.25)' }} />
-                        <span style={{ fontSize: 11, color: '#8B95A1', whiteSpace: 'nowrap' }}>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</span>
+                        <span style={{ fontSize: 11, color: '#8B95A1', whiteSpace: 'nowrap' }}><FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText></span>
                       </div>
                       {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
                         <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(163,177,198,0.2)' }}>
@@ -777,7 +778,7 @@ export default function MyPageNeu(props) {
                             <p style={{ fontSize: 11, color: '#8B95A1' }}>{tx.date} · {tx.category}</p>
                           </div>
                           <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: tx.type === 'expense' ? '#ef4444' : '#22c55e' }}>
-                            {tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원
+                            <FitText>{tx.type === 'expense' ? '-' : '+'}{(tx.amount || 0).toLocaleString()}원</FitText>
                           </p>
                         </div>
                       ))}
@@ -845,7 +846,7 @@ export default function MyPageNeu(props) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: primary, whiteSpace: 'nowrap' }}>{month.replace(/^(\d{4})-0?(\d+)$/, '$1년 $2월')}</span>
                       <div style={{ flex: 1, height: 1, background: 'rgba(163,177,198,0.25)' }} />
-                      <span style={{ fontSize: 11, color: '#8B95A1', whiteSpace: 'nowrap' }}>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</span>
+                      <span style={{ fontSize: 11, color: '#8B95A1', whiteSpace: 'nowrap' }}><FitText>-{byMonth[month].filter(tx => tx.type === 'expense').reduce((s, tx) => s + (tx.amount || 0), 0).toLocaleString()}원</FitText></span>
                     </div>
                     {byMonth[month].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map(tx => (
                       <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(163,177,198,0.2)' }}>
@@ -854,7 +855,7 @@ export default function MyPageNeu(props) {
                           <p style={{ fontSize: 11, color: '#8B95A1' }}>{tx.date} · {tx.category}</p>
                         </div>
                         <p style={{ fontSize: 14, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', color: tx.type === 'expense' ? '#ef4444' : tx.type === 'income' ? '#22c55e' : '#8B95A1' }}>
-                          {tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원
+                          <FitText>{tx.type === 'expense' ? '-' : tx.type === 'income' ? '+' : ''}{(tx.amount || 0).toLocaleString()}원</FitText>
                         </p>
                       </div>
                     ))}
@@ -998,11 +999,11 @@ export default function MyPageNeu(props) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                     <div>
                       <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 대출금 {loan.rate ? '(이자 포함)' : ''}</p>
-                      <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}>-{fmt(totalWithInterest)}원</p>
+                      <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', lineHeight: 1.1 }}><FitText>-{fmt(totalWithInterest)}원</FitText></p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>잔여 원금</p>
-                      <p style={{ fontSize: 18, fontWeight: 700 }}>{fmt(loan.remainingPrincipal)}원</p>
+                      <p style={{ fontSize: 18, fontWeight: 700 }}><FitText>{fmt(loan.remainingPrincipal)}원</FitText></p>
                     </div>
                   </div>
                   <div style={{ marginBottom: 16 }}>
@@ -1020,11 +1021,11 @@ export default function MyPageNeu(props) {
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                     {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>금리</p><p style={{ fontSize: 13, fontWeight: 600 }}>연 {loan.rate}% ({loan.rateType === 'simple' ? '단리' : '복리'})</p></div>}
-                    {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(loan.monthlyPayment)}원</p></div>}
+                    {loan.monthlyPayment && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>월 상환액</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(loan.monthlyPayment)}원</FitText></p></div>}
                     {loan.paymentDay && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>상환일</p><p style={{ fontSize: 13, fontWeight: 600 }}>매월 {loan.paymentDay}일</p></div>}
                     {loan.startDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>대출일자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.startDate}</p></div>}
                     {loan.maturityDate && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>만기일</p><p style={{ fontSize: 13, fontWeight: 600 }}>{loan.maturityDate}</p></div>}
-                    {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}>{fmt(monthlyInterest)}원</p></div>}
+                    {loan.rate != null && <div><p style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>예상 월 이자</p><p style={{ fontSize: 13, fontWeight: 600 }}><FitText>{fmt(monthlyInterest)}원</FitText></p></div>}
                   </div>
                 </div>
 

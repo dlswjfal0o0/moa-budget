@@ -24,6 +24,8 @@ import CreditCardBills from '../components/CreditCardBills'
 import { toMonthKey, resolveFixedForMonth } from '../utils/fixedExpenses'
 import DateTimeField from '../components/DateTimeField'
 import { buildDemoBudgetInsight } from '../utils/demoData'
+import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
+import FitText from '../components/FitText'
 
 // AI 캐시 버전. 프롬프트/스키마를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 1
@@ -74,7 +76,7 @@ function CustomPieTooltip({ active, payload }) {
     <div style={{ background: '#fff', borderRadius: 12, padding: '8px 14px',
       boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
       <p style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{payload[0].name}</p>
-      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>{payload[0].value.toLocaleString()}원</p>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}><FitText>{payload[0].value.toLocaleString()}원</FitText></p>
     </div>
   )
 }
@@ -118,7 +120,7 @@ function _BudgetCard({ budget, spent, themeData, fmt }) {
         </div>
         <div>
           <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>잔여</p>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#2ECC71' }}>{fmt(remaining)}원</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#2ECC71' }}><FitText>{fmt(remaining)}원</FitText></p>
         </div>
       </div>
     </div>
@@ -136,6 +138,7 @@ export default function Home() {
     () => localStorage.getItem('moa_show_trial_popup') === 'true'
   )
   const [user, setUser] = useState(null)
+  const [txnReloadKey, setTxnReloadKey] = useState(0)
   const [transactions, setTransactions] = useState(() => {
     try {
         const now = new Date()
@@ -214,7 +217,14 @@ export default function Home() {
         console.error('[Home] 거래내역 로딩 실패', err)
         setLoadError('거래내역을 불러오지 못했어요.')
     })
-  }, [user])
+  }, [user, txnReloadKey])
+
+  // 고정지출이 자동 등록되면 이번 달 거래를 다시 읽는다
+  useEffect(() => {
+    const reload = () => setTxnReloadKey(k => k + 1)
+    window.addEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+    return () => window.removeEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
+  }, [])
 
   // 신용카드 대금 결산용 전월 내역 — 신용카드가 있을 때만 불러온다
   const hasCreditCard = cards.some(c => c.cardType === 'credit')
@@ -561,17 +571,17 @@ export default function Home() {
         <div style={{ background: 'rgba(0,0,0,0.14)', borderRadius: 20, padding: '20px 24px' }}>
           <p style={{ fontSize: 13, opacity: 0.75, marginBottom: 8, fontWeight: 500 }}>이번 달 잔액</p>
           <p style={{ fontSize: 38, fontWeight: 700, marginBottom: 20, letterSpacing: '-1px', lineHeight: 1.1 }}>
-            {fmt(totalIncome - totalExpense)}원
+            <FitText>{fmt(totalIncome - totalExpense)}원</FitText>
           </p>
           <div style={{ display: 'flex', gap: 0 }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>수입</p>
-              <p style={{ fontSize: 17, fontWeight: 700 }}>+{fmt(totalIncome)}원</p>
+              <p style={{ fontSize: 17, fontWeight: 700 }}><FitText>+{fmt(totalIncome)}원</FitText></p>
             </div>
             <div style={{ width: 1, background: 'rgba(255,255,255,0.2)', margin: '0 20px' }} />
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 4, fontWeight: 500 }}>지출</p>
-              <p style={{ fontSize: 17, fontWeight: 700 }}>-{fmt(totalExpense)}원</p>
+              <p style={{ fontSize: 17, fontWeight: 700 }}><FitText>-{fmt(totalExpense)}원</FitText></p>
             </div>
           </div>
         </div>
@@ -632,7 +642,7 @@ export default function Home() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: 12, color: '#8B95A1', marginBottom: 4 }}>이번 달 사용</p>
-                        <p style={{ fontSize: 20, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 4 }}>{fmt(spent)}원</p>
+                        <p style={{ fontSize: 20, fontWeight: 700, color: themeData.text || '#191F28', marginBottom: 4 }}><FitText>{fmt(spent)}원</FitText></p>
                         <p style={{ fontSize: 13, fontWeight: 600, color: exceeded ? '#FF5A5F' : '#2ECC71' }}>
                           {exceeded ? `${fmt(spent - b.amount)}원 초과` : `잔여 ${fmt(b.amount - spent)}원`}
                         </p>
@@ -741,7 +751,7 @@ export default function Home() {
                       <p style={{ fontSize: 13, color: '#8B95A1' }}>매월 {f.dueDay}일</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 3 }}>-{fmt(f.amount)}원</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#FF5A5F', marginBottom: 3 }}><FitText>-{fmt(f.amount)}원</FitText></p>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: urgency, borderRadius: 9999, padding: '3px 9px' }}>
                         {f.daysLeft === 0 ? 'D-Day' : `D-${f.daysLeft}`}
                       </span>
@@ -822,11 +832,11 @@ export default function Home() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 15, fontWeight: 500, color: themeData.text || '#191F28', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                    <p style={{ fontSize: 13, color: '#8B95A1' }}>{t.date} · {t.category}</p>
+                    <p className="one-line" style={{ fontSize: 13, color: '#8B95A1' }}>{t.date} · {t.category}</p>
                   </div>
                 </div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: t.type === 'expense' ? '#FF5A5F' : '#2ECC71', flexShrink: 0, whiteSpace: 'nowrap', marginLeft: 12 }}>
-                  {t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원
+                  <FitText>{t.type === 'expense' ? '-' : '+'}{fmt(t.amount)}원</FitText>
                 </p>
               </div>
             ))
