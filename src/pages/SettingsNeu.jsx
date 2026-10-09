@@ -319,7 +319,7 @@ export default function SettingsNeu(props) {
               <p style={{ fontSize: 12, fontWeight: 600, color: '#8B95A1', padding: '0 4px 8px', letterSpacing: 0.3 }}>심야시간 알림 동의</p>
               <div className="neu-card" style={{ borderRadius: 20, overflow: 'hidden' }}>
                 <ToggleRow title="심야시간(21시~08시) 알림 수신 동의"
-                  desc={<>정보통신망법에 따라 심야시간 알림 발송에는 별도 동의가 필요해요.<br />동의하지 않으면 다음날 오전 8시에 보내드려요.</>}
+                  desc="동의하지 않으면 다음날 오전 8시에 보내드려요."
                   on={notifyNightConsent} onChange={setNotifyNightConsent} primary={primary} />
               </div>
             </div>
