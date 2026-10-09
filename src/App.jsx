@@ -13,6 +13,7 @@ import SplashScreen from './pages/Onboarding/SplashScreen'
 import HowToUse from './pages/Onboarding/HowToUse'
 import Auth from './pages/Onboarding/Auth'
 import BottomNav from './components/BottomNav'
+import StatusBarScrim from './components/StatusBarScrim'
 
 // 탭 화면들은 recharts/xlsx/jspdf 등 무거운 의존성을 포함하므로
 // 스플래시/로그인 시점의 초기 번들에서 제외하기 위해 지연 로드한다.
@@ -97,6 +98,7 @@ function AnimatedRoutes() {
       </div>
       {/* 탭 페이지 전환 시에도 같은 인스턴스를 유지해야 슬라이딩 인디케이터가 실제로 움직인다 (키 변경으로 재마운트되는 위 div 밖에 둔다) */}
       {isTab && <BottomNav />}
+      {isTab && <StatusBarScrim />}
     </>
   )
 }
