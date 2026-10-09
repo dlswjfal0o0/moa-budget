@@ -275,12 +275,15 @@ export default function AnalysisNeu(props) {
                 </svg>
               )
 
+              // 마지막으로 보이는 그룹 아래에는 구분선을 긋지 않는다(아래에 더 이어지는 내용이 없으므로)
+              const lastGroupKey = [['card', cardTotal], ['transfer', transferTotal], ['cash', cashTotal]].filter(([, a]) => a > 0).pop()?.[0]
+
               const PaymentRow = ({ groupKey, icon, label, amount, detail }) => {
                 if (amount === 0) return null
                 const isExpanded = expandedPayments.has(groupKey)
                 const pct = grandTotal > 0 ? Math.round(amount / grandTotal * 100) : 0
                 return (
-                  <div style={{ borderBottom: '1px solid rgba(163,177,198,0.25)' }}>
+                  <div style={{ borderBottom: groupKey === lastGroupKey ? 'none' : '1px solid rgba(163,177,198,0.25)' }}>
                     <div onClick={() => setExpandedPayments(prev => { const next = new Set(prev); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next })}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', cursor: 'pointer' }}>
                       <div className="neu-inset" style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

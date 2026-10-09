@@ -708,12 +708,15 @@ export default function Analysis() {
                 </svg>
               )
 
+              // 마지막으로 보이는 그룹 아래에는 구분선을 긋지 않는다(아래에 더 이어지는 내용이 없으므로)
+              const lastGroupKey = [['card', cardTotal], ['transfer', transferTotal], ['cash', cashTotal]].filter(([, a]) => a > 0).pop()?.[0]
+
               const PaymentRow = ({ groupKey, icon, label, amount, detail }) => {
                 if (amount === 0) return null
                 const isExpanded = expandedPayments.has(groupKey)
                 const pct = grandTotal > 0 ? Math.round(amount / grandTotal * 100) : 0
                 return (
-                  <div style={{ borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ borderBottom: groupKey === lastGroupKey ? 'none' : '1px solid #f5f5f5' }}>
                     <div onClick={() => setExpandedPayments(prev => { const next = new Set(prev); next.has(groupKey) ? next.delete(groupKey) : next.add(groupKey); return next })}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', cursor: 'pointer' }}>
                       <div style={{ width: 36, height: 36, borderRadius: 12, background: primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -726,8 +729,8 @@ export default function Analysis() {
                     </div>
                     {isExpanded && (
                       <div style={{ paddingLeft: 46, paddingBottom: 10 }}>
-                        {Object.entries(detail).filter(([,v]) => v > 0).sort(([,a],[,b]) => b - a).map(([k, v]) => (
-                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f9f9f9' }}>
+                        {Object.entries(detail).filter(([,v]) => v > 0).sort(([,a],[,b]) => b - a).map(([k, v], i, arr) => (
+                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid #f9f9f9' : 'none' }}>
                             <span style={{ fontSize: 13, color: '#8B95A1' }}>{k}</span>
                             <span style={{ fontSize: 13, color: '#191F28', fontWeight: 500 }}><FitText>{fmt(v)}원</FitText></span>
                           </div>
