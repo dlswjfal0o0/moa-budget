@@ -15,7 +15,6 @@ import { useCards } from '../contexts/CardsContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useIsPro } from '../contexts/PurchasesContext'
 import { syncPaymentNotifications } from '../utils/paymentNotifications'
-import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
 import { toMonthKey, resolveFixedForMonth, fixedListForMonth, createFixed, editFixedFromMonth, deleteFixedFromMonth } from '../utils/fixedExpenses'
 import CalendarNeu from './CalendarNeu'
 import FitText from '../components/FitText'
@@ -31,7 +30,7 @@ export default function Calendar() {
   const [transactions, setTransactions] = useState([])
   const [fixedExpenses, setFixedExpenses] = useState([])
   const [showAddFixed, setShowAddFixed] = useState(false)
-  const EMPTY_FIXED = { title: '', amount: '', dueDate: '', category: '기타', payment: '현금', autoRegister: true }
+  const EMPTY_FIXED = { title: '', amount: '', dueDate: '', category: '기타', payment: '현금' }
   const [newFixed, setNewFixed] = useState(EMPTY_FIXED)
   const [expandedFixedId, setExpandedFixedId] = useState(null)
   const [editingFixedId, setEditingFixedId] = useState(null)
@@ -84,7 +83,7 @@ export default function Calendar() {
           // Load accounts (same source as MyPage: data.accounts array with `name` field)
           if (data.accounts?.length > 0) setUserAccounts(data.accounts)
 
-          // 결제일 자동 등록은 앱 전체에서 FixedExpenseAutoRegister가 처리한다(끝나면 아래 이벤트로 다시 읽음)
+          // 고정지출은 사용자가 체크할 때만 가계부에 등록된다(handleToggleFixed) — 결제일 자동 등록 없음
           setFixedExpenses(data.fixedExpenses || [])
         } catch (err) {
           console.error('[Calendar] 사용자 데이터 로딩 실패', err)
@@ -94,19 +93,6 @@ export default function Calendar() {
     })
     return unsub
   }, [])
-
-  // 자동 등록이 끝나면 체크 상태(고정지출)와 거래를 다시 읽는다 — 오래된 목록으로 저장해 등록 기록을 덮어쓰지 않도록
-  useEffect(() => {
-    if (!user) return
-    const reload = () => {
-      getDoc(doc(db, 'users', user.uid))
-        .then(snap => { setFixedExpenses(snap.exists() ? snap.data().fixedExpenses || [] : []) })
-        .catch(err => console.error('[Calendar] 고정지출 다시 읽기 실패', err))
-      setRefreshTrigger(t => t + 1)
-    }
-    window.addEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
-    return () => window.removeEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
-  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -151,7 +137,6 @@ export default function Calendar() {
     const updated = [...fixedExpenses, createFixed({
       title: newFixed.title, amount: Number(newFixed.amount), dueDate: newFixed.dueDate,
       category: newFixed.category || '기타', payment: newFixed.payment || '현금',
-      autoRegister: newFixed.autoRegister
     }, toMonthKey(viewYear, viewMonth))]
     saveFixed(updated)
     setNewFixed(EMPTY_FIXED)
@@ -244,7 +229,6 @@ export default function Calendar() {
     const updated = fixedExpenses.map(f => f.id === editingFixedId ? editFixedFromMonth(f, {
       title: editFixedData.title, amount: Number(editFixedData.amount), dueDate: editFixedData.dueDate,
       category: editFixedData.category || '기타', payment: editFixedData.payment || '현금',
-      autoRegister: editFixedData.autoRegister
     }, toMonthKey(viewYear, viewMonth)) : f)
     saveFixed(updated)
     setEditingFixedId(null)
@@ -541,7 +525,7 @@ export default function Calendar() {
                       <div style={{ display: 'flex', borderTop: '1px solid #F2F4F6' }}>
                         <button onClick={() => {
                           setEditingFixedId(f.id)
-                          setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '', category: f.category || '기타', payment: f.payment || '현금', autoRegister: f.autoRegister !== false })
+                          setEditFixedData({ title: f.title, amount: String(f.amount), dueDate: f.dueDate || '', category: f.category || '기타', payment: f.payment || '현금' })
                           setExpandedFixedId(null)
                         }} style={{ flex: 1, padding: '14px', border: 'none', background: isDone ? '#F7F8FA' : '#fff', color: '#8B95A1', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -694,20 +678,6 @@ export default function Calendar() {
                     </div>
                   )}
                 </div>
-                {/* 가계부 자동 등록 */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #F2F4F6' }}>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
-                    <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
-                  </div>
-                  <button onClick={() => setEditFixedData(d => ({ ...d, autoRegister: !d.autoRegister }))} aria-label="가계부 자동 등록" aria-pressed={editFixedData.autoRegister}
-                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                      background: editFixedData.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
-                      position: 'relative', flexShrink: 0 }}>
-                    <div style={{ position: 'absolute', top: 3, left: editFixedData.autoRegister ? 21 : 3, width: 20, height: 20,
-                      borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                  </button>
-                </div>
               </div>
             </div>
             {/* 고정 푸터 */}
@@ -850,20 +820,6 @@ export default function Calendar() {
                       )}
                     </div>
                   )}
-                </div>
-                {/* 가계부 자동 등록 */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #F2F4F6' }}>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#191F28' }}>가계부 자동 등록</p>
-                    <p style={{ fontSize: 12, color: '#8B95A1', marginTop: 2 }}>납부일에 가계부에 자동으로 등록돼요</p>
-                  </div>
-                  <button onClick={() => setNewFixed(f => ({ ...f, autoRegister: !f.autoRegister }))} aria-label="가계부 자동 등록" aria-pressed={newFixed.autoRegister}
-                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                      background: newFixed.autoRegister ? themeData.primary : '#E5E8EB', transition: 'background 0.2s',
-                      position: 'relative', flexShrink: 0 }}>
-                    <div style={{ position: 'absolute', top: 3, left: newFixed.autoRegister ? 21 : 3, width: 20, height: 20,
-                      borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                  </button>
                 </div>
               </div>
             </div>
