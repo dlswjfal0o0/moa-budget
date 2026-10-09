@@ -5,8 +5,8 @@ import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
 import { ProBadge } from '../components/LockedFeature'
 import { useIsPro } from '../contexts/PurchasesContext'
-import ThinkingOrbs from '../components/ThinkingOrbs'
 import AiConsumptionReport from '../components/AiConsumptionReport'
+import AiUtilityReport from '../components/AiUtilityReport'
 import { UtilityIcon, UtilityChart } from './Analysis'
 import { getColoredShadow } from '../utils/neuColors'
 import FitText from '../components/FitText'
@@ -60,7 +60,8 @@ export default function AnalysisNeu(props) {
     utilities, utilityTypes,
     currentMonthTotal, prevMonthTotal, utilityTotalDiff,
     expandedUtilities, toggleUtility,
-    utilityAI, loadingUtilityAI, getUtilityAI,
+    utilityAI, utilityAIRaw, loadingUtilityAI, getUtilityAI,
+    utilityAIIsSaved, utilityItemDiffs, hasUtilityData,
     showAddUtility, setShowAddUtility,
     editingUtility, setEditingUtility,
     newUtility, setNewUtility, saveUtilities,
@@ -436,64 +437,15 @@ export default function AnalysisNeu(props) {
           })}
 
           {/* AI 공과금 분석 */}
-          <div className="neu-card" style={{ borderRadius: 20, padding: 16, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#191F28' }}>AI 공과금 분석</p>
-              <button onClick={getUtilityAI} disabled={loadingUtilityAI}
-                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', background: loadingUtilityAI ? '#E5E8EB' : primary, color: loadingUtilityAI ? '#8B95A1' : '#fff', boxShadow: loadingUtilityAI ? 'none' : coloredShadow.raisedSm, fontSize: 13, cursor: loadingUtilityAI ? 'not-allowed' : 'pointer' }}>
-                {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
-              </button>
-            </div>
-            {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#8B95A1', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
-            {loadingUtilityAI && (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <ThinkingOrbs color={primary} size={36} label="공과금 패턴을 비교하는 중...." fontSize={14} />
-              </div>
-            )}
-            {utilityAI && (
-              <div>
-                {utilityAI.items?.map((item, i) => {
-                  const type = item.type
-                  const ustyle = UTILITY_STYLES[type] || { color: '#8B95A1' }
-                  const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
-                  const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
-                  const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
-                  const diff = cur && prev ? cur.amount - prev.amount : null
-                  const isUp = diff !== null ? diff > 0 : item.status === 'up'
-                  const badgeColor = isUp ? '#f97316' : '#22c55e'
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < utilityAI.items.length - 1 ? '1px solid rgba(163,177,198,0.25)' : 'none' }}>
-                      <div className="neu-inset" style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <UtilityIcon type={type} color={ustyle.color} size={18} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{type}</span>
-                          {diff !== null && (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: `${badgeColor}18`, padding: '2px 8px', borderRadius: 9999 }}>
-                              {isUp ? '↑' : '↓'} {diff > 0 ? '+' : ''}{fmt(diff)}원
-                            </span>
-                          )}
-                        </div>
-                        <p style={{ fontSize: 13, color: '#4E5968', lineHeight: 1.6, wordBreak: 'keep-all' }}>{item.comment}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {utilityAI.overall && (
-                  <div className="neu-inset" style={{ borderRadius: 16, padding: '12px 14px', marginTop: utilityAI.items?.length ? 12 : 0, marginBottom: 10 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: primary, lineHeight: 1.6 }}>{utilityAI.overall}</p>
-                  </div>
-                )}
-
-                {utilityAI.tip && (
-                  <div className="neu-inset" style={{ borderRadius: 16, padding: '12px 14px' }}>
-                    <p style={{ fontSize: 13, color: '#16a34a', lineHeight: 1.6 }}>💡 {utilityAI.tip}</p>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="neu-card" style={{ borderRadius: 20, padding: '20px 18px', marginBottom: 12 }}>
+            <AiUtilityReport
+              data={utilityAI} raw={utilityAIRaw} loading={loadingUtilityAI} saved={utilityAIIsSaved} onAnalyze={getUtilityAI}
+              primary={primary} primaryLight={primaryLight} fmt={fmt}
+              showAdvice={aiShowAdvice} hasData={hasUtilityData}
+              month={viewMonth + 1} currentTotal={currentMonthTotal} prevTotal={prevMonthTotal}
+              itemDiffs={utilityItemDiffs} utilityStyles={UTILITY_STYLES} UtilityIcon={UtilityIcon}
+              neumorphism coloredShadow={coloredShadow}
+            />
           </div>
 
           {/* 추가/수정 모달 */}

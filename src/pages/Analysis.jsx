@@ -10,7 +10,6 @@ import ChartContainer from '../components/ChartContainer'
 import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
-import ThinkingOrbs from '../components/ThinkingOrbs'
 import AiConsumptionReport from '../components/AiConsumptionReport'
 import { getCategoryColors } from '../styles/theme'
 import { useCards } from '../contexts/CardsContext'
@@ -22,6 +21,7 @@ import { getDeterminismParams, hashForSeed } from '../utils/aiPrompt'
 import { callAI } from '../utils/aiClient'
 import AnalysisNeu from './AnalysisNeu'
 import FitText from '../components/FitText'
+import AiUtilityReport from '../components/AiUtilityReport'
 
 const UTILITY_STYLES = {
   관리비: { bg: '#F3F4F6', color: '#6B7280' },
@@ -182,6 +182,7 @@ export default function Analysis() {
   const [editingUtility, setEditingUtility] = useState(null)
   const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
   const [utilityAI, setUtilityAI] = useState(null)
+  const [utilityAIRaw, setUtilityAIRaw] = useState('')
   const [loadingUtilityAI, setLoadingUtilityAI] = useState(false)
   const [expandedPayments, setExpandedPayments] = useState(new Set())
   const [expandedUtilities, setExpandedUtilities] = useState(new Set())
@@ -412,13 +413,20 @@ export default function Analysis() {
   const utilitySig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, summary: utilitySummary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
   const utilityCached = aiCache.utility?.[cacheMonthKey]
   const utilityAIIsSaved = !!(utilityCached?.data && utilityCached.sig === utilitySig)
+  // AI 결과의 항목별 전월 대비 증감액(전월 데이터가 없으면 null)
+  const utilityItemDiffs = Object.fromEntries(utilityTypes.map(type => {
+    const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
+    const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
+    const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
+    return [type, cur && prev ? cur.amount - prev.amount : null]
+  }))
 
   const getUtilityAI = async () => {
     const summary = utilitySummary
     if (!summary) return alert('이번 달 공과금 데이터를 먼저 입력해주세요.')
     const sig = utilitySig
-    if (utilityAIIsSaved) { setUtilityAI(utilityCached.data); return }
-    setLoadingUtilityAI(true); setUtilityAI(null)
+    if (utilityAIIsSaved) { setUtilityAI(utilityCached.data); setUtilityAIRaw(''); return }
+    setLoadingUtilityAI(true); setUtilityAI(null); setUtilityAIRaw('')
     try {
       const adviceOverallRule = aiShowAdvice
         ? ' overall은 전체 공과금 흐름을 요약하고, tip은 이번 데이터에서 가장 아낄 여지가 큰 항목을 골라 구체적 절약 방법을 제안하세요.'
@@ -438,9 +446,9 @@ export default function Analysis() {
         setUtilityAI(clean)
         persistAiCache('utility', cacheMonthKey, sig, clean)
       } else {
-        setUtilityAI({ overall: aiFailureMessage(raw) })
+        setUtilityAIRaw(aiFailureMessage(raw))
       }
-    } catch { setUtilityAI({ overall: '분석에 실패했어요.' }) }
+    } catch { setUtilityAIRaw('AI 분석을 불러오는 데 실패했어요.') }
     setLoadingUtilityAI(false)
   }
 
@@ -457,6 +465,7 @@ export default function Analysis() {
     if (isDemoMode || loadingUtilityAI) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 캐시(외부 저장소)와 화면 결과를 동기화
     setUtilityAI(utilityAIIsSaved ? utilityCached.data : null)
+    setUtilityAIRaw('')
   }, [utilitySig, cacheMonthKey, aiCache]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerMonthSlide = (dir) => {
@@ -490,7 +499,8 @@ export default function Analysis() {
         utilities={utilities} utilityTypes={utilityTypes}
         currentMonthTotal={currentMonthTotal} prevMonthTotal={prevMonthTotal} utilityTotalDiff={utilityTotalDiff}
         expandedUtilities={expandedUtilities} toggleUtility={toggleUtility}
-        utilityAI={utilityAI} loadingUtilityAI={loadingUtilityAI} getUtilityAI={getUtilityAI}
+        utilityAI={utilityAI} utilityAIRaw={utilityAIRaw} loadingUtilityAI={loadingUtilityAI} getUtilityAI={getUtilityAI}
+        utilityAIIsSaved={utilityAIIsSaved} utilityItemDiffs={utilityItemDiffs} hasUtilityData={!!utilitySummary}
         showAddUtility={showAddUtility} setShowAddUtility={setShowAddUtility}
         editingUtility={editingUtility} setEditingUtility={setEditingUtility}
         newUtility={newUtility} setNewUtility={setNewUtility} saveUtilities={saveUtilities}
@@ -873,68 +883,14 @@ export default function Analysis() {
           })}
 
           {/* AI 공과금 분석 */}
-          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: 16, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: themeData.text || '#191F28' }}>AI 공과금 분석</p>
-              <button onClick={getUtilityAI} disabled={loadingUtilityAI}
-                style={{ padding: '7px 16px', borderRadius: 9999, border: 'none', cursor: loadingUtilityAI ? 'not-allowed' : 'pointer',
-                  background: loadingUtilityAI ? '#e0e0e0' : primary, color: loadingUtilityAI ? '#888' : '#fff', fontSize: 13 }}>
-                {loadingUtilityAI ? '분석 중...' : '✨ AI 분석'}
-              </button>
-            </div>
-            {!utilityAI && !loadingUtilityAI && <p style={{ fontSize: 13, color: '#C9CDD4', textAlign: 'center', padding: '12px 0' }}>AI가 전월·전년도와 비교 분석해드려요</p>}
-            {loadingUtilityAI && (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <ThinkingOrbs color={primary} size={36} label="공과금 패턴을 비교하는 중...." fontSize={14} />
-              </div>
-            )}
-            {utilityAI && (
-              <div>
-                {/* 항목별 리스트 */}
-                {utilityAI.items?.map((item, i) => {
-                  const type = item.type
-                  const ustyle = UTILITY_STYLES[type] || { bg: '#f5f5f5', color: '#888' }
-                  const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
-                  const lm = viewMonth === 0 ? { year: viewYear - 1, month: 12 } : { year: viewYear, month: viewMonth }
-                  const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
-                  const diff = cur && prev ? cur.amount - prev.amount : null
-                  const isUp = diff !== null ? diff > 0 : item.status === 'up'
-                  const badgeColor = isUp ? '#f97316' : '#22c55e'
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < utilityAI.items.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 12, background: ustyle.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <UtilityIcon type={type} color={ustyle.color} size={18} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#191F28' }}>{type}</span>
-                          {diff !== null && (
-                            <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: `${badgeColor}18`, padding: '2px 8px', borderRadius: 9999 }}>
-                              {isUp ? '↑' : '↓'} {diff > 0 ? '+' : ''}{fmt(diff)}원
-                            </span>
-                          )}
-                        </div>
-                        <p style={{ fontSize: 13, color: '#4E5968', lineHeight: 1.6, wordBreak: 'keep-all' }}>{item.comment}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                {/* 전체 총평 */}
-                {utilityAI.overall && (
-                  <div style={{ background: primaryLight, borderRadius: 16, padding: '12px 14px', marginTop: utilityAI.items?.length ? 12 : 0, marginBottom: 10 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: primary, lineHeight: 1.6 }}>{utilityAI.overall}</p>
-                  </div>
-                )}
-
-                {/* 절약 팁 */}
-                {utilityAI.tip && (
-                  <div style={{ background: '#F0FFF4', borderRadius: 16, padding: '12px 14px' }}>
-                    <p style={{ fontSize: 13, color: '#16a34a', lineHeight: 1.6 }}>💡 {utilityAI.tip}</p>
-                  </div>
-                )}
-              </div>
-            )}
+          <div style={{ background: themeData?.card || '#fff', borderRadius: 20, padding: '20px 18px', marginBottom: 12 }}>
+            <AiUtilityReport
+              data={utilityAI} raw={utilityAIRaw} loading={loadingUtilityAI} saved={utilityAIIsSaved} onAnalyze={getUtilityAI}
+              primary={primary} primaryLight={primaryLight} text={themeData.text || '#191F28'} fmt={fmt}
+              showAdvice={aiShowAdvice} hasData={!!utilitySummary}
+              month={viewMonth + 1} currentTotal={currentMonthTotal} prevTotal={prevMonthTotal}
+              itemDiffs={utilityItemDiffs} utilityStyles={UTILITY_STYLES} UtilityIcon={UtilityIcon}
+            />
           </div>
 
           {/* 추가/수정 모달 */}

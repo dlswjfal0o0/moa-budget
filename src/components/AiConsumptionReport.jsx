@@ -1,5 +1,6 @@
 import ThinkingOrbs from './ThinkingOrbs'
 import FitText from './FitText'
+import { describeFailure } from '../utils/aiFailure'
 
 // AI 소비 분석 카드 본문. 일반/뉴모피즘 분석 화면이 같은 레이아웃을 공유한다.
 // 파스텔 테마는 카드 배경·글자색이 테마마다 달라서, 본문/보조 글자색은 테마 text에 투명도를 줘 만든다.
@@ -32,28 +33,17 @@ function toText(v) {
   return v?.tip || v?.reason || v?.description || v?.message || String(v ?? '')
 }
 
-// 서버/파싱 실패 문구를 사용자용 안내로 바꾼다. 기술적인 원문(Claude 오류, 연결 오류 등)은 노출하지 않는다.
-function describeFailure(raw) {
-  const t = raw || ''
-  if (t.includes('사용 횟수')) {
-    return { icon: 'limit', title: '오늘 분석 횟수를 모두 썼어요', desc: '하루에 분석할 수 있는 횟수가 정해져 있어요. 내일 다시 시도해주세요.', retry: false }
-  }
-  if (t.includes('로그인')) {
-    return { icon: 'lock', title: '로그인이 필요해요', desc: '다시 로그인한 뒤 분석해주세요.', retry: false }
-  }
-  return { icon: 'error', title: '분석을 완료하지 못했어요', desc: '일시적인 문제일 수 있어요. 잠시 후 다시 시도해주세요.', retry: true }
-}
-
-function FailureIcon({ kind, color }) {
+export function FailureIcon({ kind, color }) {
   const p = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   if (kind === 'limit') return <svg {...p}><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" /></svg>
   if (kind === 'lock') return <svg {...p}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
   return <svg {...p}><circle cx="12" cy="12" r="9" /><line x1="12" y1="7.5" x2="12" y2="13" /><line x1="12" y1="16.5" x2="12.01" y2="16.5" /></svg>
 }
 
-function PreviewIcon({ kind, color }) {
+export function PreviewIcon({ kind, color }) {
   const p = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   if (kind === 'score') return <svg {...p}><path d="M4 16a8 8 0 1 1 16 0" /><line x1="12" y1="16" x2="15.5" y2="10.5" /><circle cx="12" cy="16" r="1.2" fill={color} /></svg>
+  if (kind === 'reason') return <svg {...p}><circle cx="11" cy="11" r="6.5" /><line x1="16" y1="16" x2="20.5" y2="20.5" /></svg>
   if (kind === 'save') return <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2c-.5-.8-1.5-1.3-2.8-1.3-1.7 0-2.8.8-2.8 2s1.1 1.7 2.8 2.1 2.8.9 2.8 2.1-1.1 2-2.8 2c-1.3 0-2.3-.5-2.8-1.3" /><line x1="12" y1="6" x2="12" y2="7.9" /><line x1="12" y1="16.1" x2="12" y2="18" /></svg>
   return <svg {...p}><polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" /></svg>
 }
