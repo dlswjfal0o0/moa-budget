@@ -6,11 +6,11 @@ const oct2 = new Date(2026, 9, 2)   // 2026-10-02
 const oct10 = new Date(2026, 9, 10) // 2026-10-10
 
 describe('planAutoRegistration', () => {
-  it('결제일이 지나면 이번 달을 등록하되, 체크(완료)는 사용자가 하도록 남겨둔다', () => {
+  it('결제일이 지나면 이번 달을 등록하고 완료로 표시한다', () => {
     const { transactions, updated } = planAutoRegistration([{ ...base, autoRegisteredMonths: [], doneMonths: [] }], oct10)
     expect(transactions.map(t => t.date)).toEqual(['2026-10-05'])
     expect(updated[0].autoRegisteredMonths).toEqual(['2026-10'])
-    expect(updated[0].doneMonths).toEqual([])
+    expect(updated[0].doneMonths).toEqual(['2026-10'])
   })
 
   it('결제일 전이면 이번 달은 등록하지 않는다', () => {

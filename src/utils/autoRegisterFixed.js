@@ -23,7 +23,6 @@ const dueDateInMonth = (monthKey, dueDay) => {
 // - 마지막으로 자동 등록한 달 다음 달부터 이번 달까지 빠진 달을 채운다(앱을 한동안 안 연 경우)
 // - 이번 달은 결제일이 지났을 때만, 지난달들은 결제일과 무관하게 등록한다
 // - 사용자가 직접 체크(doneMonths)한 달은 이미 거래가 만들어졌으므로 건너뛴다
-// - 체크는 사용자가 직접 하는 확인 표시라서, 자동 등록해도 체크(doneMonths)는 건드리지 않는다
 export function planAutoRegistration(fixedList, now = new Date()) {
   const nowMonthKey = toMonthKey(now.getFullYear(), now.getMonth())
   const transactions = []
@@ -55,8 +54,12 @@ export function planAutoRegistration(fixedList, now = new Date()) {
       newMonths.push(m)
     }
     if (newMonths.length === 0) return raw
-    // 이중 등록은 autoRegisteredMonths로 막는다
-    return { ...raw, autoRegisteredMonths: [...registered, ...newMonths] }
+    // 자동 등록한 달은 체크박스도 '완료'로 표시해 이중 등록을 막는다
+    return {
+      ...raw,
+      autoRegisteredMonths: [...registered, ...newMonths],
+      doneMonths: [...done, ...newMonths.filter(m => !done.includes(m))],
+    }
   })
 
   return { transactions, updated }

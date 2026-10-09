@@ -166,9 +166,6 @@ export default function Calendar() {
     if (!f || (!user && !isDemo)) return
     const doneMonths = f.doneMonths || []
     const isDone = doneMonths.includes(monthKey)
-    // 체크는 사용자가 직접 하는 '확인' 표시다. 자동 등록된 달은 가계부 내역이 체크와 무관하게
-    // 들어가 있으므로, 체크를 꺼도 그 내역은 지우지 않는다(자동 등록이 아닌 달만 체크와 함께 추가/삭제)
-    const autoRegistered = (raw.autoRegisteredMonths || []).includes(monthKey)
 
     if (isDemo) {
       // 데모 모드: Firestore 대신 로컬 시드 거래에 같은 형태로 추가/삭제
@@ -187,7 +184,7 @@ export default function Calendar() {
             fixedExpenseId: String(f.id), isAutoRegistered: true, createdAt: new Date().toISOString()
           }]
         }
-      } else if (!autoRegistered) {
+      } else {
         txns = txns.filter(t => t.fixedExpenseId !== String(f.id))
       }
       localStorage.setItem(txKey, JSON.stringify(txns))
@@ -213,8 +210,8 @@ export default function Calendar() {
         })
         setRefreshTrigger(t => t + 1)
       }
-    } else if (!autoRegistered) {
-      // 체크 OFF → 가계부에서 해당 내역 삭제 (자동 등록된 달은 위 주석대로 유지)
+    } else {
+      // 체크 OFF → 가계부에서 해당 내역 삭제
       const q = query(collection(db, 'transactions'),
         where('uid', '==', user.uid),
         where('month', '==', monthKey),
