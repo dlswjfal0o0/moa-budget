@@ -155,7 +155,8 @@ export default function SubscriptionPlanList({ onPurchased, renderLayout }) {
                     <span style={{ fontSize: 22, fontWeight: 800, color: sel ? primary : '#555', letterSpacing: '-0.02em' }}><FitText>{fmt(p.price)}원</FitText></span>
                     <span style={{ color: 'rgba(0,0,0,0.35)', fontSize: 13 }}>/{periodMeta.unit}</span>
                     {originalPrice != null && (
-                      <span style={{ color: 'rgba(0,0,0,0.25)', fontSize: 13, textDecoration: 'line-through' }}><FitText>{fmt(originalPrice)}원</FitText></span>
+                      // FitText는 inline-block이라 바깥 span의 취소선이 안으로 전달되지 않는다 → FitText에 직접 건다
+                      <span style={{ color: 'rgba(0,0,0,0.25)', fontSize: 13 }}><FitText style={{ textDecoration: 'line-through' }}>{fmt(originalPrice)}원</FitText></span>
                     )}
                   </div>
                 </div>
