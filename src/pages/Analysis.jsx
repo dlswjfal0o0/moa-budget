@@ -583,7 +583,7 @@ export default function Analysis() {
             ) : (
               <>
                 <ChartContainer height={180}>
-                  <BarChart data={dailyData} margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
+                  <BarChart data={dailyData} margin={{ top: 0, right: 12, left: 10, bottom: 0 }}>
                     <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false} interval={4} />
                     <YAxis tick={{ fontSize: 10, fill: '#bbb' }} tickLine={false} axisLine={false}
                       tickFormatter={v => {

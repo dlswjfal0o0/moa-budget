@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType 
 import ErrorBoundary from './components/ErrorBoundary'
 import ForceUpdateGate from './components/ForceUpdateGate'
 import DeepLinkListener from './components/DeepLinkListener'
-import FixedExpenseAutoRegister from './components/FixedExpenseAutoRegister'
 import { AppConfigProvider } from './contexts/AppConfigContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { CardsProvider } from './contexts/CardsContext'
@@ -113,7 +112,6 @@ function App() {
         <BrowserRouter>
           <ForceUpdateGate>
             <DeepLinkListener />
-            <FixedExpenseAutoRegister />
             <AnimatedRoutes />
           </ForceUpdateGate>
         </BrowserRouter>

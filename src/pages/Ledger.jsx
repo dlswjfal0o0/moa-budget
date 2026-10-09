@@ -1,7 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { useState, useEffect, useRef } from 'react'
 import { haptic } from '../utils/haptics'
-import { FIXED_AUTO_REGISTERED_EVENT } from '../utils/autoRegisterFixed'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -308,16 +307,6 @@ export default function Ledger() {
       console.error('[Ledger] 계좌 정보 로딩 실패', err)
       setLoadError('계좌 정보를 불러오지 못했어요.')
     })
-  }, [user])
-
-  // 고정지출이 자동 등록되면 목록을 다시 읽는다 (최신 fetchTransactions를 ref로 호출)
-  const fetchTransactionsRef = useRef(null)
-  fetchTransactionsRef.current = fetchTransactions
-  useEffect(() => {
-    if (!user) return
-    const reload = () => fetchTransactionsRef.current?.()
-    window.addEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
-    return () => window.removeEventListener(FIXED_AUTO_REGISTERED_EVENT, reload)
   }, [user])
 
   async function fetchTransactions() {
