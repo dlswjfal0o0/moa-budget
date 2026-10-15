@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, deleteD
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
 import YearMonthPicker from '../components/YearMonthPicker'
+import FixedPortal from '../components/FixedPortal'
 import LockedFeature from '../components/LockedFeature'
 import PaywallModal from '../components/PaywallModal'
 import { inputStyle } from '../styles/styles'
@@ -552,6 +553,7 @@ export default function Calendar() {
       {/* ── 결제수단 드롭다운 helper (edit/add 공용) ── */}
       {/* 고정지출 수정 — 바텀시트 */}
       {editingFixedId && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setEditingFixedId(null); setShowCardSelector(false); setShowAccountSelector(false) }}>
           <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '90dvh', display: 'flex', flexDirection: 'column' }}
@@ -691,10 +693,12 @@ export default function Calendar() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {/* 고정지출 추가 — 바텀시트 팝업 */}
       {showAddFixed && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED); setShowCardSelector(false); setShowAccountSelector(false) }}>
           <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '90dvh', display: 'flex', flexDirection: 'column' }}
@@ -834,6 +838,7 @@ export default function Calendar() {
             </div>
           </div>
         </div>
+        </FixedPortal>
       )}
 
       {showYMPicker && (

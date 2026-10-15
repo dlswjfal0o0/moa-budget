@@ -1,4 +1,5 @@
 import YearMonthPicker from '../components/YearMonthPicker'
+import FixedPortal from '../components/FixedPortal'
 import LoadError from '../components/LoadError'
 import AmountInput from '../components/AmountInput'
 import LockedFeature from '../components/LockedFeature'
@@ -370,6 +371,7 @@ export default function CalendarNeu(props) {
 
       {/* 고정지출 수정 */}
       {editingFixedId && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setEditingFixedId(null); setShowCardSelector(false); setShowAccountSelector(false) }}>
           <FixedExpenseForm
@@ -381,10 +383,12 @@ export default function CalendarNeu(props) {
             onSubmit={handleSaveFixed} submitLabel="저장"
           />
         </div>
+        </FixedPortal>
       )}
 
       {/* 고정지출 추가 */}
       {showAddFixed && (
+        <FixedPortal>
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 999, display: 'flex', alignItems: 'flex-end' }}
           onClick={() => { setShowAddFixed(false); setNewFixed(EMPTY_FIXED); setShowCardSelector(false); setShowAccountSelector(false) }}>
           <FixedExpenseForm
@@ -396,6 +400,7 @@ export default function CalendarNeu(props) {
             onSubmit={handleAddFixed} submitLabel="추가"
           />
         </div>
+        </FixedPortal>
       )}
 
       {showYMPicker && (
