@@ -215,12 +215,12 @@ export default function Ledger() {
   }
   // 전체화면 시트가 다 열리기 전에 포커스를 주면 WKWebView가 키보드를 위해
   // 문서를 스크롤하면서 sticky 헤더와 어긋나 보이는 문제가 있어, 진입 애니메이션이
-  // 끝난 뒤에 포커스한다. Pro가 아니면 잠금 화면이라 포커스할 필요가 없다.
+  // 끝난 뒤에 포커스한다.
   useEffect(() => {
-    if (!showSearch || !isPro) return
+    if (!showSearch) return
     const t = setTimeout(() => searchInputRef.current?.focus(), 380)
     return () => clearTimeout(t)
-  }, [showSearch, isPro])
+  }, [showSearch])
   const [recentSearches, setRecentSearches] = useState(() => {
     try { return JSON.parse(localStorage.getItem('moa_recentSearches') || '[]') } catch { return [] }
   })
@@ -1221,7 +1221,6 @@ export default function Ledger() {
         showCardSelector={showCardSelector} setShowCardSelector={setShowCardSelector}
         showAccountSelector={showAccountSelector} setShowAccountSelector={setShowAccountSelector}
         showCardBilling={showCardBilling} loans={loans}
-        isPro={isPro}
       />
     )
   }
@@ -1770,26 +1769,6 @@ export default function Ledger() {
       <BottomSheet variant="full" open={showSearch} showHandle={false} background={themeData.bg}
         onClose={() => { setShowSearch(false); resetSearchFilters() }}>
         <div>
-          {!isPro && (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 20, background: 'rgba(25,31,40,0.72)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
-              display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 0' }}>
-                <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#fff' }}>
-                  <BackIcon />
-                </button>
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 40px', textAlign: 'center' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>✨ 검색은 Pro 전용 기능이에요</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>Pro를 구독하면 내역을 검색할 수 있어요</p>
-              </div>
-            </div>
-          )}
           <div style={{ background: '#fff', padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 24px 14px', borderBottom: '1px solid #F2F4F6', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <button onClick={() => { setShowSearch(false); resetSearchFilters() }} aria-label="뒤로가기"
