@@ -41,6 +41,7 @@ const baseProps = {
   upcomingPayments: [
     { id: 'f1', title: '월세', amount: 550000, daysLeft: 0, dueDay: 5 },
   ],
+  creditBills: [], billMonthLabel: '9월', toggleCreditBill: vi.fn(), billBusyCardId: null,
   categoryData: [],
   colorMap: {},
   transactions: [],
