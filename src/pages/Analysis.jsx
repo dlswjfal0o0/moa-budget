@@ -77,6 +77,15 @@ function mergeAiCache(local, remote) {
   return out
 }
 
+// 공과금 항목 식별 키: 같은 항목·같은 달은 한 건만 존재한다
+const utilityKey = (u) => `${u.type}-${u.year}-${u.month}`
+
+// 계정(Firestore)의 공과금과 기기에 남은 공과금을 합친다. 같은 항목·같은 달이 양쪽에 있으면 계정 쪽을 쓴다.
+function mergeUtilities(remote, local) {
+  const remoteKeys = new Set(remote.map(utilityKey))
+  return [...remote, ...local.filter(u => !remoteKeys.has(utilityKey(u)))]
+}
+
 function stripHanja(s) {
   return typeof s === 'string'
     ? s.replace(/[㐀-鿿豈-﫿぀-ヿ]/g, '').replace(/[ \t]{2,}/g, ' ').trim()
@@ -178,6 +187,8 @@ export default function Analysis() {
   const [utilities, setUtilities] = useState(() => {
     try { return JSON.parse(localStorage.getItem('moa_utilities') || '[]') } catch { return [] }
   })
+  // 계정의 공과금을 불러왔는지. 불러오기 전에 저장하면 계정 데이터를 덮어쓰므로 저장 시 확인한다.
+  const utilitiesSyncedRef = useRef(false)
   const [showAddUtility, setShowAddUtility] = useState(false)
   const [editingUtility, setEditingUtility] = useState(null)
   const [newUtility, setNewUtility] = useState({ type: '전기세', amount: '', day: '' })
@@ -268,10 +279,18 @@ export default function Analysis() {
     if (localStorage.getItem('moa_demo_mode') === 'true') fetchDemoData()
   }, [viewYear, viewMonth]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 계정 기준 AI 캐시 로드: 로그인 시 Firestore에서 저장된 분석 결과를 불러옴
+  // 계정 기준 AI 캐시·공과금 로드: 로그인 시 Firestore에서 저장된 분석 결과와 공과금을 불러옴.
+  // 로그아웃 시 moa_* 로컬 캐시가 모두 지워지므로, 공과금은 반드시 계정에서 다시 읽어와야 한다.
   useEffect(() => {
     if (!user) return
     getDoc(doc(db, 'users', user.uid)).then(snap => {
+      const remoteUtilities = snap.exists() && Array.isArray(snap.data().utilities) ? snap.data().utilities : []
+      setUtilities(prev => {
+        const next = mergeUtilities(remoteUtilities, prev)
+        try { localStorage.setItem('moa_utilities', JSON.stringify(next)) } catch { /* ignore */ }
+        return next
+      })
+      utilitiesSyncedRef.current = true
       if (snap.exists() && snap.data().aiCache) {
         const remote = snap.data().aiCache
         setAiCache(prev => {
@@ -393,9 +412,24 @@ export default function Analysis() {
   }
 
   const saveUtilities = async (updated) => {
-    setUtilities(updated)
-    localStorage.setItem('moa_utilities', JSON.stringify(updated))
-    if (user) await setDoc(doc(db, 'users', user.uid), { utilities: updated }, { merge: true })
+    let next = updated
+    if (user && !utilitiesSyncedRef.current) {
+      // 계정 공과금을 아직 못 불러온 상태(네트워크 지연·실패)에서 저장하면 계정의 기존 기록이 통째로 덮어써진다.
+      // 계정에만 있고 이 화면이 모르던 기록은 살려서 합친다(화면에 있던 기록 중 빠진 것은 사용자가 지운 것).
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid))
+        const remote = snap.exists() && Array.isArray(snap.data().utilities) ? snap.data().utilities : []
+        const known = new Set([...utilities, ...updated].map(utilityKey))
+        next = [...updated, ...remote.filter(u => !known.has(utilityKey(u)))]
+        utilitiesSyncedRef.current = true
+      } catch {
+        alert('계정의 공과금 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.')
+        return
+      }
+    }
+    setUtilities(next)
+    localStorage.setItem('moa_utilities', JSON.stringify(next))
+    if (user) await setDoc(doc(db, 'users', user.uid), { utilities: next }, { merge: true })
   }
 
   const utilitySummary = utilityTypes.map(type => {
