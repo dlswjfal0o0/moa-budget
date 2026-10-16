@@ -2,7 +2,8 @@ import ThinkingOrbs from './ThinkingOrbs'
 import FitText from './FitText'
 import { describeFailure } from '../utils/aiFailure'
 
-// AI 소비 분석 카드 본문. 일반/뉴모피즘 분석 화면이 같은 레이아웃을 공유한다.
+// AI 소비/공과금 분석 카드 본문. 일반/뉴모피즘 분석 화면, 소비/공과금 탭이 모두 같은 레이아웃을 공유하고
+// variant('consume' | 'utility')에 따라 문구와 '평소와 다른 지출' ↔ '항목별 변화' 섹션만 바뀐다.
 // 파스텔 테마는 카드 배경·글자색이 테마마다 달라서, 본문/보조 글자색은 테마 text에 투명도를 줘 만든다.
 //
 // 설정의 "AI 분석 스타일"(1 매우 공감적 ~ 5 매우 이성적)에 맞춰 카드의 톤도 바꾼다.
@@ -14,11 +15,44 @@ const GREEN = '#12A150'
 const LEVEL_NAMES = ['위험', '주의', '보통', '양호', '우수']
 
 const RATING_COLORS = { good: GREEN, warning: '#E08600', danger: '#F04452' }
-const RATING_LABELS = {
-  warm:     { good: '정말 잘하고 있어요', warning: '조금만 신경 써볼까요?', danger: '이번 달은 지출이 많았어요' },
-  balanced: { good: '소비 우등생이에요', warning: '지출 관리가 필요해요', danger: '지출이 많은 편이에요' },
-  data:     { good: '안정적인 소비', warning: '지출 관리 필요', danger: '지출 과다' },
+// 탭별 문구. 레이아웃은 같고 내용만 다르다.
+const VARIANTS = {
+  consume: {
+    title: 'AI 소비 분석',
+    subject: '소비',
+    loadingLabel: '소비 패턴을 분석하는 중....',
+    intro: '지난달과 비교해 어디에 많이 썼는지, 무엇이 달라졌는지 알려드려요.',
+    totalLabel: '이번 달 지출',
+    previewLabels: { score: '소비 점수', save: '아낄 수 있는 곳', trend: '평소와 다른 지출' },
+    cta: '✨ 이번 달 소비 분석하기',
+    noData: '분석할 지출 내역이 없어요',
+    noDataHint: '이번 달 지출을 기록하면 분석할 수 있어요.',
+    savedHint: '같은 내역으로는 같은 분석을 보여드려요. 이번 달 내역이 바뀌면 다시 분석할 수 있어요.',
+    ratings: {
+      warm:     { good: '정말 잘하고 있어요', warning: '조금만 신경 써볼까요?', danger: '이번 달은 지출이 많았어요' },
+      balanced: { good: '소비 우등생이에요', warning: '지출 관리가 필요해요', danger: '지출이 많은 편이에요' },
+      data:     { good: '안정적인 소비', warning: '지출 관리 필요', danger: '지출 과다' },
+    },
+  },
+  utility: {
+    title: 'AI 공과금 분석',
+    subject: '공과금',
+    loadingLabel: '공과금 패턴을 비교하는 중....',
+    intro: '전월·전년도와 비교해 어떤 항목이 늘고 줄었는지, 왜 그런지 알려드려요.',
+    totalLabel: '이번 달 공과금',
+    previewLabels: { score: '공과금 점수', save: '아낄 수 있는 곳', trend: '항목별 변화' },
+    cta: '✨ 이번 달 공과금 분석하기',
+    noData: '분석할 공과금이 없어요',
+    noDataHint: '위에서 이번 달 공과금을 입력하면 분석할 수 있어요.',
+    savedHint: '같은 내역으로는 같은 분석을 보여드려요. 이번 달 공과금이 바뀌면 다시 분석할 수 있어요.',
+    ratings: {
+      warm:     { good: '공과금을 잘 관리하고 있어요', warning: '조금만 신경 써볼까요?', danger: '이번 달은 공과금이 많이 나왔어요' },
+      balanced: { good: '공과금 관리 우등생이에요', warning: '공과금 관리가 필요해요', danger: '공과금이 많은 편이에요' },
+      data:     { good: '안정적인 공과금', warning: '공과금 관리 필요', danger: '공과금 과다' },
+    },
+  },
 }
+const STATUS_COLORS = { up: '#F04452', down: GREEN }
 const ADVICE_TITLES = { warm: '이렇게 해보면 어때요?', balanced: '아낄 수 있는 곳', data: '절감 포인트' }
 const STYLE_NAMES = ['매우 공감적', '공감적', '균형형', '이성적', '매우 이성적'] // AIStyleSlider와 동일
 
@@ -43,7 +77,6 @@ export function FailureIcon({ kind, color }) {
 export function PreviewIcon({ kind, color }) {
   const p = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
   if (kind === 'score') return <svg {...p}><path d="M4 16a8 8 0 1 1 16 0" /><line x1="12" y1="16" x2="15.5" y2="10.5" /><circle cx="12" cy="16" r="1.2" fill={color} /></svg>
-  if (kind === 'reason') return <svg {...p}><circle cx="11" cy="11" r="6.5" /><line x1="16" y1="16" x2="20.5" y2="20.5" /></svg>
   if (kind === 'save') return <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M14.8 9.2c-.5-.8-1.5-1.3-2.8-1.3-1.7 0-2.8.8-2.8 2s1.1 1.7 2.8 2.1 2.8.9 2.8 2.1-1.1 2-2.8 2c-1.3 0-2.3-.5-2.8-1.3" /><line x1="12" y1="6" x2="12" y2="7.9" /><line x1="12" y1="16.1" x2="12" y2="18" /></svg>
   return <svg {...p}><polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" /></svg>
 }
@@ -95,7 +128,10 @@ export default function AiConsumptionReport({
   styleLevel = 3, categorySpend = {}, showAdvice = true, hasData = true,
   month, totalExpense = 0, lastTotalExpense = 0,
   neumorphism = false, coloredShadow,
+  variant = 'consume', itemDiffs = {},
 }) {
+  const copy = VARIANTS[variant] || VARIANTS.consume
+  const isUtility = variant === 'utility'
   const mode = styleMode(styleLevel)
   const body = `${text}D9`   // 본문 — 충분한 대비를 유지하면서 제목보다 한 톤 낮게
   const muted = `${text}8C`  // 보조 설명
@@ -105,25 +141,30 @@ export default function AiConsumptionReport({
   const tinted = neumorphism ? { className: 'neu-inset', style: {} } : { style: { background: `${primary}0F` } }
 
   const ratingColor = data ? (RATING_COLORS[data.rating] || primary) : primary
-  const ratingLabel = data ? (RATING_LABELS[mode][data.rating] || '분석 완료') : ''
+  const ratingLabel = data ? (copy.ratings[mode][data.rating] || '분석 완료') : ''
+  const hasScore = data?.score != null && data.score !== ''
   const level = data ? Math.min(5, Math.max(1, Math.ceil((Number(data.score) || 50) / 20))) : 0
-  const cuts = Array.isArray(data?.cuts) ? data.cuts.filter(c => c && (c.category || c.tip)) : []
+  // 공과금 분석의 예전 결과(overall/tip 형식)도 같은 레이아웃으로 보이게 옮겨 담는다
+  const cuts = Array.isArray(data?.cuts) ? data.cuts.filter(c => c && (c.category || c.tip))
+    : isUtility && data?.tip ? [{ tip: data.tip }] : []
+  const summary = data?.summary || (isUtility ? data?.overall : '')
+  const items = isUtility && Array.isArray(data?.items) ? data.items.filter(it => it && it.type) : []
   const unusual = Array.isArray(data?.unusual) ? data.unusual.map(toText).filter(Boolean) : []
   const goal = Number(data?.saving_goal) > 0 ? Number(data.saving_goal) : 0
   const message = data?.message ? toText(data.message) : ''
   const failure = !loading && raw ? describeFailure(raw) : null
   const isEmpty = !loading && !data && !raw
   const previews = [
-    { kind: 'score', label: '소비 점수' },
-    showAdvice && { kind: 'save', label: '아낄 수 있는 곳' },
-    { kind: 'trend', label: '평소와 다른 지출' },
+    { kind: 'score', label: copy.previewLabels.score },
+    showAdvice && { kind: 'save', label: copy.previewLabels.save },
+    { kind: 'trend', label: copy.previewLabels.trend },
   ].filter(Boolean)
 
   return (
     <>
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: data || failure || loading ? 18 : 12 }}>
-        <p style={{ fontSize: 15, fontWeight: 700, color: text }}>AI 소비 분석</p>
+        <p style={{ fontSize: 15, fontWeight: 700, color: text }}>{copy.title}</p>
         {saved && !loading ? (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: primary, background: neumorphism ? undefined : primaryLight, padding: '6px 11px', borderRadius: 9999 }}
             className={neumorphism ? 'neu-inset' : undefined}>
@@ -147,7 +188,7 @@ export default function AiConsumptionReport({
 
       {loading && (
         <div style={{ textAlign: 'center', padding: '24px 0 28px' }}>
-          <ThinkingOrbs color={primary} size={40} label="소비 패턴을 분석하는 중...." />
+          <ThinkingOrbs color={primary} size={40} label={copy.loadingLabel} />
         </div>
       )}
 
@@ -155,10 +196,10 @@ export default function AiConsumptionReport({
       {isEmpty && (
         <div>
           <p style={{ fontSize: 18, fontWeight: 800, color: text, letterSpacing: '-0.03em', lineHeight: 1.35, wordBreak: 'keep-all' }}>
-            {month ? `${month}월 소비, ` : '이번 달 소비, '}<span style={{ color: primary }}>AI가 짚어드릴게요</span>
+            {month ? `${month}월 ${copy.subject}, ` : `이번 달 ${copy.subject}, `}<span style={{ color: primary }}>AI가 짚어드릴게요</span>
           </p>
           <p style={{ fontSize: 13.5, color: muted, lineHeight: 1.55, marginTop: 4, wordBreak: 'keep-all' }}>
-            지난달과 비교해 어디에 많이 썼는지, 무엇이 달라졌는지 알려드려요.
+            {copy.intro}
           </p>
 
           {/* 이번 달 실제 수치 — 분석 전에도 내 데이터가 반영된 카드처럼 보이도록 */}
@@ -169,7 +210,7 @@ export default function AiConsumptionReport({
             return (
               <div {...panel} style={{ ...panel.style, borderRadius: 14, padding: '12px 14px', marginTop: 14, display: 'flex', alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>이번 달 지출</p>
+                  <p style={{ fontSize: 12, color: muted, marginBottom: 2 }}>{copy.totalLabel}</p>
                   <p style={{ fontSize: 17, fontWeight: 800, color: text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}><FitText>{fmt(totalExpense)}원</FitText></p>
                 </div>
                 <div style={{ width: 1, alignSelf: 'stretch', background: divider, margin: '0 14px' }} />
@@ -201,10 +242,10 @@ export default function AiConsumptionReport({
               cursor: hasData ? 'pointer' : 'not-allowed', fontSize: 15, fontWeight: 700,
               background: hasData ? primary : `${text}14`, color: hasData ? '#fff' : muted,
               boxShadow: neumorphism && hasData ? coloredShadow?.raisedSm : undefined }}>
-            {hasData ? '✨ 이번 달 소비 분석하기' : '분석할 지출 내역이 없어요'}
+            {hasData ? copy.cta : copy.noData}
           </button>
           <p style={{ fontSize: 12, color: muted, lineHeight: 1.5, marginTop: 10, textAlign: 'center', wordBreak: 'keep-all' }}>
-            {hasData ? '같은 내역으로는 언제 봐도 같은 분석 결과를 보여드려요.' : '이번 달 지출을 기록하면 분석할 수 있어요.'}
+            {hasData ? '같은 내역으로는 언제 봐도 같은 분석 결과를 보여드려요.' : copy.noDataHint}
           </p>
         </div>
       )}
@@ -235,6 +276,7 @@ export default function AiConsumptionReport({
       {!loading && data && (
         <div>
           {/* 점수 + 등급 */}
+          {hasScore && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <ScoreRing score={data.score} color={ratingColor} track={track} />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -247,10 +289,11 @@ export default function AiConsumptionReport({
               </div>
             </div>
           </div>
+          )}
 
           {/* 요약 */}
-          {data.summary && (
-            <p style={{ fontSize: 15, color: body, lineHeight: 1.7, marginTop: 16, wordBreak: 'keep-all' }}>{toText(data.summary)}</p>
+          {summary && (
+            <p style={{ fontSize: 15, color: body, lineHeight: 1.7, marginTop: hasScore ? 16 : 0, wordBreak: 'keep-all' }}>{toText(summary)}</p>
           )}
 
           {/* 공감형: 응원 메시지를 요약 바로 아래 말풍선으로 */}
@@ -359,6 +402,34 @@ export default function AiConsumptionReport({
             </div>
           )}
 
+          {/* 공과금: 항목별 변화 ('평소와 다른 지출'과 같은 자리·같은 목록 형태) */}
+          {items.length > 0 && (
+            <div style={{ marginTop: 22 }}>
+              <SectionTitle color={muted}>{copy.previewLabels.trend}</SectionTitle>
+              {items.map((item, i) => {
+                const diff = itemDiffs[item.type] ?? null
+                const status = diff !== null ? (diff > 0 ? 'up' : diff < 0 ? 'down' : 'same') : item.status
+                const dot = STATUS_COLORS[status] || muted
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 0', borderTop: i === 0 ? 'none' : `1px solid ${divider}` }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot, flexShrink: 0, marginTop: 8 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{item.type}</span>
+                        {diff !== null && diff !== 0 && (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: dot, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                            {diff > 0 ? '▲' : '▼'} {fmt(Math.abs(diff))}원
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 14, color: body, lineHeight: 1.65, marginTop: 2, wordBreak: 'keep-all' }}>{toText(item.comment)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* 균형형: 한마디는 맨 아래에. (공감형은 위에 표시, 이성형은 감정 표현이라 생략) */}
           {mode === 'balanced' && message && (
             <p style={{ fontSize: 14, fontWeight: 500, color: body, lineHeight: 1.65, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${divider}`, wordBreak: 'keep-all' }}>
@@ -368,7 +439,7 @@ export default function AiConsumptionReport({
 
           {saved && (
             <p style={{ fontSize: 12, color: muted, lineHeight: 1.5, marginTop: 16, wordBreak: 'keep-all' }}>
-              같은 내역으로는 같은 분석을 보여드려요. 이번 달 내역이 바뀌면 다시 분석할 수 있어요.
+              {copy.savedHint}
             </p>
           )}
         </div>
