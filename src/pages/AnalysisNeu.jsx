@@ -61,7 +61,7 @@ export default function AnalysisNeu(props) {
     currentMonthTotal, prevMonthTotal, utilityTotalDiff,
     expandedUtilities, toggleUtility,
     utilityAI, utilityAIRaw, loadingUtilityAI, getUtilityAI,
-    utilityAIIsSaved, utilityItemDiffs, hasUtilityData,
+    utilityAIIsSaved, utilityItemDiffs, utilitySpend, hasUtilityData,
     showAddUtility, setShowAddUtility,
     editingUtility, setEditingUtility,
     newUtility, setNewUtility, saveUtilities,
@@ -441,9 +441,9 @@ export default function AnalysisNeu(props) {
             <AiUtilityReport
               data={utilityAI} raw={utilityAIRaw} loading={loadingUtilityAI} saved={utilityAIIsSaved} onAnalyze={getUtilityAI}
               primary={primary} primaryLight={primaryLight} fmt={fmt}
-              showAdvice={aiShowAdvice} hasData={hasUtilityData}
+              styleLevel={aiAnalysisStyle} showAdvice={aiShowAdvice} hasData={hasUtilityData}
               month={viewMonth + 1} currentTotal={currentMonthTotal} prevTotal={prevMonthTotal}
-              itemDiffs={utilityItemDiffs} utilityStyles={UTILITY_STYLES} UtilityIcon={UtilityIcon}
+              itemDiffs={utilityItemDiffs} utilitySpend={utilitySpend}
               neumorphism coloredShadow={coloredShadow}
             />
           </div>

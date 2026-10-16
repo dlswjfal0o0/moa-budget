@@ -32,6 +32,8 @@ const UTILITY_STYLES = {
 
 // AI 캐시 버전. 모델/프롬프트를 바꾸면 이 값을 올려 과거 캐시를 무효화한다.
 const AI_CACHE_VERSION = 3
+// 공과금 분석 응답 형식 버전. 소비 분석과 같은 구성(점수·요약·조언·항목별 변화·한마디)으로 바뀌어 예전 결과를 다시 받는다.
+const UTILITY_AI_SCHEMA_VERSION = 2
 
 // AI 응답에서 순수 JSON만 추출 (앞뒤 설명/코드블록/추론 텍스트 제거)
 function extractJson(text) {
@@ -227,14 +229,21 @@ export default function Analysis() {
       message: '조금만 더 노력하면 저축 목표를 달성할 수 있습니다! 화이팅 💪',
     })
     setUtilityAI({
+      rating: 'good',
+      score: 78,
+      summary: '이번 달 공과금은 지난달과 비슷한 수준입니다. 전기세가 4,000원 늘었지만 가스비가 3,000원 줄어 전체 변화는 크지 않습니다.',
       items: [
-        { type: '전기세', status: 'up',   comment: '지난달보다 4,000원 증가했습니다. 초여름 에어컨 사용이 늘어난 것으로 보입니다. ⚡' },
-        { type: '수도세', status: 'same', comment: '지난달과 비슷한 수준으로 안정적으로 유지되고 있습니다. 💧' },
-        { type: '가스비', status: 'down', comment: '날씨가 따뜻해지면서 지난달보다 3,000원 줄었습니다. 🔥' },
-        { type: '관리비', status: 'up',   comment: '지난달보다 3,000원 소폭 증가했습니다. 계절별 공용부분 관리비 영향으로 보입니다. 🏠' },
+        { type: '전기세', status: 'up',   comment: '지난달보다 4,000원 증가했습니다. 초여름 에어컨 사용이 늘어난 것으로 보입니다.' },
+        { type: '수도세', status: 'same', comment: '지난달과 비슷한 수준으로 안정적으로 유지되고 있습니다.' },
+        { type: '가스비', status: 'down', comment: '날씨가 따뜻해지면서 난방 사용이 줄어 지난달보다 3,000원 줄었습니다.' },
+        { type: '관리비', status: 'up',   comment: '지난달보다 3,000원 소폭 증가했습니다. 계절별 공용부분 관리비 영향으로 보입니다.' },
       ],
-      overall: '전반적으로 공과금 지출이 안정적입니다. 여름철 전기세 관리에 집중하는 것이 좋습니다. 😊',
-      tip: '에어컨 설정 온도를 1도 올려보는 건 어떨까요? 전기세를 약 7% 아낄 수 있으니 이번 여름에 함께 실천해보는 게 어떨까요?',
+      cuts: [
+        { category: '전기세', save: 4000, tip: '에어컨 설정 온도를 1도 올려보는 건 어떨까요? 전기세를 약 7% 아낄 수 있으니 이번 여름에 함께 실천해보는 게 어떨까요?' },
+        { category: '수도세', save: 2000, tip: '샤워 시간을 2분만 줄여보는 건 어떨까요? 물 사용량이 줄어 수도세 부담을 덜 수 있습니다.' },
+      ],
+      saving_goal: 6000,
+      message: '전반적으로 공과금을 안정적으로 관리하고 있습니다. 여름철 전기세만 조금 신경 쓰면 충분합니다.',
     })
   }
 
@@ -444,7 +453,7 @@ export default function Analysis() {
     return `${type}: 이번달 ${fmt(cur.amount)}원 / ${comparison}`
   }).filter(Boolean).join('\n')
   // 데이터 시그니처: 동일 데이터 + 동일 설정(스타일/조언)이면 계정에 저장된 결과를 그대로 사용 → 매번 결과가 달라지지 않음
-  const utilitySig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, summary: utilitySummary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
+  const utilitySig = hashForSeed(JSON.stringify({ v: AI_CACHE_VERSION, uv: UTILITY_AI_SCHEMA_VERSION, summary: utilitySummary, y: viewYear, m: viewMonth, style: aiAnalysisStyle, advice: aiShowAdvice }))
   const utilityCached = aiCache.utility?.[cacheMonthKey]
   const utilityAIIsSaved = !!(utilityCached?.data && utilityCached.sig === utilitySig)
   // AI 결과의 항목별 전월 대비 증감액(전월 데이터가 없으면 null)
@@ -454,6 +463,11 @@ export default function Analysis() {
     const prev = utilities.find(u => u.type === type && u.year === lm.year && u.month === lm.month)
     return [type, cur && prev ? cur.amount - prev.amount : null]
   }))
+  // 항목별 이번 달 금액 (조언의 절감액이 해당 항목에서 차지하는 비율 표시에 사용)
+  const utilitySpend = Object.fromEntries(utilityTypes.map(type => {
+    const cur = utilities.find(u => u.type === type && u.year === viewYear && u.month === viewMonth + 1)
+    return [type, cur?.amount || 0]
+  }))
 
   const getUtilityAI = async () => {
     const summary = utilitySummary
@@ -462,16 +476,18 @@ export default function Analysis() {
     if (utilityAIIsSaved) { setUtilityAI(utilityCached.data); setUtilityAIRaw(''); return }
     setLoadingUtilityAI(true); setUtilityAI(null); setUtilityAIRaw('')
     try {
-      const adviceOverallRule = aiShowAdvice
-        ? ' overall은 전체 공과금 흐름을 요약하고, tip은 이번 데이터에서 가장 아낄 여지가 큰 항목을 골라 구체적 절약 방법을 제안하세요.'
-        : ' overall은 전체 공과금 흐름을 요약하세요.'
+      const adviceContentRule = aiShowAdvice
+        ? '\n- cuts는 이번 달 금액이 크거나 늘어난 항목 위주로 최소 1개, 최대 3개 작성하세요. category는 관리비/수도세/전기세/가스비 중 하나이고, 각 조언(tip)은 서로 겹치지 않는 그 항목에 딱 맞는 구체적 방법으로 쓰세요.\n- save는 해당 항목의 이번 달 금액보다 작은 현실적인 정수 금액으로, 항목마다 다르게 산정하세요.\n- saving_goal은 cuts의 save를 바탕으로 한 현실적인 다음 달 절감 목표 금액을 제시하세요.'
+        : ''
+      const itemsSchema = '"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}]'
       const schema = aiShowAdvice
-        ? '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평","tip":"구체적 절약 제안 (청유형)"}'
-        : '{"items":[{"type":"관리비","status":"up|down|same 중 하나","comment":"데이터 근거의 서로 다른 구체적 한두 줄"}],"overall":"전체 총평"}'
+        ? `{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약",${itemsSchema},"cuts":[{"category":"항목명","tip":"항목별로 서로 다른 구체적 절약 방법 (청유형)","save":정수}],"saving_goal":정수,"message":"응원 메시지"}`
+        : `{"rating":"good|warning|danger 중 하나","score":0~100 정수,"summary":"실제 수치 근거 2줄 요약",${itemsSchema},"message":"응원 메시지"}`
+      const totalLine = `이번 달 공과금 합계 ${fmt(currentMonthTotal)}원 / 지난달 합계 ${prevMonthTotal > 0 ? fmt(prevMonthTotal) + '원' : '없음'}`
       const data = await callAI({
-        max_tokens: 1500, ...getDeterminismParams(),
+        max_tokens: 2000, ...getDeterminismParams(),
         domain: 'utility', styleLevel: aiAnalysisStyle, showAdvice: aiShowAdvice,
-        messages: [{ role: 'user', content: `아래 공과금 현황을 항목별로 분석해 JSON으로만 응답해주세요.\n\n${summary}\n\n[JSON 필드 규칙]\n- 각 항목의 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.\n-${adviceOverallRule}\n- items의 comment, overall은 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n아래 형식 그대로, 값은 위 규칙대로 새로 작성:\n${schema}` }]
+        messages: [{ role: 'user', content: `아래 공과금 현황을 분석해 JSON으로만 응답해주세요.\n\n${totalLine}\n${summary}\n\n[JSON 필드 규칙]\n- score는 전월·전년도 대비 증감과 계절 요인을 고려한 공과금 관리 점수입니다(높을수록 잘 관리). rating은 score와 어울리게 고르세요.\n- summary는 이번 달 공과금 합계와 전월 대비 변화, 가장 크게 변한 항목을 실제 수치로 언급해 요약하세요.\n- items는 이번 달 데이터가 있는 항목만 작성하세요. 각 comment는 전월 대비 증감 금액이나 계절적 요인 등 실제 데이터에 근거해 서로 다르게, 구체적으로 작성하세요.\n- "관리비가 줄었습니다"처럼 숫자만 반복하는 성의 없는 한 줄은 금지합니다. 왜 그런지 또는 어떤 의미인지 한 가지를 덧붙이세요.${adviceContentRule}\n- summary, comment, message는 "-입니다/-습니다"로 끝나는 구어체 존댓말로 작성하세요.\n- 문어체(-다, -하였다, -되었다, -이다) 금지. 한자, 영어, 일본어 등 한글 이외의 문자 절대 금지.\n\n응답 형식(이 형식 그대로만, 값은 위 규칙대로 새로 작성):\n${schema}` }]
       })
       const raw = data.content?.[0]?.text || ''
       const parsed = parseAiJson(extractJson(raw))
@@ -534,7 +550,7 @@ export default function Analysis() {
         currentMonthTotal={currentMonthTotal} prevMonthTotal={prevMonthTotal} utilityTotalDiff={utilityTotalDiff}
         expandedUtilities={expandedUtilities} toggleUtility={toggleUtility}
         utilityAI={utilityAI} utilityAIRaw={utilityAIRaw} loadingUtilityAI={loadingUtilityAI} getUtilityAI={getUtilityAI}
-        utilityAIIsSaved={utilityAIIsSaved} utilityItemDiffs={utilityItemDiffs} hasUtilityData={!!utilitySummary}
+        utilityAIIsSaved={utilityAIIsSaved} utilityItemDiffs={utilityItemDiffs} utilitySpend={utilitySpend} hasUtilityData={!!utilitySummary}
         showAddUtility={showAddUtility} setShowAddUtility={setShowAddUtility}
         editingUtility={editingUtility} setEditingUtility={setEditingUtility}
         newUtility={newUtility} setNewUtility={setNewUtility} saveUtilities={saveUtilities}
@@ -921,9 +937,9 @@ export default function Analysis() {
             <AiUtilityReport
               data={utilityAI} raw={utilityAIRaw} loading={loadingUtilityAI} saved={utilityAIIsSaved} onAnalyze={getUtilityAI}
               primary={primary} primaryLight={primaryLight} text={themeData.text || '#191F28'} fmt={fmt}
-              showAdvice={aiShowAdvice} hasData={!!utilitySummary}
+              styleLevel={aiAnalysisStyle} showAdvice={aiShowAdvice} hasData={!!utilitySummary}
               month={viewMonth + 1} currentTotal={currentMonthTotal} prevTotal={prevMonthTotal}
-              itemDiffs={utilityItemDiffs} utilityStyles={UTILITY_STYLES} UtilityIcon={UtilityIcon}
+              itemDiffs={utilityItemDiffs} utilitySpend={utilitySpend}
             />
           </div>
 
