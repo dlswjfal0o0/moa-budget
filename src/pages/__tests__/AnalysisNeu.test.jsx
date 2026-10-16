@@ -41,7 +41,7 @@ describe('AnalysisNeu — 공과금 탭 Pro 게이팅', () => {
     purchasesState.isPro = false
     const props = makeProps('소비')
     render(<AnalysisNeu {...props} />)
-    expect(screen.getByText('✨ PRO')).toBeInTheDocument()
+    expect(screen.getByText('PRO')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('공과금'))
     expect(props.setActiveAnalysisTab).not.toHaveBeenCalled()
@@ -57,7 +57,7 @@ describe('AnalysisNeu — 공과금 탭 Pro 게이팅', () => {
   it('isPro=true면 ProBadge 없이 공과금 탭 콘텐츠가 정상 렌더된다', () => {
     purchasesState.isPro = true
     render(<AnalysisNeu {...makeProps('공과금')} />)
-    expect(screen.queryByText('✨ PRO')).not.toBeInTheDocument()
+    expect(screen.queryByText('PRO')).not.toBeInTheDocument()
     expect(screen.getByText('이번 달 공과금 합계')).toBeInTheDocument()
   })
 })

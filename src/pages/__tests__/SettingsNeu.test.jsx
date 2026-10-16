@@ -43,7 +43,7 @@ describe('SettingsNeu — 엑셀/PDF 내보내기 Pro 게이팅', () => {
     purchasesState.isPro = false
     const props = baseProps
     render(<SettingsNeu {...props} />)
-    expect(screen.getAllByText('✨ PRO')).toHaveLength(2)
+    expect(screen.getAllByText('PRO')).toHaveLength(2)
 
     fireEvent.click(screen.getByText('엑셀로 내보내기'))
     expect(props.exportToExcel).not.toHaveBeenCalled()
@@ -54,7 +54,7 @@ describe('SettingsNeu — 엑셀/PDF 내보내기 Pro 게이팅', () => {
     purchasesState.isPro = true
     const props = { ...baseProps, exportToExcel: vi.fn(), exportToPDF: vi.fn(), setShowPaywall: vi.fn() }
     render(<SettingsNeu {...props} />)
-    expect(screen.queryByText('✨ PRO')).not.toBeInTheDocument()
+    expect(screen.queryByText('PRO')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByText('PDF로 내보내기'))
     expect(props.exportToPDF).toHaveBeenCalled()
