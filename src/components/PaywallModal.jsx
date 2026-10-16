@@ -54,7 +54,7 @@ export default function PaywallModal({ open, onClose }) {
                   </>
                 ) : (
                   <>
-                    결제 알림, 고정지출·대출 관리, 검색, 내보내기 등
+                    결제 알림, 고정지출·대출 관리, 내보내기 등
                     <br />
                     더 많은 기능을 이용해보세요.
                   </>
